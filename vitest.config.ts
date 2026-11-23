@@ -1,9 +1,13 @@
 import { fileURLToPath } from 'node:url';
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 
 export default defineConfig({
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
-  test: { environment: 'node' },
+  test: {
+    environment: 'node',
+    // The side-scroller example owns its own package, config, and tests.
+    exclude: [...configDefaults.exclude, 'examples/**'],
+  },
 });
