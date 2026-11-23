@@ -12,6 +12,20 @@ progression, loot, equipment, achievements and statistics; fishing rules and
 commands; village data, quests, NPC movement, and dungeon/village navigation.
 The host drives movement and fishing state-machine ticks and presents results.
 
+## Build any interface on top
+
+The engine is independent of how the game is presented. A host can build a web,
+desktop, mobile, terminal, or side-scrolling interface and use the engine for
+Knowledge Dungeon state, learning commands, progression, reviews, and fishing.
+The host owns rendering, input, camera behavior, and any presentation-specific
+mechanics.
+
+This is a headless engine for Knowledge Dungeon, not a general-purpose game
+physics engine. Its included dungeon movement and collision model is grid-based;
+it does not implement platformer mechanics such as gravity or jumping. A
+side-scrolling interface can still use the learning and progression rules, but
+would supply its own movement and collision behavior.
+
 ## Setup
 
 Requires Node.js 20 or newer to build. The built ES module also runs in modern
