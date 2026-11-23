@@ -15,20 +15,21 @@ the gate outcome and the baseline facts later gates compare against.
   working-tree run. If `uncommitted`, record the phase status board value too.
 - **Result** is one of `pass`, `fail`, `blocked`, or `partial`, with a one-line reason.
 - **Failures stay.** A later pass links back to the failing row.
-- **Artifacts** are referenced by path or description. Screenshots and performance
-  captures live outside the repository; record where they are held and who can access
-  them.
+- **Artifacts** — screenshots live in `visuals/pN/` and are indexed in
+  [VISUALS.md](VISUALS.md) with a per-gate manifest. Performance traces and other large
+  captures may stay outside the repository; record their path, conditions, and who can
+  access them.
 
 ## Status
 
 | Field | Value |
 |---|---|
-| Plan version | 1.1 |
+| Plan version | 1.3 |
 | Plan written | 2026-11-23 |
-| Engine test baseline | **13 files / 280 tests at `3951737`; unchanged after P0** |
+| Engine test baseline | **13 files / 280 tests at `3951737`; unchanged after P0 and P1** |
 | First gate run | 2026-11-23 |
-| Latest gate passed | G0 (2026-11-23) |
-| Current phase | P0 complete; P1 not started |
+| Latest gate passed | G1 (2026-11-23) |
+| Current phase | P1 complete; P2 not started |
 | Open failures | None recorded |
 
 ## Gate index
@@ -36,7 +37,7 @@ the gate outcome and the baseline facts later gates compare against.
 | Gate | Phase | Date (UTC) | Commit | Result | Engine tests | Example tests | Evidence |
 |---|---|---|---|---|---|---|---|
 | G0 | [P0 — scaffold, storage, boot](phase-0-scaffold.md#execution-evidence) | 2026-11-23 | uncommitted (base `3951737`) | pass | 13 / 280 | 2 / 6 | [P0 evidence](phase-0-scaffold.md#execution-evidence) |
-| G1 | [P1 — dungeon level](phase-1-dungeon-level.md#execution-evidence) | — | — | Pending | — | — | — |
+| G1 | [P1 — dungeon level](phase-1-dungeon-level.md#execution-evidence) | 2026-11-23 | uncommitted (base `989acf1`) | pass | 13 / 280 | 7 / 39 | [P1 evidence](phase-1-dungeon-level.md#execution-evidence) |
 | G2 | [P2 — note loop](phase-2-note-loop.md#execution-evidence) | — | — | Pending | — | — | — |
 | G3 | [P3 — surface village](phase-3-surface-village.md#execution-evidence) | — | — | Pending | — | — | — |
 | G4 | [P4 — fishing](phase-4-fishing.md#execution-evidence) | — | — | Pending | — | — | — |
@@ -50,16 +51,19 @@ changes size, add a new baseline row and explain why.
 |---|---|---|---|---|---|---|---|
 | 2026-11-23 | `3951737` | 13 | 280 | pass | pass | — | Pre-P0 baseline |
 | 2026-11-23 | uncommitted | 13 | 280 | pass | pass | 0 `examples/` paths | After P0; example suite 2 files / 6 tests |
+| 2026-11-23 | uncommitted (base `989acf1`) | 13 | 280 | pass | pass | 0 `examples/` paths | G1 checkpoint; no baseline change; example suite 7 files / 39 tests |
 
 ## Per-task evidence links
 
 | Phase | Detailed log | Notable task rows |
 |---|---|---|
 | P0 | [phase-0-scaffold.md §Execution evidence](phase-0-scaffold.md#execution-evidence) | Storage round-trip, isolation probe, recovery behaviour |
-| P1 | [phase-1-dungeon-level.md §Execution evidence](phase-1-dungeon-level.md#execution-evidence) | Map metrics, traversal proof, low-frame-rate check |
+| P1 | [phase-1-dungeon-level.md §Execution evidence](phase-1-dungeon-level.md#execution-evidence) | Map metrics, level/physics/visit tests, traversal proof, low-frame-rate check, reduced-motion focus pass |
 | P2 | [phase-2-note-loop.md §Execution evidence](phase-2-note-loop.md#execution-evidence) | Draft/refusal/clear, save failure, keyboard pass |
 | P3 | [phase-3-surface-village.md §Execution evidence](phase-3-surface-village.md#execution-evidence) | Surface layout, portal entry/return, reload routing |
 | P4 | [phase-4-fishing.md §Execution evidence](phase-4-fishing.md#execution-evidence) | Replay, keep/release, reload recovery, performance |
+
+Visual record: [VISUALS.md](VISUALS.md) — dated frames, conditions, and manifests per gate.
 
 ## Gate record template
 
@@ -80,6 +84,7 @@ Commands run:
   example build                -> <pass/fail>
 Acceptance criteria verified:  <A-xx, E-xx>
 Manual checks:                 <keyboard, reduced motion, reload, performance>
+Visuals:                       <VISUALS.md anchor or visual frame files>
 Exceptions accepted:           <risk id + why>
 Result:                        <pass/fail/blocked>
 Notes:
@@ -103,4 +108,5 @@ Notes:
 
 | ID | Raised at | Issue | Owner | Status |
 |---|---|---|---|---|
-| — | — | — | — | — |
+| P1-O1 | G1 | The engine stores `roomsVisited` as a per-session set, so a re-entry commits a second `recordRoomVisit` but adds no second unique room id. The host de-duplication (one command per entry) is proven in `tests/visits.test.ts`; R-13 forbids changing engine behaviour. | Host example | Accepted — documented in P1 findings |
+| P1-O2 | G1 | Physics has no cross-frame accumulator: a frame delta is subdivided into at most 5 × 1/120 s steps, so under 24 fps the simulation slows down instead of spending time. This is the conservative K-03 choice and is covered by the 100 ms terminal-velocity test. | Host example | Accepted — documented in P1 amendments |

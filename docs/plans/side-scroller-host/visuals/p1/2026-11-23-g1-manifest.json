@@ -1,0 +1,63 @@
+{
+  "gate": "G1",
+  "phase": "P1 \u2014 dungeon level and movement",
+  "commit": "uncommitted (base 989acf1)",
+  "capturedAt": "2026-11-23T23:33:00.000Z",
+  "browser": "Firefox 150.0, headless via geckodriver 0.36",
+  "app": "http://127.0.0.1:5175/ (Vite dev server)",
+  "viewport": "1366x682 (WebDriver window screenshot)",
+  "prefix": "2026-11-23-g1",
+  "lowFps": true,
+  "frameStats": {
+    "frames": 30,
+    "avgMs": 37,
+    "maxMs": 67
+  },
+  "finalState": {
+    "activeSubjectId": "tutorial-first-walkthrough",
+    "world": "dungeon",
+    "rooms": [
+      "tut-note",
+      "tut-tools",
+      "tut-map"
+    ],
+    "visited": [
+      "tut-note"
+    ],
+    "sessions": 2,
+    "xp": 0
+  },
+  "error": "",
+  "frames": [
+    {
+      "file": "2026-11-23-g1-01-root-room.png",
+      "label": "Root room",
+      "detail": "Start; spawn in tut-note; XP 0; 0/3 cleared; visits 1; all rooms Open"
+    },
+    {
+      "file": "2026-11-23-g1-02-tools-room-low-fps.png",
+      "label": "Lower room under low FPS",
+      "detail": "Step off the root floor and ladder down; visits 2; frames avg 37 ms, max 67 ms; no tunnelling"
+    },
+    {
+      "file": "2026-11-23-g1-03-map-room.png",
+      "label": "Upper room",
+      "detail": "Climb \u22483.8 s; visits 3; label drawn in the left half and clear of the ladder"
+    },
+    {
+      "file": "2026-11-23-g1-04-return-to-root.png",
+      "label": "Return to root",
+      "detail": "Descend \u22481.1 s and step off the ladder; visits stays 3 because roomsVisited is a set"
+    },
+    {
+      "file": "2026-11-23-g1-05-reload.png",
+      "label": "Reload",
+      "detail": "tut-note / tut-tools / tut-map restored from IndexedDB; sessions 1 \u2192 2; fresh session visits 1; focus on Progress"
+    },
+    {
+      "file": "2026-11-23-g1-06-reduced-motion.png",
+      "label": "Reduced motion",
+      "detail": "Separate session with ui.prefersReducedMotion=1; matchMedia true; same layout, camera snaps instead of smoothing"
+    }
+  ]
+}

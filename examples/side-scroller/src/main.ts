@@ -1,14 +1,12 @@
 import type { EngineState, KnowledgeDungeonEngine } from '@/index';
-import { openExampleEngine, setErrorReporter, subscribeState } from './engine';
+import { getState, openExampleEngine, setErrorReporter, subscribeState } from './engine';
+import { buildDungeonLevel, type LevelModel } from './level/model';
+import { createVisitTracker, playerCentre, roomAtPoint } from './level/visits';
+import { createPlayerBody, stepBody, type Body, type MoveIntent } from './physics';
+import { projectDungeon, roomBadges, type DungeonView } from './projection';
+import { createHud } from './render/hud';
+import { createCamera, prepareCanvas, renderWorld, updateCamera } from './render/canvas';
 import { createIndexedDbStorage } from './storage';
-
-const canvas = must<HTMLCanvasElement>('#game');
-const summary = must<HTMLDListElement>('#summary');
-const roomList = must<HTMLUListElement>('#rooms');
-const errorBox = must<HTMLDivElement>('#error');
-const status = must<HTMLDivElement>('#status');
-const startButton = must<HTMLButtonElement>('#start-tutorial');
-const clearButton = must<HTMLButtonElement>('#clear-save');
 
 function must<T extends Element>(selector: string): T {
   const element = document.querySelector<T>(selector);
@@ -20,83 +18,228 @@ function describe(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function showError(message: string): void {
-  errorBox.textContent = message;
-  errorBox.hidden = false;
+const canvas = must<HTMLCanvasElement>('#game');
+const overlay = must<HTMLDivElement>('#overlay');
+const overlayText = must<HTMLParagraphElement>('#overlay-text');
+const startButton = must<HTMLButtonElement>('#start-tutorial');
+const clearButton = must<HTMLButtonElement>('#clear-save');
+const panelTitle = must<HTMLHeadingElement>('#panel-title');
+
+const hud = createHud({
+  summary: must<HTMLElement>('#summary'),
+  rooms: must<HTMLElement>('#rooms'),
+  status: must<HTMLElement>('#status'),
+  error: must<HTMLElement>('#error'),
+});
+setErrorReporter((message) => hud.showError(message));
+
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+const camera = createCamera();
+const visits = createVisitTracker();
+
+let engine: KnowledgeDungeonEngine | null = null;
+let context: CanvasRenderingContext2D | null = null;
+let level: LevelModel | null = null;
+let body: Body | null = null;
+let view: DungeonView | null = null;
+let badges: Record<string, { cleared: boolean; label: string }> = {};
+let activeRoomId: string | null = null;
+let levelKey = '';
+let jumpQueued = false;
+const held = new Set<string>();
+
+/** Geometry changes only when the subject graph changes; statuses refresh through the view model. */
+function structuralKey(state: EngineState, subjectId: string): string {
+  const subject = state.subjects[subjectId];
+  if (!subject) return '';
+  return [
+    subjectId,
+    subject.dungeon.dungeonId,
+    subject.dungeon.rootRoomId,
+    JSON.stringify(subject.dungeon.rooms.map((room) => [room.roomId, room.topic])),
+    JSON.stringify(subject.dungeon.edges),
+  ].join('|');
 }
 
-function announce(message: string): void {
-  status.textContent = message;
+function showOverlay(text: string, showStart: boolean): void {
+  overlayText.textContent = text;
+  startButton.hidden = !showStart;
+  overlay.hidden = false;
 }
 
-function row(term: string, value: string): [HTMLElement, HTMLElement] {
-  const dt = document.createElement('dt');
-  dt.textContent = term;
-  const dd = document.createElement('dd');
-  dd.textContent = value;
-  return [dt, dd];
+function resetLevel(): void {
+  level = null;
+  body = null;
+  view = null;
+  badges = {};
+  activeRoomId = null;
+  levelKey = '';
+  visits.reset();
 }
 
-function render(state: EngineState): void {
-  const activeId = state.activeSubjectId;
-  const active = activeId ? state.subjects[activeId] : undefined;
-  const progression = activeId ? state.progression[activeId] : undefined;
+function onState(state: EngineState): void {
+  const subjectId = state.activeSubjectId;
+  const subject = subjectId ? state.subjects[subjectId] : undefined;
+  const inDungeon = state.session.world === 'dungeon' && subject !== undefined && subjectId !== undefined;
 
-  const rows = [
-    ['Session world', state.session.world],
-    ['Study phase', state.session.phase],
-    ['Quest step', state.session.questStep],
-    ['Active subject', active ? `${active.dungeon.subjectName} (${activeId})` : 'none'],
-    ['Subjects', String(Object.keys(state.subjects).length)],
-    ['Study session', state.activeStudySessionId ? 'active' : 'closed'],
-    ['XP', progression ? String(progression.xpTotal) : '—'],
-  ];
-  summary.replaceChildren(...rows.flatMap(([term, value]) => row(term, value)));
-
-  if (!active) {
-    const item = document.createElement('li');
-    item.className = 'hint';
-    item.textContent = 'No active subject.';
-    roomList.replaceChildren(item);
+  if (!inDungeon || !subject || !subjectId) {
+    resetLevel();
+    hud.update(null, null);
+    showOverlay('Start the tutorial to enter the dungeon.', true);
     return;
   }
 
-  const rooms = Object.values(active.rooms).map((room) => {
-    const item = document.createElement('li');
-    const cleared = room.validationState.finalPass ? ' — cleared' : '';
-    item.textContent = `${room.topic} [${room.state}]${cleared}`;
-    return item;
+  const key = structuralKey(state, subjectId);
+  if (key !== levelKey) {
+    level = buildDungeonLevel(subject);
+    body = createPlayerBody(level);
+    levelKey = key;
+    activeRoomId = null;
+    visits.reset();
+    updateCamera(camera, body, level, 100, true);
+  }
+
+  view = projectDungeon(state);
+  badges = roomBadges(view);
+  const overlayWasVisible = overlay.hidden === false;
+  overlay.hidden = true;
+  if (overlayWasVisible) panelTitle.focus({ preventScroll: true });
+  hud.update(view, activeRoomId);
+}
+
+function isTypingTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  return ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
+}
+
+const LEFT = new Set(['KeyA', 'ArrowLeft']);
+const RIGHT = new Set(['KeyD', 'ArrowRight']);
+const UP = new Set(['KeyW', 'ArrowUp']);
+const DOWN = new Set(['KeyS', 'ArrowDown']);
+
+function readIntent(): MoveIntent {
+  return {
+    left: held.has('KeyA') || held.has('ArrowLeft'),
+    right: held.has('KeyD') || held.has('ArrowRight'),
+    up: held.has('KeyW') || held.has('ArrowUp'),
+    down: held.has('KeyS') || held.has('ArrowDown'),
+    jump: jumpQueued,
+  };
+}
+
+function clearInput(): void {
+  held.clear();
+  jumpQueued = false;
+}
+
+function installInput(): void {
+  window.addEventListener('keydown', (event) => {
+    if (isTypingTarget(event.target)) return;
+
+    if (LEFT.has(event.code) || RIGHT.has(event.code) || UP.has(event.code) || DOWN.has(event.code)) {
+      event.preventDefault();
+      held.add(event.code);
+      return;
+    }
+    if (event.code === 'Space') {
+      event.preventDefault();
+      if (!event.repeat) jumpQueued = true;
+      return;
+    }
+    if (event.code === 'KeyE' && !event.repeat) {
+      // Reserved for P2. Proximity state is host-local and not implemented yet.
+      hud.announce('Interact is not available yet.');
+    }
   });
-  roomList.replaceChildren(...rooms);
+
+  window.addEventListener('keyup', (event) => {
+    held.delete(event.code);
+  });
+
+  window.addEventListener('blur', clearInput);
 }
 
-function drawPlaceholder(): void {
-  const context = canvas.getContext('2d');
+function updateRoomVisit(): void {
+  if (!level || !body || !engine) return;
+
+  const centre = playerCentre(body);
+  const room = roomAtPoint(level, centre.x, centre.y);
+  const roomId = room?.roomId ?? null;
+  if (roomId !== activeRoomId) {
+    activeRoomId = roomId;
+    hud.update(view, activeRoomId);
+    if (room) {
+      const status = view?.rooms.find((entry) => entry.roomId === room.roomId)?.statusLabel ?? room.status;
+      hud.announce(`Entered ${room.topic}. ${status}.`);
+    }
+  }
+
+  const toRecord = visits.observe(room);
+  if (!toRecord) return;
+
+  const topic = room?.topic ?? toRecord;
+  void engine
+    .recordRoomVisit(toRecord)
+    .then(() => {
+      visits.succeed(toRecord);
+    })
+    .catch((error: unknown) => {
+      visits.fail(toRecord);
+      const message = `Could not record the visit to ${topic}: ${describe(error)}. The visit was not saved.`;
+      hud.showError(message);
+      hud.announce(`The visit to ${topic} was not saved.`);
+    });
+}
+
+let lastFrameMs = performance.now();
+let firstFrame = true;
+
+function frame(nowMs: number): void {
+  const deltaMs = firstFrame ? 0 : Math.max(0, Math.min(nowMs - lastFrameMs, 100));
+  firstFrame = false;
+  lastFrameMs = nowMs;
+
+  const intent = readIntent();
+  jumpQueued = false;
+
+  if (level && body && context) {
+    body = stepBody(body, intent, level, deltaMs);
+    updateRoomVisit();
+    updateCamera(camera, body, level, deltaMs, reducedMotion.matches);
+    renderWorld(context, {
+      level,
+      body,
+      camera,
+      activeRoomId,
+      badges,
+      reducedMotion: reducedMotion.matches,
+    });
+  }
+
+  requestAnimationFrame(frame);
+}
+
+function resizeCanvas(): void {
+  context = prepareCanvas(canvas, camera);
   if (!context) {
-    showError('Canvas 2D is not available in this browser.');
+    hud.showError('Canvas 2D is not available in this browser.');
     return;
   }
-  const { width, height } = canvas;
-  const gradient = context.createLinearGradient(0, 0, 0, height);
-  gradient.addColorStop(0, '#0b0d13');
-  gradient.addColorStop(1, '#182033');
-  context.fillStyle = gradient;
-  context.fillRect(0, 0, width, height);
-  context.fillStyle = '#a8b3c9';
-  context.font = '20px system-ui, sans-serif';
-  context.textAlign = 'center';
-  context.fillText('P0 pipeline proof — the world renders in P1', width / 2, height / 2);
+  if (level && body) updateCamera(camera, body, level, 100, true);
 }
 
-function wireActions(engine: KnowledgeDungeonEngine, storage: ReturnType<typeof createIndexedDbStorage>): void {
+function wireActions(storage: ReturnType<typeof createIndexedDbStorage>): void {
   startButton.addEventListener('click', () => {
+    if (!engine) return;
     startButton.disabled = true;
+    hud.clearError();
     void engine
       .startTutorial()
-      .then(() => announce('Tutorial started. The state was committed and saved.'))
+      .then(() => hud.announce('Tutorial started. Walk to a room to record a visit.'))
       .catch((error: unknown) => {
-        showError(`Could not start the tutorial: ${describe(error)}`);
-        announce('Tutorial did not start.');
+        hud.showError(`Could not start the tutorial: ${describe(error)}`);
+        hud.announce('Tutorial did not start.');
       })
       .finally(() => {
         startButton.disabled = false;
@@ -109,28 +252,41 @@ function wireActions(engine: KnowledgeDungeonEngine, storage: ReturnType<typeof 
     void storage
       .clear()
       .then(() => {
-        announce('Saved state cleared. Reloading.');
+        hud.announce('Saved state cleared. Reloading.');
         window.location.reload();
       })
       .catch((error: unknown) => {
-        showError(`Could not clear saved state: ${describe(error)}`);
+        hud.showError(`Could not clear saved state: ${describe(error)}`);
         clearButton.disabled = false;
       });
   });
 }
 
-setErrorReporter(showError);
-drawPlaceholder();
+function boot(): void {
+  showOverlay('Loading the engine…', false);
+  startButton.disabled = true;
+  installInput();
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+  requestAnimationFrame(frame);
 
-const storage = createIndexedDbStorage();
+  const storage = createIndexedDbStorage();
+  void openExampleEngine(storage)
+    .then((opened) => {
+      engine = opened;
+      hud.clearError();
+      startButton.disabled = false;
+      wireActions(storage);
+      subscribeState(onState);
+      // `onState` runs immediately with the current state and routes the screen.
+      if (getState().session.world !== 'dungeon') {
+        hud.announce('Engine ready. Start the tutorial to enter the dungeon.');
+      }
+    })
+    .catch((error: unknown) => {
+      hud.showError(`Could not open the engine: ${describe(error)}`);
+      showOverlay('The engine could not start. Check the error panel.', false);
+    });
+}
 
-void openExampleEngine(storage)
-  .then((engine) => {
-    errorBox.hidden = true;
-    wireActions(engine, storage);
-    subscribeState(render);
-    announce('Engine ready. Start the tutorial, then reload to verify persistence.');
-  })
-  .catch((error: unknown) => {
-    showError(`Could not open the engine: ${describe(error)}`);
-  });
+boot();

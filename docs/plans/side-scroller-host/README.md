@@ -2,12 +2,13 @@
 
 | Field | Value |
 |---|---|
-| Plan version | 1.0 |
-| Status | Proposed — not started |
+| Plan version | 1.3 |
+| Status | In progress — P0 and P1 done; P2 next |
 | Created | 2026-11-23 |
 | Owner | Unassigned |
 | Phase documents | [P0](phase-0-scaffold.md) · [P1](phase-1-dungeon-level.md) · [P2](phase-2-note-loop.md) · [P3](phase-3-surface-village.md) · [P4](phase-4-fishing.md) |
 | Evidence index | [EVIDENCE.md](EVIDENCE.md) |
+| Visual record | [VISUALS.md](VISUALS.md) |
 | Base commit | `3951737` (`Add project documentation and host UI guide`) |
 
 This plan turns Knowledge Dungeon Engine into a small, playable side-scroller host
@@ -60,6 +61,7 @@ without updating this table.
 | D-06 | UI stack | Vanilla TypeScript + Vite + Canvas 2D |
 | D-07 | Example location | `examples/` in this repository |
 | D-08 | Surface perspective | Side-view street |
+| D-09 | Visual record | Dated screenshots under `docs/plans/side-scroller-host/visuals/pN/`, indexed by [VISUALS.md](VISUALS.md) and captured with `examples/side-scroller/scripts/capture-dungeon.mjs` |
 
 ## 3. Goals and non-goals
 
@@ -157,6 +159,8 @@ examples/side-scroller/
   tsconfig.json           own baseUrl/paths; includes src + tests
   vitest.config.ts        node environment; own alias
   index.html              canvas + DOM overlay root
+  scripts/
+    capture-dungeon.mjs   WebDriver visual-record capture (host tooling)
   src/
     main.ts               boot, screen routing, frame loop
     storage.ts            IndexedDB EngineStorage adapter
@@ -263,6 +267,17 @@ learner prose or secrets.
 10. Tab through the entire path without a mouse; confirm focus is visible and outcomes
     are announced.
 
+For a visual record of the run, use the capture script (Firefox and `geckodriver`
+required):
+
+```sh
+node examples/side-scroller/scripts/capture-dungeon.mjs \
+  --out docs/plans/side-scroller-host/visuals/p2 \
+  --prefix 2026-11-23-g2 --low-fps --reduced-motion
+```
+
+Append the printed rows and images to [VISUALS.md](VISUALS.md).
+
 ### Performance and accessibility checks
 
 - Frame loop: no `snapshot()` call inside the frame callback; asserted by code review
@@ -312,9 +327,11 @@ learner prose or secrets.
 
 ### Rollback
 
-- Delete `examples/side-scroller/`.
+- Delete `examples/side-scroller/` (including `scripts/capture-dungeon.mjs`).
 - Revert the documented root entries: the `examples/**` exclusion in
   `vitest.config.ts` and any `.gitignore` additions.
+- The visual record (`VISUALS.md` and `visuals/`) is documentation only; remove it with
+  the plan if the whole example is abandoned.
 - No data migration, feature flag, or engine version bump is needed.
 
 ## 12. Evidence policy
@@ -326,8 +343,12 @@ learner prose or secrets.
 - Gate entries additionally record: acceptance criteria verified, the exact test counts,
   and any accepted exception with its risk ID.
 - Failed gates stay in the log. A later pass is a new row that references the failure.
-- Screenshots and performance captures are host artifacts: record their path or a
-  short description, not learner content.
+- Screenshots are kept in-repo under the plan folder's `visuals/pN/` and indexed in
+  [VISUALS.md](VISUALS.md), with one manifest per gate. They may show the tutorial fixture
+  and placeholder art only; never learner content. Performance traces may stay as host
+  artifacts with a path and a summary.
+- The capture script (`examples/side-scroller/scripts/capture-dungeon.mjs`) drives the real
+  app over WebDriver and adds no test hooks to the page.
 
 ## 13. Sub-agent policy
 
@@ -351,10 +372,12 @@ Rules:
 | Phase | Status | Gate | Evidence |
 |---|---|---|---|
 | P0 | Done — G0 passed | G0 passed 2026-11-23 | [phase-0 evidence](phase-0-scaffold.md#execution-evidence) |
-| P1 | Not started | G1 pending | — |
+| P1 | Done — G1 passed | G1 passed 2026-11-23 | [phase-1 evidence](phase-1-dungeon-level.md#execution-evidence) |
 | P2 | Not started | G2 pending | — |
 | P3 | Not started | G3 pending | — |
 | P4 | Not started | G4 pending | — |
+
+Visual record: [VISUALS.md](VISUALS.md) — P1/G1 frames captured 2026-11-23.
 
 ## 15. Assumptions to confirm at the G0 gate
 
@@ -375,3 +398,5 @@ update this section before P1.
 |---|---|---|
 | 2026-11-23 | 1.0 | Initial plan after maintainer decisions D-01…D-08 |
 | 2026-11-23 | 1.1 | P0 executed and G0 passed; added `@types/node` and `fake-indexeddb` as example-only dev dependencies; recorded evidence |
+| 2026-11-23 | 1.2 | P1 executed and G1 passed; side-view level, physics, renderer, camera, HUD, and visit de-duplication; amendments recorded in the P1 document |
+| 2026-11-23 | 1.3 | Added the in-repo visual record ([VISUALS.md](VISUALS.md)) and the repeatable WebDriver capture script; P1/G1 frames stored under `visuals/p1/` (D-09) |
