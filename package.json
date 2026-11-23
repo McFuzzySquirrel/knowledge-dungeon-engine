@@ -1,0 +1,25 @@
+{
+  "name": "knowledge-dungeon-engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "LICENSE"],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.6.3",
+    "vitest": "^4.1.6"
+  }
+}
