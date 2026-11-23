@@ -56,6 +56,7 @@ export function createHud(elements: HudElements): Hud {
       const current = view.rooms.find((room) => room.roomId === activeRoomId);
       const rows = [
         ['Subject', view.subjectName],
+        ['World', `${view.world} · ${view.phase}`],
         ['XP', String(view.xp)],
         ['Rank', view.rank],
         ['Rooms cleared', `${view.clearedCount} / ${view.totalRooms}`],

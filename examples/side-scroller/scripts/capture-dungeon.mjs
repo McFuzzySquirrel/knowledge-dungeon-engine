@@ -13,6 +13,9 @@
  *     --prefix 2026-11-23-g1 \
  *     --low-fps --reduced-motion
  *
+ * P2 adds `--note-loop`, which drives the composer through draft, clear,
+ * reload, and a simulated storage failure after the dungeon frames.
+ *
  * The script drives the real app over WebDriver, writes PNGs to `--out`, and
  * writes `<prefix>-manifest.json` plus Markdown table rows for VISUALS.md.
  * It does not edit engine source or add test hooks to the page.
@@ -28,6 +31,7 @@ function parseArgs(argv) {
     driver: 'http://127.0.0.1:4444',
     lowFps: false,
     reducedMotion: false,
+    noteLoop: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -37,6 +41,7 @@ function parseArgs(argv) {
     else if (arg === '--driver') options.driver = argv[++index];
     else if (arg === '--low-fps') options.lowFps = true;
     else if (arg === '--reduced-motion') options.reducedMotion = true;
+    else if (arg === '--note-loop') options.noteLoop = true;
     else throw new Error(`Unknown argument: ${arg}`);
   }
   return options;
@@ -149,6 +154,9 @@ async function stored(session) {
           visited: state.studySessions.find((x) => x.sessionId === state.activeStudySessionId)?.roomsVisited ?? [],
           sessions: state.studySessions.length,
           xp: state.progression[state.activeSubjectId]?.xpTotal ?? null,
+          cleared: Object.values(state.subjects[state.activeSubjectId]?.rooms ?? {})
+            .filter((room) => room.validationState.finalPass).length,
+          artifacts: state.progression[state.activeSubjectId]?.collectedNotes?.length ?? 0,
         });
       };
     };
@@ -174,8 +182,193 @@ async function startTutorial(session) {
   await sleep(1500);
 }
 
-async function captureReducedMotion(prefix, frames) {
-  const session = await openSession({ 'ui.prefersReducedMotion': 1 });
+async function waitForExpr(session, expression, timeoutMs = 8000, stepMs = 200) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const value = await session.execute(`return (${expression});`);
+    if (value) return Date.now() - start;
+    await sleep(stepMs);
+  }
+  return null;
+}
+
+const VALID_NOTE = [
+  'Summary',
+  'The note records what the learner understood in this room and why it matters.',
+  '',
+  'Key Points',
+  'A note needs a summary, key points, and a recall question. The recall question ends with a question mark.',
+  '',
+  'Recall Question',
+  'Why does a note need a recall question?',
+  '',
+].join('\n');
+
+/**
+ * P2 note loop: draft, clear, reload, and a simulated save failure.
+ *
+ * The save failure is injected through the page's own IndexedDB prototype, not a
+ * test hook in the app: the engine's storage adapter sees a rejected write and its
+ * normal "not saved" path runs.
+ */
+async function captureNoteLoop(prefix, frames) {
+  const session = await openSession();
+  try {
+    await wd('POST', session.session('/url'), { url: APP });
+    await sleep(1800);
+
+    // Reset the example's own save through its reset control, then reload clean.
+    await session.execute(`window.confirm = () => true; document.querySelector('#clear-save')?.click(); return true;`);
+    await sleep(1500);
+    await wd('POST', session.session('/refresh'), {});
+    await sleep(2200);
+    await startTutorial(session);
+
+    // 07 — composer opens from E, with the section template and textarea focus.
+    await session.synthDown('KeyE', 'e');
+    await session.synthUp('KeyE', 'e');
+    await waitForExpr(session, `document.querySelector('#note-panel')?.hidden === false`);
+    const composer = await session.execute(`
+      return {
+        focus: document.activeElement?.id ?? '',
+        value: document.querySelector('#note-text')?.value ?? '',
+        promptHidden: document.querySelector('#prompt')?.hidden ?? null,
+      };
+    `);
+    frames.push({
+      file: await session.screenshot(`${prefix}-07-composer.png`),
+      label: 'Composer',
+      detail: `focus=${composer.focus}; prefilled=${composer.value.includes('Recall Question')}; prompt hidden while open=${composer.promptHidden}`,
+    });
+
+    // 08 — incomplete note: exact missing sections, room stays uncleared.
+    await session.execute(`
+      const text = document.querySelector('#note-text');
+      text.value = ['Summary', 'Only the summary heading is present.', ''].join('\\n');
+      document.querySelector('#note-submit').click();
+      return true;
+    `);
+    await waitForExpr(session, `document.querySelector('#note-feedback')?.innerText.includes('Missing required') === true`);
+    const draft = await session.execute(`
+      return {
+        feedback: document.querySelector('#note-feedback')?.innerText ?? '',
+        errorHidden: document.querySelector('#note-error')?.hidden ?? null,
+        focus: document.activeElement?.id ?? '',
+      };
+    `);
+    const draftState = await stored(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-08-draft.png`),
+      label: 'Draft',
+      detail: `missing named=${draft.feedback.includes('Key Points, Recall Question')}; xp=${draftState.xp}; cleared=${draftState.cleared}`,
+    });
+
+    // 09 — complete note with confirmation: clear, XP, artifact as plain text.
+    await session.execute(`
+      const text = document.querySelector('#note-text');
+      text.value = ${JSON.stringify(VALID_NOTE)};
+      const confirm = document.querySelector('#note-confirmed');
+      confirm.checked = true;
+      document.querySelector('#note-submit').click();
+      return true;
+    `);
+    await waitForExpr(session, `document.querySelector('#note-outcome')?.hidden === false`);
+    await session.execute(`document.querySelector('#note-outcome')?.scrollIntoView({ block: 'start' }); return true;`);
+    await sleep(400);
+    const cleared = await session.execute(`
+      return {
+        feedback: document.querySelector('#note-feedback')?.innerText ?? '',
+        artifact: document.querySelector('#note-artifact')?.textContent ?? '',
+        focus: document.activeElement?.id ?? '',
+      };
+    `);
+    const clearedState = await stored(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-09-cleared.png`),
+      label: 'Cleared',
+      detail: `xp=${clearedState.xp}; cleared=${clearedState.cleared}; artifact pre starts "${cleared.artifact.slice(0, 15)}"; focus=${cleared.focus}`,
+    });
+
+    // Take the artifact, then close with Escape; focus must return to the canvas.
+    await session.execute(`document.querySelector('#note-collect').click(); return true;`);
+    await waitForExpr(session, `document.querySelector('#note-feedback')?.innerText.includes('journal') === true`);
+    const collectedState = await stored(session);
+    await session.synthDown('Escape', 'Escape');
+    await session.synthUp('Escape', 'Escape');
+    await sleep(400);
+    const closed = await panel(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-10-closed.png`),
+      label: 'Composer closed',
+      detail: `artifacts=${collectedState.artifacts}; focus=${closed.focus}; panel hidden=true`,
+    });
+
+    // 11 — reload: cleared room, XP, and artifact survive.
+    await wd('POST', session.session('/refresh'), {});
+    await sleep(2600);
+    const reload = await stored(session);
+    const reloadHud = await panel(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-11-reload.png`),
+      label: 'Reload after clear',
+      detail: `xp=${reload.xp}; cleared=${reload.cleared}; artifacts=${reload.artifacts}; visits=${reload.visited.length}; cleared label=${reloadHud.rooms.includes('Cleared')}`,
+    });
+
+    // 12 — save failure: move to the lower room, open the composer, break the next write.
+    await session.hold('d', 650);
+    await sleep(300);
+    await session.hold('s', 3000);
+    await sleep(500);
+    await session.synthDown('KeyE', 'e');
+    await session.synthUp('KeyE', 'e');
+    await waitForExpr(session, `document.querySelector('#note-panel')?.hidden === false`);
+    const beforeFailure = await stored(session);
+    await session.execute(`
+      const text = document.querySelector('#note-text');
+      text.value = ${JSON.stringify(VALID_NOTE)};
+      const confirm = document.querySelector('#note-confirmed');
+      confirm.checked = true;
+      window.__originalPut = IDBObjectStore.prototype.put;
+      IDBObjectStore.prototype.put = function () {
+        throw new DOMException('simulated quota failure', 'QuotaExceededError');
+      };
+      document.querySelector('#note-submit').click();
+      return true;
+    `);
+    const notSavedMs = await waitForExpr(session, `document.querySelector('#note-error')?.hidden === false`);
+    await session.execute(`document.querySelector('#note-error')?.scrollIntoView({ block: 'center' }); return true;`);
+    await sleep(300);
+    const failed = await session.execute(`
+      return {
+        error: document.querySelector('#note-error')?.innerText ?? '',
+        pending: document.querySelector('#note-submit')?.disabled ?? null,
+        feedback: document.querySelector('#note-feedback')?.innerText ?? '',
+      };
+    `);
+    const afterFailure = await stored(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-12-not-saved.png`),
+      label: 'Save failure',
+      detail: `shownIn=${notSavedMs ?? 'timeout'}ms; error=${/not saved/i.test(failed.error)}; submit re-enabled=${failed.pending === false}; xp ${beforeFailure.xp}→${afterFailure.xp}; cleared ${beforeFailure.cleared}→${afterFailure.cleared}`,
+    });
+    await session.execute(`IDBObjectStore.prototype.put = window.__originalPut; delete window.__originalPut; return true;`);
+
+    return {
+      composer,
+      draft,
+      cleared,
+      collected: collectedState,
+      reload,
+      failed,
+      beforeFailure,
+      afterFailure,
+    };
+  } finally {
+    await session.close();
+  }
+}
+
+async function captureReducedMotion(prefix, frames) {  const session = await openSession({ 'ui.prefersReducedMotion': 1 });
   try {
     await wd('POST', session.session('/url'), { url: APP });
     await sleep(1800);
@@ -301,6 +494,7 @@ async function main() {
   const frames = [];
   if (options.reducedMotion) await captureReducedMotion(options.prefix, frames);
   const run = await captureDungeon(options.prefix, frames);
+  const notes = options.noteLoop ? await captureNoteLoop(options.prefix, frames) : null;
 
   const manifest = {
     capturedAt: new Date().toISOString(),
@@ -308,9 +502,11 @@ async function main() {
     viewport: 'default headless Firefox (captured window)',
     prefix: options.prefix,
     lowFps: options.lowFps,
+    noteLoop: options.noteLoop,
     frameStats: run.frameStats,
     finalState: run.final,
     error: run.error,
+    notes,
     frames,
   };
   await writeFile(resolve(OUT, `${options.prefix}-manifest.json`), JSON.stringify(manifest, null, 2));

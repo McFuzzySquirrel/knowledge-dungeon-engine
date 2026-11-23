@@ -24,12 +24,12 @@ the gate outcome and the baseline facts later gates compare against.
 
 | Field | Value |
 |---|---|
-| Plan version | 1.3 |
+| Plan version | 1.4 |
 | Plan written | 2026-11-23 |
-| Engine test baseline | **13 files / 280 tests at `3951737`; unchanged after P0 and P1** |
+| Engine test baseline | **13 files / 280 tests at `3951737`; unchanged after P0–P2** |
 | First gate run | 2026-11-23 |
-| Latest gate passed | G1 (2026-11-23) |
-| Current phase | P1 complete; P2 not started |
+| Latest gate passed | G2 (2026-11-23) |
+| Current phase | P2 complete; P3 next |
 | Open failures | None recorded |
 
 ## Gate index
@@ -38,7 +38,7 @@ the gate outcome and the baseline facts later gates compare against.
 |---|---|---|---|---|---|---|---|
 | G0 | [P0 — scaffold, storage, boot](phase-0-scaffold.md#execution-evidence) | 2026-11-23 | uncommitted (base `3951737`) | pass | 13 / 280 | 2 / 6 | [P0 evidence](phase-0-scaffold.md#execution-evidence) |
 | G1 | [P1 — dungeon level](phase-1-dungeon-level.md#execution-evidence) | 2026-11-23 | uncommitted (base `989acf1`) | pass | 13 / 280 | 7 / 39 | [P1 evidence](phase-1-dungeon-level.md#execution-evidence) |
-| G2 | [P2 — note loop](phase-2-note-loop.md#execution-evidence) | — | — | Pending | — | — | — |
+| G2 | [P2 — note loop](phase-2-note-loop.md#execution-evidence) | 2026-11-23 | uncommitted (base `f0eda0e`) | pass | 13 / 280 | 9 / 49 | [P2 evidence](phase-2-note-loop.md#execution-evidence) |
 | G3 | [P3 — surface village](phase-3-surface-village.md#execution-evidence) | — | — | Pending | — | — | — |
 | G4 | [P4 — fishing](phase-4-fishing.md#execution-evidence) | — | — | Pending | — | — | — |
 
@@ -52,6 +52,7 @@ changes size, add a new baseline row and explain why.
 | 2026-11-23 | `3951737` | 13 | 280 | pass | pass | — | Pre-P0 baseline |
 | 2026-11-23 | uncommitted | 13 | 280 | pass | pass | 0 `examples/` paths | After P0; example suite 2 files / 6 tests |
 | 2026-11-23 | uncommitted (base `989acf1`) | 13 | 280 | pass | pass | 0 `examples/` paths | G1 checkpoint; no baseline change; example suite 7 files / 39 tests |
+| 2026-11-23 | uncommitted (base `f0eda0e`) | 13 | 280 | pass | pass | 0 `examples/` paths | G2 checkpoint; no baseline change; example suite 9 files / 49 tests |
 
 ## Per-task evidence links
 
@@ -110,3 +111,4 @@ Notes:
 |---|---|---|---|---|
 | P1-O1 | G1 | The engine stores `roomsVisited` as a per-session set, so a re-entry commits a second `recordRoomVisit` but adds no second unique room id. The host de-duplication (one command per entry) is proven in `tests/visits.test.ts`; R-13 forbids changing engine behaviour. | Host example | Accepted — documented in P1 findings |
 | P1-O2 | G1 | Physics has no cross-frame accumulator: a frame delta is subdivided into at most 5 × 1/120 s steps, so under 24 fps the simulation slows down instead of spending time. This is the conservative K-03 choice and is covered by the 100 ms terminal-velocity test. | Host example | Accepted — documented in P1 amendments |
+| P2-O1 | G2 | Headless Firefox software compositing cannot reach the plan's 16.7 ms frame target: `about:blank` measures avg 18.49 ms. The app adds ≈3.8 ms (avg 22.25 ms, p95 33.94 ms). The deliberate 55 ms/80 ms hog run showed no tunneling. | Host example | Accepted — environment exception, not a product regression |

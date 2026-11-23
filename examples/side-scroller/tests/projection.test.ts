@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { KnowledgeDungeonEngine, MemoryEngineStorage, type EngineState } from '@/index';
-import { projectDungeon, roomBadges } from '../src/projection';
+import { projectDungeon, projectHud, roomBadges } from '../src/projection';
 
 const FIXED_NOW = '2026-11-23T12:00:00.000Z';
 
@@ -88,5 +88,58 @@ describe('projectDungeon', () => {
     expect(Object.keys(badges).sort()).toEqual(['tut-map', 'tut-note', 'tut-tools']);
     expect(badges['tut-note']).toEqual({ cleared: false, label: 'Open' });
     expect(roomBadges(null)).toEqual({});
+  });
+});
+
+describe('projectHud', () => {
+  it('projects an empty HUD when there is no subject', async () => {
+    const state = await tutorialState();
+    const hud = projectHud({ ...state, activeSubjectId: null }, null);
+
+    expect(hud.subjectName).toBeNull();
+    expect(hud.rooms).toEqual([]);
+    expect(hud.xpTotal).toBe(0);
+    expect(hud.rank).toBe('Novice');
+    expect(hud.world).toBe('dungeon');
+    expect(hud.phase).toBe('scribe');
+  });
+
+  it('projects the draft state of every tutorial room', async () => {
+    const state = await tutorialState();
+    const hud = projectHud(state, state.activeSubjectId);
+
+    expect(hud.subjectName).toBe('First Dungeon (Tutorial)');
+    expect(hud.world).toBe('dungeon');
+    expect(hud.phase).toBe('scribe');
+    expect(hud.xpTotal).toBe(0);
+    expect(hud.rooms.map((room) => room.status)).toEqual(['Open', 'Open', 'Open']);
+    expect(hud.rooms.every((room) => !room.cleared)).toBe(true);
+  });
+
+  it('projects a cleared room and progression XP', async () => {
+    const state = await tutorialState();
+    const subjectId = state.activeSubjectId;
+    if (!subjectId) throw new Error('Tutorial subject missing');
+    const room = state.subjects[subjectId]?.rooms['tut-note'];
+    if (!room) throw new Error('Root room missing');
+    room.state = 'ArtifactCollected';
+    room.validationState.finalPass = true;
+    state.progression[subjectId] = { ...state.progression[subjectId], xpTotal: 42, rank: 'Scholar' };
+
+    const hud = projectHud(state, subjectId);
+    const cleared = hud.rooms.find((entry) => entry.roomId === 'tut-note');
+
+    expect(cleared).toEqual({ roomId: 'tut-note', topic: 'The Note', status: 'Cleared', cleared: true });
+    expect(hud.rooms.filter((entry) => entry.cleared)).toHaveLength(1);
+    expect(hud.xpTotal).toBe(42);
+    expect(hud.rank).toBe('Scholar');
+  });
+
+  it('treats an unknown subject id as no subject rather than throwing', async () => {
+    const hud = projectHud(await tutorialState(), 'missing-subject');
+
+    expect(hud.subjectName).toBeNull();
+    expect(hud.rooms).toEqual([]);
+    expect(hud.xpTotal).toBe(0);
   });
 });

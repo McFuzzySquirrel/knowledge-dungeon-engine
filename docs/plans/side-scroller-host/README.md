@@ -2,8 +2,8 @@
 
 | Field | Value |
 |---|---|
-| Plan version | 1.3 |
-| Status | In progress — P0 and P1 done; P2 next |
+| Plan version | 1.4 |
+| Status | In progress — P0–P2 done; P3 next |
 | Created | 2026-11-23 |
 | Owner | Unassigned |
 | Phase documents | [P0](phase-0-scaffold.md) · [P1](phase-1-dungeon-level.md) · [P2](phase-2-note-loop.md) · [P3](phase-3-surface-village.md) · [P4](phase-4-fishing.md) |
@@ -373,11 +373,11 @@ Rules:
 |---|---|---|---|
 | P0 | Done — G0 passed | G0 passed 2026-11-23 | [phase-0 evidence](phase-0-scaffold.md#execution-evidence) |
 | P1 | Done — G1 passed | G1 passed 2026-11-23 | [phase-1 evidence](phase-1-dungeon-level.md#execution-evidence) |
-| P2 | Not started | G2 pending | — |
+| P2 | Done — G2 passed | G2 passed 2026-11-23 | [phase-2 evidence](phase-2-note-loop.md#execution-evidence) |
 | P3 | Not started | G3 pending | — |
 | P4 | Not started | G4 pending | — |
 
-Visual record: [VISUALS.md](VISUALS.md) — P1/G1 frames captured 2026-11-23.
+Visual record: [VISUALS.md](VISUALS.md) — P1/G1 and P2/G2 frames captured 2026-11-23.
 
 ## 15. Assumptions to confirm at the G0 gate
 
@@ -400,3 +400,4 @@ update this section before P1.
 | 2026-11-23 | 1.1 | P0 executed and G0 passed; added `@types/node` and `fake-indexeddb` as example-only dev dependencies; recorded evidence |
 | 2026-11-23 | 1.2 | P1 executed and G1 passed; side-view level, physics, renderer, camera, HUD, and visit de-duplication; amendments recorded in the P1 document |
 | 2026-11-23 | 1.3 | Added the in-repo visual record ([VISUALS.md](VISUALS.md)) and the repeatable WebDriver capture script; P1/G1 frames stored under `visuals/p1/` (D-09) |
+| 2026-11-23 | 1.4 | P2 executed and G2 passed; note composer, draft/clear/refusal/save-failure states, `projectHud`, save-failure harness, keyboard trap, and the `--note-loop` capture mode; frames under `visuals/p2/` |

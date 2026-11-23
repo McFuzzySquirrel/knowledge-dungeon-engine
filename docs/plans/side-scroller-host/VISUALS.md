@@ -29,6 +29,18 @@ passed.
 | 2026-11-23 | G1 | uncommitted | Return to root | [`04-return-to-root.png`](visuals/p1/2026-11-23-g1-04-return-to-root.png) | Descend ≈1.1 s and step off; visits stays 3 (engine keeps a set) |
 | 2026-11-23 | G1 | uncommitted | Reload | [`05-reload.png`](visuals/p1/2026-11-23-g1-05-reload.png) | Three rooms restored from IndexedDB; sessions 1 → 2; fresh session visits 1 |
 | 2026-11-23 | G1 | uncommitted | Reduced motion | [`06-reduced-motion.png`](visuals/p1/2026-11-23-g1-06-reduced-motion.png) | `ui.prefersReducedMotion=1`; `matchMedia` true; camera snaps |
+| 2026-11-23 | G2 | uncommitted (base `f0eda0e`) | Reduced motion | [`06-reduced-motion.png`](visuals/p2/2026-11-23-g2-06-reduced-motion.png) | P2 build; `matchMedia` true; no panel transitions; focus on the Progress heading |
+| 2026-11-23 | G2 | uncommitted | Dungeon re-run: root | [`01-root-room.png`](visuals/p2/2026-11-23-g2-01-root-room.png) | P2 build; visits 1; P1 traversal unchanged |
+| 2026-11-23 | G2 | uncommitted | Dungeon re-run: lower room | [`02-tools-room-low-fps.png`](visuals/p2/2026-11-23-g2-02-tools-room-low-fps.png) | Deliberate 55 ms/80 ms hog; visits 2; frames avg 41 ms, max 67 ms |
+| 2026-11-23 | G2 | uncommitted | Dungeon re-run: upper room | [`03-map-room.png`](visuals/p2/2026-11-23-g2-03-map-room.png) | Climb ≈3.6 s; visits 3 |
+| 2026-11-23 | G2 | uncommitted | Dungeon re-run: return | [`04-return-to-root.png`](visuals/p2/2026-11-23-g2-04-return-to-root.png) | Descend ≈1.1 s; visits stays 3 |
+| 2026-11-23 | G2 | uncommitted | Dungeon re-run: reload | [`05-reload.png`](visuals/p2/2026-11-23-g2-05-reload.png) | Three rooms restored; fresh session visits 1 |
+| 2026-11-23 | G2 | uncommitted | Composer | [`07-composer.png`](visuals/p2/2026-11-23-g2-07-composer.png) | `E` opens; template prefilled; focus in `#note-text`; prompt hidden while open |
+| 2026-11-23 | G2 | uncommitted | Draft | [`08-draft.png`](visuals/p2/2026-11-23-g2-08-draft.png) | Missing sections named (`Key Points, Recall Question`); XP 0; cleared 0 |
+| 2026-11-23 | G2 | uncommitted | Cleared | [`09-cleared.png`](visuals/p2/2026-11-23-g2-09-cleared.png) | 28 XP; room `Cleared`; artifact plain text in `<pre>`; focus on Take artifact |
+| 2026-11-23 | G2 | uncommitted | Composer closed | [`10-closed.png`](visuals/p2/2026-11-23-g2-10-closed.png) | `Escape` closes; focus returns to `#game`; artifact count 1 |
+| 2026-11-23 | G2 | uncommitted | Reload after clear | [`11-reload.png`](visuals/p2/2026-11-23-g2-11-reload.png) | XP 28, cleared 1, artifact 1 survive IndexedDB |
+| 2026-11-23 | G2 | uncommitted | Save failure | [`12-not-saved.png`](visuals/p2/2026-11-23-g2-12-not-saved.png) | Simulated quota failure; "Not saved" in panel and HUD; XP 28→28, cleared 1→1 |
 
 Manifest: [`2026-11-23-g1-manifest.json`](visuals/p1/2026-11-23-g1-manifest.json).
 
@@ -67,6 +79,38 @@ start button is hidden once the dungeon opens.
 
 ![Reduced motion](visuals/p1/2026-11-23-g1-06-reduced-motion.png)
 
+## P2 — Note loop
+
+P2 re-ran the P1 dungeon path on the current build (frames `01`–`06`) and then drove the
+note loop in a fresh save (frames `07`–`12`). The composer is a real DOM dialog over the
+canvas; the artifact is plain text in a `<pre>`; no frame contains learner content.
+
+### Composer opens from E
+
+![Composer](visuals/p2/2026-11-23-g2-07-composer.png)
+
+### Draft: the exact missing sections
+
+![Draft](visuals/p2/2026-11-23-g2-08-draft.png)
+
+### Cleared: XP and the plain-text artifact
+
+![Cleared](visuals/p2/2026-11-23-g2-09-cleared.png)
+
+### Closed: focus back on the canvas
+
+![Composer closed](visuals/p2/2026-11-23-g2-10-closed.png)
+
+### Reload: cleared room, XP, and artifact survive
+
+![Reload after clear](visuals/p2/2026-11-23-g2-11-reload.png)
+
+### Save failure: "Not saved", prior state intact
+
+![Save failure](visuals/p2/2026-11-23-g2-12-not-saved.png)
+
+Manifest: [`2026-11-23-g2-manifest.json`](visuals/p2/2026-11-23-g2-manifest.json).
+
 ## Capturing the next phase
 
 Prerequisites: example dependencies installed, Firefox on `PATH`, and `geckodriver`
@@ -85,7 +129,7 @@ geckodriver --port 4444
 node examples/side-scroller/scripts/capture-dungeon.mjs \
   --out docs/plans/side-scroller-host/visuals/p2 \
   --prefix 2026-11-23-g2 \
-  --low-fps --reduced-motion
+  --low-fps --reduced-motion --note-loop
 ```
 
 The script drives the real app over WebDriver:
@@ -98,6 +142,12 @@ The script drives the real app over WebDriver:
 6. descend, step off, root frame;
 7. reload and final frame;
 8. writes `<prefix>-manifest.json` and prints Markdown rows for the index.
+
+With `--note-loop`, a second session resets the save through the app's own control and
+then captures: composer open, draft, clear, close/focus return, reload, and a simulated
+storage failure (the next IndexedDB `put` throws). The script injects that failure through
+`IDBObjectStore.prototype.put` in the page; the app has no test hooks and its normal
+"not saved" path runs.
 
 It does not add test hooks to the page or change engine state beyond normal commands.
 Use a new `--prefix` for every gate so the record stays append-only.
