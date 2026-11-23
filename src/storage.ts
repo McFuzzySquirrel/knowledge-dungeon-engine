@@ -1,11 +1,20 @@
 import type { SubjectSnapshot } from './core/validation/persistence';
 import type { CanonicalSubjectProgression } from './core/progression/canonicalProgression';
+import type { FishingContext } from './core/fishing/fishingContext';
+import { initialGameSession, type GameSession } from './session';
+import type { StudySessionRecord } from './studySessions';
 
 export interface EngineState {
   version: 1;
   activeSubjectId: string | null;
   subjects: Record<string, SubjectSnapshot>;
   progression: Record<string, CanonicalSubjectProgression>;
+  fishingSession: FishingContext | null;
+  achievements: string[];
+  session: GameSession;
+  studySessions: StudySessionRecord[];
+  activeStudySessionId: string | null;
+  attachmentBytes: Record<string, Uint8Array>;
 }
 
 /**
@@ -18,7 +27,9 @@ export interface EngineStorage {
 }
 
 export function createEmptyState(): EngineState {
-  return { version: 1, activeSubjectId: null, subjects: {}, progression: {} };
+  return { version: 1, activeSubjectId: null, subjects: {}, progression: {}, fishingSession: null,
+    achievements: [], session: initialGameSession(), studySessions: [], activeStudySessionId: null,
+    attachmentBytes: {} };
 }
 
 /** Volatile reference adapter. A new instance starts empty. */

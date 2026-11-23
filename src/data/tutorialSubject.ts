@@ -6,8 +6,7 @@ const ROOT_ROOM_ID = 'tut-note';
 const ROOM_ATTACHMENTS_ID = 'tut-tools';
 const ROOM_MAP_ID = 'tut-map';
 
-export function createTutorialSubject(): SubjectSnapshot {
-  const now = new Date().toISOString();
+export function createTutorialSubject(now = new Date().toISOString()): SubjectSnapshot {
 
   return {
     dungeon: {

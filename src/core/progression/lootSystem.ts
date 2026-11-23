@@ -164,7 +164,12 @@ export function computeEquipBonuses(equipped: readonly EquippableLootItem[]): {
 /**
  * Roll for equippable loot based on quality bonus.
  */
-export function rollEquippableLoot(qualityBonus: number, minRarity?: 'rare' | 'epic'): EquippableLootItem | null {
+export function rollEquippableLoot(
+  qualityBonus: number,
+  minRarity?: 'rare' | 'epic',
+  random: () => number = Math.random,
+  now: () => Date = () => new Date(),
+): EquippableLootItem | null {
   let pool = EQUIPPABLE_LOOT_POOL;
 
   if (minRarity === 'epic') {
@@ -181,13 +186,14 @@ export function rollEquippableLoot(qualityBonus: number, minRarity?: 'rare' | 'e
 
   if (pool.length === 0) return null;
 
-  const pick = pool[Math.floor(Math.random() * pool.length)]!;
+  const pick = pool[Math.floor(random() * pool.length)]!;
+  const date = now();
   return {
-    id: `gear-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+    id: `gear-${date.getTime().toString(36)}-${random().toString(36).slice(2, 6)}`,
     name: pick.name,
     description: pick.description,
     rarity: pick.rarity,
-    acquiredAt: new Date().toISOString(),
+    acquiredAt: date.toISOString(),
     equipSlot: pick.equipSlot,
     qualityBonus: pick.qualityBonus,
     xpMultiplier: pick.xpMultiplier,
