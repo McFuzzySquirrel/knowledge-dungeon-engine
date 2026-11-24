@@ -1,0 +1,43 @@
+{
+  "capturedAt": "2026-11-24T13:06:00.196Z",
+  "app": "http://localhost:5174/",
+  "viewport": "default headless Firefox (captured window)",
+  "prefix": "2026-11-24-g6rm",
+  "creator": true,
+  "reducedMotion": true,
+  "result": {
+    "opened": {
+      "hidden": false,
+      "focusKey": "creator-panel-title",
+      "focusTag": "H2",
+      "subjects": [
+        "Rivers & Bridges — 4 rooms, 0 cleared\nEdit\nEnter dungeon",
+        "Sky & Weather — 5 rooms, 0 cleared\nEdit\nEnter dungeon",
+        "Kitchen Chemistry — 4 rooms, 0 cleared\nEdit\nEnter dungeon"
+      ],
+      "rooms": [],
+      "edges": [],
+      "tags": "",
+      "createName": "",
+      "createRoot": "",
+      "result": "",
+      "error": "",
+      "resultHidden": true,
+      "errorHidden": true
+    },
+    "closedMs": 41,
+    "reducedMotion": true
+  },
+  "frames": [
+    {
+      "file": "2026-11-24-g6rm-01-subject-list.png",
+      "label": "Creator subject list",
+      "detail": "seededIn=364ms; openIn=24ms; subjects=3; portals row=\"3 portals\"; listed=3; focus=H2"
+    },
+    {
+      "file": "2026-11-24-g6rm-02-reduced-motion.png",
+      "label": "Creator reduced motion",
+      "detail": "prefers-reduced-motion=1; panel has no animation; rooms=0; listed=3"
+    }
+  ]
+}

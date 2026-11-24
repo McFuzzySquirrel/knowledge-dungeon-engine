@@ -22,8 +22,12 @@ passed.
 ## Index
 
 P5 was captured on 2026-11-24 (`visuals/p5/`, two runs: normal and reduced motion).
-P6–P10 are planned; their `visuals/p6/`–`visuals/p10/` folders will be added as each
-gate is captured.
+P6 was captured on 2026-11-24 (`visuals/p6/`, three runs: normal, reduced motion, and a
+keyboard-only segment). P7–P10 are planned; their `visuals/p7/`–`visuals/p10/` folders
+will be added as each gate is captured.
+
+The P6 demo subject names — Rivers & Bridges, Sky & Weather, Kitchen Chemistry — are
+synthetic authored content. No learner subject or note appears in the P6 record.
 
 | Date | Gate | Commit | Frame | File | What it shows |
 |---|---|---|---|---|---|
@@ -106,6 +110,21 @@ gate is captured.
 | 2026-11-24 | G5 follow-up | uncommitted (base `9c9ef3d`) | Pond figure | [`g5player-03-pond-idle.png`](visuals/p5/2026-11-24-g5player-03-pond-idle.png) | Same figure at the pond; replaces the P4 rectangular torso plus circular head |
 | 2026-11-24 | P4 follow-up | uncommitted (base `066844b`) | Pond before a clear | [`01a-pond-refusal.png`](visuals/p4/2026-11-24-g4b-01a-pond-refusal.png) | Canvas toast: "No dungeon subject is in focus…"; prompt still offers `E` |
 | 2026-11-24 | P4 follow-up | uncommitted | Non-portal building | [`11a-library.png`](visuals/p4/2026-11-24-g4b-11a-library.png) | Canvas toast: "Library is a facade…; only subject portals and the Training Grounds open a dungeon" |
+| 2026-11-24 | G6 | uncommitted (base `46e28b3`) | Creator subject list | [`01-subject-list.png`](visuals/p6/2026-11-24-g6-01-subject-list.png) | Fresh save; 3 demo subjects seeded; 3 portals; list shows room/cleared counts |
+| 2026-11-24 | G6 | uncommitted | Create form | [`02-create-form.png`](visuals/p6/2026-11-24-g6-02-create-form.png) | Name and root topic filled; host mints ids |
+| 2026-11-24 | G6 | uncommitted | Created subject | [`03-created.png`](visuals/p6/2026-11-24-g6-03-created.png) | Subjects 3→4; active study session; root room only |
+| 2026-11-24 | G6 | uncommitted | Room tree | [`04-tree.png`](visuals/p6/2026-11-24-g6-04-tree.png) | Root plus three depth-1 children in graph order |
+| 2026-11-24 | G6 | uncommitted | Cascade confirmation | [`05-cascade-confirm.png`](visuals/p6/2026-11-24-g6-05-cascade-confirm.png) | Two nested rooms under the selected room; "Confirm remove: 3 rooms"; nothing written |
+| 2026-11-24 | G6 | uncommitted | Cascade removed | [`06-cascade-removed.png`](visuals/p6/2026-11-24-g6-06-cascade-removed.png) | Subtree removed; rooms 6→3; outcome names three rooms |
+| 2026-11-24 | G6 | uncommitted | Tree with tags | [`07-tree-tags.png`](visuals/p6/2026-11-24-g6-07-tree-tags.png) | Selected room carries stored `water, observation`; depth and parent shown |
+| 2026-11-24 | G6 | uncommitted | Cross-link edge | [`08-cross-link.png`](visuals/p6/2026-11-24-g6-08-cross-link.png) | Non-tree edge rendered below the tree |
+| 2026-11-24 | G6 | uncommitted | New portal on the street | [`09-street-portal.png`](visuals/p6/2026-11-24-g6-09-street-portal.png) | 4 portals from engine data; new portal drawn and reachable; session closed |
+| 2026-11-24 | G6 | uncommitted | Duplicate-name refusal | [`10-refusal.png`](visuals/p6/2026-11-24-g6-10-refusal.png) | Visible refusal; subject count unchanged |
+| 2026-11-24 | G6 | uncommitted | Rejected graph write | [`11-not-saved.png`](visuals/p6/2026-11-24-g6-11-not-saved.png) | Simulated quota failure; "Not saved"; tree and tags unchanged |
+| 2026-11-24 | G6 | uncommitted | Keyboard-only Creator | [`12-keyboard-create.png`](visuals/p6/2026-11-24-g6-12-keyboard-create.png) | C, Tab, typing, Enter: subject 4→5 and 3 rooms; no pointer events |
+| 2026-11-24 | G6 | uncommitted | Keyboard-only portal entry | [`13-keyboard-enter.png`](visuals/p6/2026-11-24-g6-13-keyboard-enter.png) | Escape returns focus to `#game`; D/E enters the new subject's dungeon |
+| 2026-11-24 | G6 reduced motion | uncommitted | Subject list | [`01-subject-list.png`](visuals/p6/2026-11-24-g6rm-01-subject-list.png) | `prefers-reduced-motion=1`; Creator open; same engine data |
+| 2026-11-24 | G6 reduced motion | uncommitted | Creator panel | [`02-reduced-motion.png`](visuals/p6/2026-11-24-g6rm-02-reduced-motion.png) | No panel animation; reduced-motion flag recorded |
 
 Manifests: [`2026-11-23-g1-manifest.json`](visuals/p1/2026-11-23-g1-manifest.json),
 [`2026-11-23-g2-manifest.json`](visuals/p2/2026-11-23-g2-manifest.json),
@@ -113,7 +132,9 @@ Manifests: [`2026-11-23-g1-manifest.json`](visuals/p1/2026-11-23-g1-manifest.jso
 [`2026-11-24-g3-manifest.json`](visuals/p3/2026-11-24-g3-manifest.json),
 [`2026-11-24-g3p-manifest.json`](visuals/p3/2026-11-24-g3p-manifest.json),
 [`2026-11-24-g4-manifest.json`](visuals/p4/2026-11-24-g4-manifest.json),
-[`2026-11-24-g4b-manifest.json`](visuals/p4/2026-11-24-g4b-manifest.json).
+[`2026-11-24-g4b-manifest.json`](visuals/p4/2026-11-24-g4b-manifest.json),
+[`2026-11-24-g6-manifest.json`](visuals/p6/2026-11-24-g6-manifest.json),
+[`2026-11-24-g6rm-manifest.json`](visuals/p6/2026-11-24-g6rm-manifest.json).
 
 P0 predates this record: it proved boot and storage with a debug panel and captured no
 frames. The record starts at P1.
@@ -502,6 +523,76 @@ prefix; the two frames below show the comparison.
 ![Pond figure](visuals/p5/2026-11-24-g5player-03-pond-idle.png)
 
 Manifest: [`2026-11-24-g5player-manifest.json`](visuals/p5/2026-11-24-g5player-manifest.json).
+
+## P6 — Creator and demo campaign
+
+A fresh profile seeds three synthetic subjects on the first boot. The run then uses `C`
+(the host's street shortcut; the Guild Hall door opens the same overlay) to create a
+fourth subject, build a nested tree, tag and cross-link rooms, and remove the subtree
+through the two-step cascade confirmation. The demo subject names are authored content,
+not learner data. Frames were reduced to 256-colour PNGs with the snippet at the end of
+this file.
+
+### Subject list on a seeded save
+
+![Creator subject list](visuals/p6/2026-11-24-g6-01-subject-list.png)
+
+### Create a subject
+
+![Creator create form](visuals/p6/2026-11-24-g6-02-create-form.png)
+
+### The new subject's empty tree
+
+![Created subject](visuals/p6/2026-11-24-g6-03-created.png)
+
+### Tree after adding root children
+
+![Room tree](visuals/p6/2026-11-24-g6-04-tree.png)
+
+### Cascade confirmation names all three rooms
+
+![Cascade confirmation](visuals/p6/2026-11-24-g6-05-cascade-confirm.png)
+
+![Cascade removed](visuals/p6/2026-11-24-g6-06-cascade-removed.png)
+
+### Tags and a cross-link
+
+![Tree with tags](visuals/p6/2026-11-24-g6-07-tree-tags.png)
+
+![Cross-link edge](visuals/p6/2026-11-24-g6-08-cross-link.png)
+
+### The new portal on the street
+
+![New portal on the street](visuals/p6/2026-11-24-g6-09-street-portal.png)
+
+### Refusals are visible and non-destructive
+
+![Duplicate-name refusal](visuals/p6/2026-11-24-g6-10-refusal.png)
+
+![Rejected graph write](visuals/p6/2026-11-24-g6-11-not-saved.png)
+
+### Keyboard-only create, add rooms, and entry
+
+![Keyboard-only Creator](visuals/p6/2026-11-24-g6-12-keyboard-create.png)
+
+![Keyboard-only portal entry](visuals/p6/2026-11-24-g6-13-keyboard-enter.png)
+
+The keyboard segment used real WebDriver key events only: `C` opened the panel, Tab
+reached the create form (9 tabs), typing filled name and root topic, Enter created,
+Tab reached the topics textarea, Enter added two rooms, Escape closed and returned
+focus to `#game`, then `D` walked to the new portal and `E` entered its dungeon.
+
+### Reduced-motion run (2026-11-24)
+
+`matchMedia('(prefers-reduced-motion: reduce)')` true, same seed. The Creator panel has
+no animation; the underlying street camera snaps instead of easing.
+
+![Creator subject list — reduced motion](visuals/p6/2026-11-24-g6rm-01-subject-list.png)
+
+![Creator panel — reduced motion](visuals/p6/2026-11-24-g6rm-02-reduced-motion.png)
+
+Manifests: [`2026-11-24-g6-manifest.json`](visuals/p6/2026-11-24-g6-manifest.json),
+[`2026-11-24-g6rm-manifest.json`](visuals/p6/2026-11-24-g6rm-manifest.json).
 
 ## Capturing the next phase
 

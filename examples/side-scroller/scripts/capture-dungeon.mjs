@@ -23,6 +23,11 @@
  * refusal and the `R review` prompt, rates a pass, saves for later across a
  * reload, resumes, discards, shows the duplicate award, and simulates a rejected
  * review save.
+ * P6 adds `--creator`, which opens the Guild Hall's Creator overlay with `C`,
+ * creates a subject, adds a nested room tree, tags a room, cross-links two
+ * rooms, captures the cascade confirmation, removes the subtree, shows the new
+ * street portal, records a duplicate-name refusal and a rejected graph write,
+ * and checks the keyboard focus path.
  *
  * The script drives the real app over WebDriver, writes PNGs to `--out`, and
  * writes `<prefix>-manifest.json` plus Markdown table rows for VISUALS.md.
@@ -43,6 +48,7 @@ function parseArgs(argv) {
     surface: false,
     fishing: false,
     review: false,
+    creator: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -56,6 +62,7 @@ function parseArgs(argv) {
     else if (arg === '--surface') options.surface = true;
     else if (arg === '--fishing') options.fishing = true;
     else if (arg === '--review') options.review = true;
+    else if (arg === '--creator') options.creator = true;
     else throw new Error(`Unknown argument: ${arg}`);
   }
   return options;
@@ -1308,7 +1315,7 @@ async function captureReview(prefix, frames) {
     const afterFailure = await stored(session);
     await session.execute(`IDBObjectStore.prototype.put = window.__originalPut; delete window.__originalPut; return true;`);
     frames.push({
-      file: await session.screenshot(`${prefix}-10-not-saved.png`),
+      file: await session.screenshot(`${prefix}-11-not-saved.png`),
       label: 'Review save failure',
       detail: `descend=${descendMs ?? 'timeout'}ms; shownIn=${notSavedMs ?? 'timeout'}ms; error says not saved=${/not saved/i.test(failed.error)}; panel open=${failed.hidden === false}; submit enabled after failure=${failed.submitEnabled}; xp ${beforeFailure.xpTotal}→${afterFailure.xpTotal}; passCount tut-tools ${beforeFailure.reviewPassCounts['tut-tools']}→${afterFailure.reviewPassCounts['tut-tools']}`,
     });
@@ -1390,9 +1397,508 @@ async function captureReview(prefix, frames) {
   }
 }
 
+// ── P6 Creator ──────────────────────────────────────────────────────────────
+
+async function creatorState(session) {
+  return session.execute(`
+    const root = document.querySelector('#creator-panel');
+    const text = (selector) => document.querySelector(selector)?.innerText ?? '';
+    return {
+      hidden: root?.hidden ?? null,
+      focusKey: document.activeElement?.dataset?.focusKey ?? document.activeElement?.id ?? '',
+      focusTag: document.activeElement?.tagName ?? '',
+      subjects: [...document.querySelectorAll('#creator-panel .creator-subject')].map((node) => node.innerText),
+      rooms: [...document.querySelectorAll('#creator-panel .creator-room-select')].map((node) => node.innerText.trim()),
+      edges: [...document.querySelectorAll('#creator-panel .creator-edge-list li')].map((node) => node.innerText),
+      tags: document.querySelector('#creator-tags')?.value ?? '',
+      createName: document.querySelector('#creator-subject-name')?.value ?? '',
+      createRoot: document.querySelector('#creator-root-topic')?.value ?? '',
+      result: text('#creator-result'),
+      error: text('#creator-error'),
+      resultHidden: document.querySelector('#creator-result')?.hidden ?? null,
+      errorHidden: document.querySelector('#creator-error')?.hidden ?? null,
+    };
+  `);
+}
+
+async function selectCreatorRoom(session, topic) {
+  return session.execute(`
+    const button = [...document.querySelectorAll('#creator-panel .creator-room-select')]
+      .find((node) => node.innerText.includes(${JSON.stringify(topic)}));
+    if (!button) return false;
+    button.click();
+    return true;
+  `);
+}
+
+async function addCreatorRooms(session, parentTopic, topics) {
+  return session.execute(`
+    const parent = document.querySelector('#creator-add-parent');
+    const option = [...parent.options].find((node) => node.textContent.includes(${JSON.stringify(parentTopic)}));
+    if (!option) return false;
+    parent.value = option.value;
+    parent.dispatchEvent(new Event('change', { bubbles: true }));
+    const text = document.querySelector('#creator-add-topics');
+    text.value = ${JSON.stringify(topics.join('\n'))};
+    text.dispatchEvent(new Event('input', { bubbles: true }));
+    document.querySelector('[data-focus-key="add-submit"]').click();
+    return true;
+  `);
+}
+
+/**
+ * P6 Creator run.
+ *
+ * A fresh profile seeds the three demo subjects on boot. The run then creates a
+ * fourth subject, builds a nested tree, tags and cross-links rooms, captures the
+ * removal confirmation with its cascade count, removes the subtree, shows the
+ * new portal on the street, and records a duplicate-name refusal and a rejected
+ * graph write. The write failure is injected through the page's own IndexedDB
+ * prototype, as P2 does; the app has no test hook.
+ */
+async function captureCreator(prefix, frames) {
+  const session = await openSession(
+    options.reducedMotion ? { 'ui.prefersReducedMotion': 1 } : {},
+  );
+  try {
+    await wd('POST', session.session('/url'), { url: APP });
+    const seededMs = await waitForExpr(
+      session,
+      `document.querySelector('#summary')?.innerText.includes('3 portals') === true`,
+      25000,
+    );
+    await sleep(400);
+    const seededState = await stored(session);
+    const seededPanel = await panel(session);
+
+    // 01 — open from the street with the host shortcut.
+    await session.synthDown('KeyC', 'c');
+    await session.synthUp('KeyC', 'c');
+    const openedMs = await waitForExpr(
+      session,
+      `document.querySelector('#creator-panel')?.hidden === false`,
+      8000,
+    );
+    const opened = await creatorState(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-01-subject-list.png`),
+      label: 'Creator subject list',
+      detail: `seededIn=${seededMs ?? 'timeout'}ms; openIn=${openedMs ?? 'timeout'}ms; subjects=${seededState.subjects}; portals row="${(seededPanel.summary.match(/Subject portals\n(.+)/) ?? [])[1] ?? 'missing'}"; listed=${opened.subjects.length}; focus=${opened.focusTag}`,
+    });
+
+    if (options.reducedMotion) {
+      frames.push({
+        file: await session.screenshot(`${prefix}-02-reduced-motion.png`),
+        label: 'Creator reduced motion',
+        detail: `prefers-reduced-motion=1; panel has no animation; rooms=${opened.rooms.length}; listed=${opened.subjects.length}`,
+      });
+      await session.synthDown('Escape', 'Escape');
+      await session.synthUp('Escape', 'Escape');
+      const closedMs = await waitForExpr(
+        session,
+        `document.querySelector('#creator-panel')?.hidden !== false && document.activeElement?.id === 'game'`,
+        8000,
+      );
+      return { opened, closedMs, reducedMotion: true };
+    }
+
+    // 02 — create form, filled but not submitted.
+    await session.execute(`
+      const set = (selector, value) => {
+        const node = document.querySelector(selector);
+        node.value = value;
+        node.dispatchEvent(new Event('input', { bubbles: true }));
+      };
+      set('#creator-subject-name', 'Tide Pools');
+      set('#creator-root-topic', 'Rock Pool Ecology');
+      return true;
+    `);
+    const form = await creatorState(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-02-create-form.png`),
+      label: 'Creator create form',
+      detail: `name="${form.createName}"; root="${form.createRoot}"; subjects before create=${seededState.subjects}`,
+    });
+
+    // 03 — create the subject; it becomes the edited subject immediately.
+    await session.execute(`document.querySelector('[data-focus-key="create-submit"]').click(); return true;`);
+    const createdMs = await waitForExpr(
+      session,
+      `document.querySelector('#creator-panel .creator-room-select') !== null && document.querySelector('#creator-result')?.innerText.includes('Created') === true`,
+      10000,
+    );
+    const afterCreate = await stored(session);
+    const created = await creatorState(session);
+    await session.execute(
+      `document.querySelector('#creator-panel .creator-tree')?.scrollIntoView({ block: 'start' }); return true;`,
+    );
+    await sleep(150);
+    frames.push({
+      file: await session.screenshot(`${prefix}-03-created.png`),
+      label: 'Created subject',
+      detail: `shownIn=${createdMs ?? 'timeout'}ms; subjects ${seededState.subjects}→${afterCreate.subjects}; rooms=${created.rooms.length}; active study=${afterCreate.activeStudy}; result=${/Created/.test(created.result)}`,
+    });
+
+    // 04 — add three root children.
+    await addCreatorRooms(session, 'Rock Pool Ecology', ['Tide Zones', 'Pool Life', 'Salinity']);
+    const rootChildrenMs = await waitForExpr(
+      session,
+      `document.querySelectorAll('#creator-panel .creator-room-select').length === 4`,
+      10000,
+    );
+    const tree = await creatorState(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-04-tree.png`),
+      label: 'Room tree',
+      detail: `addedIn=${rootChildrenMs ?? 'timeout'}ms; rooms=${tree.rooms.length}; order=${tree.rooms.map((room) => room.replace(/^.*?\\s/, '')).join(' > ')}`,
+    });
+
+    // 05 — nest two rooms under Tide Zones, then arm its removal.
+    await addCreatorRooms(session, 'Tide Zones', ['Splash Zone', 'Mid Zone']);
+    await waitForExpr(
+      session,
+      `document.querySelectorAll('#creator-panel .creator-room-select').length === 6`,
+      10000,
+    );
+    await selectCreatorRoom(session, 'Tide Zones');
+    await session.execute(`document.querySelector('[data-focus-key="remove-button"]').click(); return true;`);
+    const armed = await creatorState(session);
+    const confirmLabel = await session.execute(
+      `return document.querySelector('[data-focus-key="remove-button"]')?.innerText ?? '';`,
+    );
+    frames.push({
+      file: await session.screenshot(`${prefix}-05-cascade-confirm.png`),
+      label: 'Cascade confirmation',
+      detail: `rooms=${armed.rooms.length}; confirm="${confirmLabel}"; names cascade=${/Confirm remove: 3 rooms/.test(confirmLabel)}; no write yet=${armed.resultHidden === true}`,
+    });
+
+    // 06 — confirm: Tide Zones plus the two nested rooms go.
+    await session.execute(`document.querySelector('[data-focus-key="remove-button"]').click(); return true;`);
+    const removedMs = await waitForExpr(
+      session,
+      `document.querySelectorAll('#creator-panel .creator-room-select').length === 3`,
+      10000,
+    );
+    const removed = await creatorState(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-06-cascade-removed.png`),
+      label: 'Cascade removed',
+      detail: `removedIn=${removedMs ?? 'timeout'}ms; rooms=${removed.rooms.length}; result=${/Removed 3 rooms/.test(removed.result)}`,
+    });
+
+    // 07 — tag Pool Life and cross-link it to Salinity.
+    await selectCreatorRoom(session, 'Pool Life');
+    await session.execute(`
+      const input = document.querySelector('#creator-tags');
+      input.value = 'water, observation';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      document.querySelector('[data-focus-key="tags-submit"]').click();
+      return true;
+    `);
+    const tagsSavedMs = await waitForExpr(
+      session,
+      `document.querySelector('#creator-tags')?.value.includes('water') === true`,
+      10000,
+    );
+    await session.execute(`
+      const pick = (selector, topic) => {
+        const select = document.querySelector(selector);
+        const option = [...select.options].find((node) => node.textContent.includes(topic));
+        if (!option) return false;
+        select.value = option.value;
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        return true;
+      };
+      pick('#creator-link-from', 'Pool Life');
+      pick('#creator-link-to', 'Salinity');
+      document.querySelector('[data-focus-key="link-submit"]').click();
+      return true;
+    `);
+    const linkedMs = await waitForExpr(
+      session,
+      `document.querySelectorAll('#creator-panel .creator-edge-list li').length === 1`,
+      10000,
+    );
+    const tagged = await creatorState(session);
+    await session.execute(
+      `document.querySelector('#creator-panel .creator-tree')?.scrollIntoView({ block: 'start' }); return true;`,
+    );
+    await sleep(150);
+    frames.push({
+      file: await session.screenshot(`${prefix}-07-tree-tags.png`),
+      label: 'Tree with tags',
+      detail: `tagsIn=${tagsSavedMs ?? 'timeout'}ms; tags="${tagged.tags}"; rooms=${tagged.rooms.length}`,
+    });
+    await session.execute(
+      `document.querySelector('#creator-panel .creator-edge-list')?.scrollIntoView({ block: 'center' }); return true;`,
+    );
+    await sleep(150);
+    frames.push({
+      file: await session.screenshot(`${prefix}-08-cross-link.png`),
+      label: 'Cross-link edge',
+      detail: `linkIn=${linkedMs ?? 'timeout'}ms; edges=${JSON.stringify(tagged.edges)}`,
+    });
+
+    // 08 — keyboard check: Tab reaches a native control, Escape closes to #game.
+    await session.hold('\uE004', 60);
+    await sleep(150);
+    const tabbed = await creatorState(session);
+    await session.synthDown('Escape', 'Escape');
+    await session.synthUp('Escape', 'Escape');
+    const closedMs = await waitForExpr(
+      session,
+      `document.querySelector('#creator-panel')?.hidden !== false && document.activeElement?.id === 'game'`,
+      10000,
+    );
+    await sleep(600);
+    const afterClose = await stored(session);
+
+    // 09 — the new portal is on the street, from engine data.
+    await sleep(300);
+    const walked = await walkToNearby(session, 'KeyD', 'd', 'Tide Pools', 30000);
+    await sleep(300);
+    const streetPanel = await panel(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-09-street-portal.png`),
+      label: 'New portal on the street',
+      detail: `closedIn=${closedMs ?? 'timeout'}ms; focus returned to #game=${closedMs !== null}; tab reached=${tabbed.focusKey || tabbed.focusTag}; subjects=${afterClose.subjects}; portals row="${(streetPanel.summary.match(/Subject portals\n(.+)/) ?? [])[1] ?? 'missing'}"; walk found Tide Pools=${walked.found}; nearby="${walked.nearby}"; activeStudy=${afterClose.activeStudy}`,
+    });
+
+    // 10 — open again and refuse a duplicate subject name.
+    await session.synthDown('KeyC', 'c');
+    await session.synthUp('KeyC', 'c');
+    await waitForExpr(session, `document.querySelector('#creator-panel')?.hidden === false`, 8000);
+    await session.execute(`
+      const set = (selector, value) => {
+        const node = document.querySelector(selector);
+        node.value = value;
+        node.dispatchEvent(new Event('input', { bubbles: true }));
+      };
+      set('#creator-subject-name', 'Tide Pools');
+      set('#creator-root-topic', 'Another Root');
+      document.querySelector('[data-focus-key="create-submit"]').click();
+      return true;
+    `);
+    const refusalMs = await waitForExpr(
+      session,
+      `document.querySelector('#creator-error')?.hidden === false`,
+      8000,
+    );
+    const refusal = await creatorState(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-10-refusal.png`),
+      label: 'Duplicate-name refusal',
+      detail: `shownIn=${refusalMs ?? 'timeout'}ms; refusal=${/Refused/.test(refusal.error) && /already exists/.test(refusal.error)}; subjects still=${afterClose.subjects}; error="${refusal.error}"`,
+    });
+
+    // 11 — select Tide Pools for editing, then reject the next graph write.
+    await session.execute(`
+      const row = [...document.querySelectorAll('#creator-panel .creator-subject')]
+        .find((node) => node.innerText.includes('Tide Pools'));
+      row?.querySelector('button')?.click();
+      return true;
+    `);
+    await waitForExpr(
+      session,
+      `document.querySelectorAll('#creator-panel .creator-room-select').length === 3`,
+      10000,
+    );
+    await selectCreatorRoom(session, 'Pool Life');
+    await session.execute(`
+      const input = document.querySelector('#creator-tags');
+      input.value = 'quota-test';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      window.__originalPut = IDBObjectStore.prototype.put;
+      IDBObjectStore.prototype.put = function () {
+        throw new DOMException('simulated quota failure', 'QuotaExceededError');
+      };
+      document.querySelector('[data-focus-key="tags-submit"]').click();
+      return true;
+    `);
+    const notSavedMs = await waitForExpr(
+      session,
+      `document.querySelector('#creator-error')?.hidden === false`,
+      10000,
+    );
+    const failed = await creatorState(session);
+    const afterFailure = await stored(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-11-not-saved.png`),
+      label: 'Rejected graph write',
+      detail: `shownIn=${notSavedMs ?? 'timeout'}ms; not saved=${/Not saved/.test(failed.error)}; tree intact=${failed.rooms.length === 3}; tags still "${failed.tags}"; subjects ${afterCreate.subjects}→${afterFailure.subjects}`,
+    });
+    await session.execute(`IDBObjectStore.prototype.put = window.__originalPut; delete window.__originalPut; return true;`);
+
+    await session.synthDown('Escape', 'Escape');
+    await session.synthUp('Escape', 'Escape');
+    await sleep(600);
+
+    // 12–14 — keyboard-only Creator pass: C, Tab, Enter, typing, Escape, then
+    // walk to the new portal and press E. No pointer events are used.
+    const keyboard = await keyboardCreatorFlow(session, frames, prefix, afterClose.subjects);
+
+    return {
+      seeded: seededState,
+      opened,
+      created,
+      tree,
+      confirmLabel,
+      tagged,
+      tabbed,
+      refusal,
+      failed,
+      afterFailure,
+      afterClose,
+      street: streetPanel.summary,
+      keyboard,
+    };
+  } finally {
+    await session.close();
+  }
+}
+
+/** Send one real WebDriver key and let the page handle it. */
+async function pressKey(session, value) {
+  await session.hold(value, 40);
+  await sleep(70);
+}
+
+async function typeKeys(session, text) {
+  for (const character of text) {
+    await session.hold(character, 10);
+  }
+  await sleep(150);
+}
+
+/** Tab forward until the predicate matches; returns the tab count or null. */
+async function tabTo(session, predicate, max = 40) {
+  for (let index = 0; index < max; index += 1) {
+    await pressKey(session, '\uE004');
+    const matched = await session.execute(`return (${predicate});`);
+    if (matched) return index + 1;
+  }
+  return null;
+}
+
+/**
+ * Keyboard-only path through the Creator and into a new subject's dungeon.
+ *
+ * The capture uses real WebDriver key events, so the host's own handlers run:
+ * `C` opens, Tab walks native controls, Enter activates a button, typing fills
+ * an input, Escape closes and returns focus to `#game`, then D/E enter the new
+ * portal. This is the phase gate's keyboard pass for the P6 surface.
+ */
+async function keyboardCreatorFlow(session, frames, prefix, baselineSubjects) {
+  await pressKey(session, 'c');
+  const openedMs = await waitForExpr(
+    session,
+    `document.querySelector('#creator-panel')?.hidden === false`,
+    8000,
+  );
+
+  const nameTabs = await tabTo(session, `document.activeElement?.dataset?.focusKey === 'create-name'`);
+  await typeKeys(session, 'keyboard subject');
+  await pressKey(session, '\uE004');
+  await typeKeys(session, 'keyboard root');
+  await pressKey(session, '\uE004');
+  await pressKey(session, '\uE004');
+  const createFocus = await session.execute(`return document.activeElement?.dataset?.focusKey ?? '';`);
+  await pressKey(session, '\uE006');
+  const createdMs = await waitForExpr(
+    session,
+    `document.querySelectorAll('#creator-panel .creator-room-select').length === 1 && document.querySelector('#creator-result')?.innerText.includes('Created') === true`,
+    12000,
+  );
+  const afterKeyboardCreate = await stored(session);
+  await sleep(400);
+
+  const topicsTabs = await tabTo(session, `document.activeElement?.dataset?.focusKey === 'add-topics'`);
+  await typeKeys(session, 'one');
+  await pressKey(session, '\uE006');
+  await typeKeys(session, 'two');
+  const submitTabs = await tabTo(session, `document.activeElement?.dataset?.focusKey === 'add-submit'`);
+  await pressKey(session, '\uE006');
+  const treeMs = await waitForExpr(
+    session,
+    `document.querySelectorAll('#creator-panel .creator-room-select').length === 3`,
+    12000,
+  );
+  await sleep(400);
+  await session.execute(
+    `document.querySelector('#creator-panel .creator-tree')?.scrollIntoView({ block: 'start' }); return true;`,
+  );
+  await sleep(150);
+  const keyboardTree = await creatorState(session);
+  frames.push({
+    file: await session.screenshot(`${prefix}-12-keyboard-create.png`),
+    label: 'Keyboard-only Creator',
+    detail: `openIn=${openedMs ?? 'timeout'}ms; tabs to name=${nameTabs}; create focus=${createFocus}; createdIn=${createdMs ?? 'timeout'}ms; subjects ${baselineSubjects}→${afterKeyboardCreate.subjects}; tabs to topics=${topicsTabs}, to add=${submitTabs}; treeIn=${treeMs ?? 'timeout'}ms; rooms=${keyboardTree.rooms.length}`,
+  });
+
+  await pressKey(session, '\uE00C');
+  const closedMs = await waitForExpr(
+    session,
+    `document.querySelector('#creator-panel')?.hidden !== false && document.activeElement?.id === 'game'`,
+    10000,
+  );
+  await sleep(600);
+
+  const walked = await walkToNearby(session, 'KeyD', 'd', 'keyboard subject', 45000);
+  await pressKey(session, 'e');
+  const enteredMs = await waitForExpr(
+    session,
+    `document.querySelector('#summary')?.innerText.includes('keyboard subject') === true && document.querySelector('#summary')?.innerText.includes('dungeon') === true`,
+    15000,
+  );
+  await sleep(300);
+  const entered = await panel(session);
+  frames.push({
+    file: await session.screenshot(`${prefix}-13-keyboard-enter.png`),
+    label: 'Keyboard-only portal entry',
+    detail: `escape focus returned=${closedMs !== null}; walk found=${walked.found}; enteredIn=${enteredMs ?? 'timeout'}ms; summary subject row=${/keyboard subject/.test(entered.summary)}; world=${(entered.summary.match(/World\n(.+)/) ?? [])[1] ?? 'missing'}`,
+  });
+
+  return {
+    openedMs,
+    nameTabs,
+    createFocus,
+    createdMs,
+    topicsTabs,
+    submitTabs,
+    treeMs,
+    closedMs,
+    walked,
+    enteredMs,
+    summary: entered.summary,
+  };
+}
+
+
 async function main() {
   await mkdir(OUT, { recursive: true });
   const frames = [];
+
+  if (options.creator) {
+    const run = await captureCreator(options.prefix, frames);
+    const manifest = {
+      capturedAt: new Date().toISOString(),
+      app: APP,
+      viewport: 'default headless Firefox (captured window)',
+      prefix: options.prefix,
+      creator: true,
+      reducedMotion: options.reducedMotion,
+      result: run,
+      frames,
+    };
+    await writeFile(resolve(OUT, `${options.prefix}-manifest.json`), JSON.stringify(manifest, null, 2));
+    console.log(JSON.stringify(manifest, null, 2));
+    const date = new Date().toISOString().slice(0, 10);
+    console.log('\nMarkdown rows:\n');
+    for (const frame of frames) {
+      console.log(`| ${date} | ${frame.label} | \`${frame.file}\` | ${frame.detail} |`);
+    }
+    return;
+  }
 
   if (options.fishing) {
     const run = await captureFishing(options.prefix, frames);

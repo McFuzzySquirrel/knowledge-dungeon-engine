@@ -11,7 +11,7 @@ documented root entries) leaves the engine exactly as it was. The full rule set 
 
 | Field | Value |
 | --- | --- |
-| Status | P0–P5 complete; P6–P10 planned |
+| Status | P0–P6 complete; P7–P10 planned |
 | Stack | Vanilla TypeScript + Vite + Canvas 2D |
 | Storage | IndexedDB, one `EngineState` record |
 | Package | Private, standalone (`package.json`, lockfile, `tsconfig`, Vitest config) |
@@ -49,11 +49,13 @@ discover `examples/**` (the root Vitest config excludes it).
 | Note loop | Composer drives `submitNote`; drafts name the exact missing sections; clears award XP and an artifact |
 | Review | Cleared rooms show `E write a note` and `R review`; ratings 0–5, due labels, save/resume/discard across reload, one reward per (room, pass) |
 | Fishing | Pond entry after a clear, cast/bite/reel, recall question from a cleared room, keep/release |
+| Creator | Subject list, create form, room-tree editor (add, reparent, remove with cascade count, tags, cross-links), typed refusals; `C` or the Guild Hall opens it |
+| Demo campaign | Three synthetic subjects seed on a first boot and appear as ordinary portals; a first-run flag prevents resurrection after deletion |
 | Persistence | Reload keeps rooms, XP, fish, review schedule, and any saved review marker |
 
-P6–P10 add the Creator and demo subjects, village services, the journal and settings,
-title/save portability, touch controls, and local polish. Placeholder rectangles and
-silence are deliberate: this example ships no art or audio.
+P7–P10 add village services, the journal and settings, title/save portability, touch
+controls, and local polish. Placeholder rectangles and silence are deliberate: this
+example ships no art or audio.
 
 ## Controls
 
@@ -63,6 +65,7 @@ silence are deliberate: this example ships no art or audio.
 | `Space` | Jump (hold/release to cast in a pond; press at a bite to reel) |
 | `W`/`S` or `↑`/`↓` | Climb ladders |
 | `E` | Enter a portal / use a building / write a note |
+| `C` | Open the Creator from the street (the Guild Hall does the same) |
 | `R` | Review a cleared room, or the last-studied subject's queue from the street |
 | `0`–`5`, `Enter`, `S`, `D`, `Escape` | In review: rate, submit, save for later, discard, close |
 | `Escape` | Close a dialog, leave a pond, or close a review |
@@ -81,8 +84,9 @@ src/storage.ts              IndexedDB EngineStorage adapter
 src/level/                  DungeonMap / VillageMapDef -> side-view LevelModel
 src/physics.ts              fixed-step gravity, ladders, AABB movement
 src/render/                 Canvas world and DOM HUD
-src/ui/                     note panel, review panel, recall dialog, prompts
+src/ui/                     note panel, review panel, Creator panel, recall dialog, prompts
 src/review/                 pure review projections and copy (P5)
+src/creator/                demo seeds and pure Creator projections (P6)
 src/fishing/                pond bridge, machine session, scene (P4)
 src/projection.ts           EngineState -> view models, pure
 tests/                      one suite per phase, isolated from the root suite
@@ -104,12 +108,12 @@ and indexed in [VISUALS.md](../../docs/plans/side-scroller-host/VISUALS.md):
 
 ```sh
 node examples/side-scroller/scripts/capture-dungeon.mjs \
-  --out docs/plans/side-scroller-host/visuals/p5 \
-  --prefix 2026-11-24-g5 --review
+  --out docs/plans/side-scroller-host/visuals/p6 \
+  --prefix 2026-11-24-g6 --creator
 ```
 
-Modes: default dungeon, `--note-loop`, `--surface`, `--fishing`, `--review`; add
-`--low-fps` or `--reduced-motion` for the environment variants.
+Modes: default dungeon, `--note-loop`, `--surface`, `--fishing`, `--review`,
+`--creator`; add `--low-fps` or `--reduced-motion` for the environment variants.
 
 ## Deleting the example
 

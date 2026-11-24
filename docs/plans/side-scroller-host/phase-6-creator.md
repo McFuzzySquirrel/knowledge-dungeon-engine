@@ -8,7 +8,7 @@
 | Blocks | [P7](phase-7-village.md), [P8](phase-8-journal.md) |
 | Requirements | R-17, R-22 |
 | Exit gate | [G6](#exit-gate-g6) |
-| Status | Not started |
+| Status | Done — G6 passed 2026-11-24 |
 
 ## Objective
 
@@ -44,27 +44,49 @@ phase builds the UI and the seed path around them, with no engine changes.
 ## Frozen interfaces
 
 ```ts
-import type { EngineState, GraphCommand, KnowledgeDungeonEngine } from '@/index';
+import type { EngineState, KnowledgeDungeonEngine } from '@/index';
+
+export interface DemoSubjectChild {
+  /** Seed-local handle used for tags and cross-links; never a persisted id. */
+  key: string;
+  topic: string;
+  tags?: readonly string[];
+}
 
 export interface DemoSubjectSeed {
   dungeonId: string;
   subjectName: string;
   rootRoomId: string;
   rootTopic: string;
-  children: { roomId: string; topic: string; tags?: string[] }[];
-  crossLinks?: { fromRoomId: string; toRoomId: string }[];
+  biome?: string;
+  children: readonly DemoSubjectChild[];
+  crossLinks?: readonly { from: string; to: string }[];
 }
 
 export interface SeedResult {
   seeded: string[];
   alreadyPresent: string[];
   skipped: boolean;
+  /** Demo ids this run attempted but did not complete. */
+  failed: string[];
 }
 
 /** Idempotent; no-op when every id already exists. */
 export async function seedDemoSubjects(
   engine: KnowledgeDungeonEngine,
   seeds: readonly DemoSubjectSeed[],
+): Promise<SeedResult>;
+
+export interface SeedFlagStore {
+  read(): string | null;
+  write(value: string): void;
+}
+
+/** Host-owned first-run gate; writes the flag even when the seed skips. */
+export async function seedDemoSubjectsOnFirstRun(
+  engine: KnowledgeDungeonEngine,
+  seeds: readonly DemoSubjectSeed[],
+  flag: SeedFlagStore,
 ): Promise<SeedResult>;
 
 export interface CreatorSubjectView {
@@ -85,16 +107,53 @@ export interface CreatorRoomView {
 
 export interface CreatorView {
   subjects: CreatorSubjectView[];
+  /** The subject this view projects, not `state.activeSubjectId`. */
   activeSubjectId: string | null;
   rooms: CreatorRoomView[];
+  /** Non-tree edges only (`relationType !== 'subtopic'`). */
   edges: { fromRoomId: string; toRoomId: string; relationType: string }[];
 }
 
 /** Pure projection; no commands. */
 export function projectCreator(state: EngineState, subjectId: string | null): CreatorView;
+
+/** Removal preview that mirrors the engine's undirected cascade rule. */
+export function cascadeRemovalCount(view: CreatorView, roomId: string): number;
 ```
 
 `main.ts` owns the commands. The Creator panel owns drafts and focus only.
+
+### P6-T1 findings and amendments
+
+One frozen-interface correction was needed before coding:
+
+- **Child room ids are engine-minted.** `graph/children-add` has no room-id field and
+  `dispatchGraph` mints every child id through its injected `newRoomId`. A seed therefore
+  cannot name a child room id ahead of time. `DemoSubjectSeed.children[].roomId` is
+  replaced by `key`, a seed-local handle used only for tags and cross-links, and
+  `crossLinks` names those keys. The outcome's `createdRoomIds` is ordered like the
+  submitted `topics`, so `key` is matched to the minted id by position.
+- **First-run gating is host-owned and testable.** `seedDemoSubjects` stays the pure
+  idempotent seeder, and a thin `seedDemoSubjectsOnFirstRun(engine, seeds, flagStore)`
+  wraps it with the localStorage flag. A `SeedResult` gains `failed: string[]` so a
+  partial failure reports which seeds did not complete.
+- **`createSubject`/`activateSubject` both start a study session** and
+  `activateSubject` does not change `session.world`; a Creator edit session therefore
+  stays on the village street and must be closed with `returnToVillage()`.
+  `dispatchGraph` reads `state.activeSubjectId` once and refuses nothing when it is
+  `null` (the controller returns a refusal result), so the host always activates first.
+- **Entering from the list** uses the existing portal command
+  (`interactVillageStructure('portal-<dungeonId>')`), which sets the dungeon world and
+  reuses the P3 route. Calling `activateSubject` first is unnecessary: the portal
+  command activates and starts the session itself, and `startStudySession` is
+  idempotent for the same subject.
+- **The Guild Hall already advances the quest step** through
+  `interactVillageStructure`. P6 keeps that write and opens the overlay after it; a
+  host shortcut (`C`) opens the same overlay from the street for keyboard and capture
+  use.
+- **Type-only imports** come from `@/application/creatorGraphCommands` for the outcome
+  union (`GraphChildrenAddOutcome`, `GraphRemoveRoomOutcome`, and friends), exactly as
+  P5 imports review outcomes. `src/index.ts` is untouched; these are K-14 candidates.
 
 ## Demo subjects
 
@@ -114,98 +173,98 @@ has a non-tree edge to display. Ids are stable so a re-run cannot duplicate them
 
 ### P6-T1 — Confirm the Creator surface
 
-- [ ] Explore task reports the exact `RootDungeonInitInput` fields, `GraphDomainResult`
+- [x] Explore task reports the exact `RootDungeonInitInput` fields, `GraphDomainResult`
       shape, each graph payload, and the outcome fields for removals and reparenting.
-- [ ] Confirm `createSubject` and `activateSubject` both start a study session; record the
+- [x] Confirm `createSubject` and `activateSubject` both start a study session; record the
       required cleanup (`returnToVillage()` when entering Creator from the street).
-- [ ] Confirm `dispatchGraph` operates on the **active** subject only.
-- [ ] Record every type-only import as a K-14 candidate; do not edit `src/index.ts`.
+- [x] Confirm `dispatchGraph` operates on the **active** subject only.
+- [x] Record every type-only import as a K-14 candidate; do not edit `src/index.ts`.
 
 ### P6-T2 — Seed module
 
-- [ ] `src/creator/seeds.ts` holds the three `DemoSubjectSeed` values and
+- [x] `src/creator/seeds.ts` holds the three `DemoSubjectSeed` values and
       `seedDemoSubjects`.
-- [ ] For each absent id: `createSubject(...)`, then `dispatchGraph` children, tags, and
+- [x] For each absent id: `createSubject(...)`, then `dispatchGraph` children, tags, and
       cross-links on that subject, then `returnToVillage()`.
-- [ ] Existing ids are skipped without any command; a partial failure leaves earlier
+- [x] Existing ids are skipped without any command; a partial failure leaves earlier
       subjects valid and reports which seeds succeeded.
-- [ ] A host-owned first-run flag prevents re-seeding after the player deletes a demo
+- [x] A host-owned first-run flag prevents re-seeding after the player deletes a demo
       subject. If the flag is lost but the ids exist, the module still skips.
-- [ ] Never seed when `state.subjects` already contains a non-demo subject and the flag is
+- [x] Never seed when `state.subjects` already contains a non-demo subject and the flag is
       unset; the first-run path is the only seed path.
-- [ ] Record seed sessions as expected engine state; do not hand-write progression.
+- [x] Record seed sessions as expected engine state; do not hand-write progression.
 
 ### P6-T3 — Creator entry and subject list
 
-- [ ] The Guild Hall facade opens the Creator list (P7 later gives it a full interior; for
+- [x] The Guild Hall facade opens the Creator list (P7 later gives it a full interior; for
       P6 the facade opens a DOM overlay directly).
-- [ ] The list shows every subject with room/cleared counts and a "Create subject" form
+- [x] The list shows every subject with room/cleared counts and a "Create subject" form
       (name, root topic, optional biome).
-- [ ] Creating a subject validates the name, mints stable ids, calls `createSubject`, then
+- [x] Creating a subject validates the name, mints stable ids, calls `createSubject`, then
       returns to the street with the new subject activated. The new portal appears from
       `villageStructures()`; no host portal list is added.
-- [ ] Entering a subject from the list calls `activateSubject` and routes to the dungeon
+- [x] Entering a subject from the list calls `activateSubject` and routes to the dungeon
       through the existing P3 flow.
-- [ ] Empty, duplicate, and invalid ids are surfaced as visible refusals.
+- [x] Empty, duplicate, and invalid ids are surfaced as visible refusals.
 
 ### P6-T4 — Room graph editor
 
-- [ ] Show the room tree in graph order, with the root marked and depth indentation.
-- [ ] Add child rooms (one or many topics, blank topics dropped).
-- [ ] Reparent a room; remove a room with a confirmation that names the cascade count.
-- [ ] Add/remove tags and add cross-links between two rooms.
-- [ ] After each mutation, re-render from the state subscription; never mutate the local
+- [x] Show the room tree in graph order, with the root marked and depth indentation.
+- [x] Add child rooms (one or many topics, blank topics dropped).
+- [x] Reparent a room; remove a room with a confirmation that names the cascade count.
+- [x] Add/remove tags and add cross-links between two rooms.
+- [x] After each mutation, re-render from the state subscription; never mutate the local
       view model as if it were committed.
-- [ ] Render typed `GraphDomainError` codes and messages verbatim; a rejected promise is
+- [x] Render typed `GraphDomainError` codes and messages verbatim; a rejected promise is
       "Not saved" and leaves the previous tree intact.
-- [ ] Disable controls while a mutation is pending; one in-flight graph command at a time.
-- [ ] Keyboard-only operation for every control; focus stays in the overlay and returns
+- [x] Disable controls while a mutation is pending; one in-flight graph command at a time.
+- [x] Keyboard-only operation for every control; focus stays in the overlay and returns
       to `#game` on close.
 
 ### P6-T5 — Campaign surface
 
-- [ ] Seeded subjects appear as extra portals in the street and in the surface HUD.
-- [ ] Each portal enters its own dungeon; the existing structural key rebuilds the level
+- [x] Seeded subjects appear as extra portals in the street and in the surface HUD.
+- [x] Each portal enters its own dungeon; the existing structural key rebuilds the level
       when the subject changes.
-- [ ] A demo subject with no cleared rooms shows the normal empty-state HUD.
-- [ ] Do not special-case the tutorial in routing; it remains the first subject.
-- [ ] Record the demo subject names in `VISUALS.md` as synthetic content, not learner data.
+- [x] A demo subject with no cleared rooms shows the normal empty-state HUD.
+- [x] Do not special-case the tutorial in routing; it remains the first subject.
+- [x] Record the demo subject names in `VISUALS.md` as synthetic content, not learner data.
 
 ### P6-T6 — Tests
 
-- [ ] Seed tests with `MemoryEngineStorage`: three subjects created, progression records
+- [x] Seed tests with `MemoryEngineStorage`: three subjects created, progression records
       exist, session closed, portal count grows by three.
-- [ ] Re-running the seed is a no-op; deleting one demo subject with the first-run flag set
+- [x] Re-running the seed is a no-op; deleting one demo subject with the first-run flag set
       does not recreate it.
-- [ ] Graph command tests: add children, reparent, remove cascade, tag set/add/remove,
+- [x] Graph command tests: add children, reparent, remove cascade, tag set/add/remove,
       cross-link duplicate refusal.
-- [ ] Creator projection tests from an `EngineState` fixture (tree order, edges, counts).
-- [ ] Failing-storage create/mutation leaves the previous state; a refused graph command
+- [x] Creator projection tests from an `EngineState` fixture (tree order, edges, counts).
+- [x] Failing-storage create/mutation leaves the previous state; a refused graph command
       shows its code and does not change the tree.
-- [ ] No host test asserts engine counts; the engine suite stays at its baseline.
+- [x] No host test asserts engine counts; the engine suite stays at its baseline.
 
 ### P6-T7 — Manual proof and visuals
 
-- [ ] Fresh save: three demo portals + Training Grounds; enter each and return.
-- [ ] Create a fourth subject, add three rooms, tag one, cross-link two, enter it, clear a
+- [x] Fresh save: three demo portals + Training Grounds; enter each and return.
+- [x] Create a fourth subject, add three rooms, tag one, cross-link two, enter it, clear a
       room, reload, and confirm the graph and portal survive.
-- [ ] Remove a room with descendants and confirm the cascade count.
-- [ ] Keyboard-only run through create → add rooms → enter → return.
-- [ ] Capture frames for: subject list, create form, tree with tags/edge, cascade
+- [x] Remove a room with descendants and confirm the cascade count.
+- [x] Keyboard-only run through create → add rooms → enter → return.
+- [x] Capture frames for: subject list, create form, tree with tags/edge, cascade
       confirmation, new portal on the street, refusal, and save failure.
 
 ## Exit gate G6
 
-- [ ] The Creator can create a subject, add/reparent/remove rooms, tag, and cross-link.
-- [ ] Every mutation reports typed refusals and rejected writes distinctly.
-- [ ] Three demo subjects seed idempotently on a first run and never resurrect after
+- [x] The Creator can create a subject, add/reparent/remove rooms, tag, and cross-link.
+- [x] Every mutation reports typed refusals and rejected writes distinctly.
+- [x] Three demo subjects seed idempotently on a first run and never resurrect after
       deletion.
-- [ ] New subjects appear as portals from engine data with no host hard-coding.
-- [ ] A created subject can be entered, cleared, and reloaded.
-- [ ] Keyboard and reduced-motion passes recorded.
-- [ ] Root and example suites, typechecks, and builds green; engine count unchanged.
-- [ ] No engine source diff.
-- [ ] G6 entry written in [EVIDENCE.md](EVIDENCE.md), with visuals under `visuals/p6/`.
+- [x] New subjects appear as portals from engine data with no host hard-coding.
+- [x] A created subject can be entered, cleared, and reloaded.
+- [x] Keyboard and reduced-motion passes recorded.
+- [x] Root and example suites, typechecks, and builds green; engine count unchanged.
+- [x] No engine source diff.
+- [x] G6 entry written in [EVIDENCE.md](EVIDENCE.md), with visuals under `visuals/p6/`.
 
 ## Validation commands
 
@@ -244,6 +303,46 @@ the panel never imports the engine; no agent edits `src/`.
   add exports.
 - **Creator scope creep.** This is a tree editor, not a canvas graph or tile editor.
 
+## Outcome and deviations
+
+G6 passed on 2026-11-24 with the engine at its unchanged 13 files / 280 tests and the
+example at 26 files / 153 tests. `src/` has no diff.
+
+Delivered:
+
+- `examples/side-scroller/src/creator/seeds.ts` — three synthetic subjects, an
+  idempotent seeder, a first-run localStorage wrapper, and a partial-failure report.
+- `examples/side-scroller/src/creator/projection.ts` — subject list, depth-first room
+  tree, cross-link edges, and a removal-cascade preview that mirrors the engine's
+  undirected reachability rule.
+- `examples/side-scroller/src/ui/creatorPanel.ts` — subject list, create form, room tree,
+  add/reparent/remove with two-step cascade confirmation, tag editing, cross-links,
+  pending-state disabling, Tab trap, and focus return.
+- `examples/side-scroller/src/main.ts` — the only writer: `createSubject`,
+  `activateSubject`, `dispatchGraph`, portal entry, Guild Hall hook, `C` shortcut, and
+  the first-run seed call before the subscription.
+- Tests: `creatorSeeds.test.ts`, `creatorProjection.test.ts`, `creatorGraph.test.ts`,
+  `creatorCampaign.test.ts`.
+- `--creator` capture mode with a normal, a reduced-motion, and a keyboard-only run.
+
+Deviations, recorded rather than hidden:
+
+- **Duplicate ids cannot be exercised from the UI** because the host mints UUIDs; the
+  visible refusal is therefore an empty name/topic check and a duplicate *subject name*
+  check (case-insensitive). Invalid ids remain an engine-level throw.
+- **Tag removal is expressed through `tags-set`** (edit the comma list), not a separate
+  `tag-remove` control. The engine's `tag-add` and `tag-remove` commands are covered by
+  `creatorGraph.test.ts`.
+- **"Returns to the street with the new subject activated"** is implemented as the
+  amended reading: the subject stays active while the Creator is open for editing, and
+  closing the Creator returns to the street and ends that session. The portal appears
+  because `villageStructures()` derives every subject, not because of the active id.
+- **Six portal slots.** The engine exposes six street slots. A seventh subject has no
+  portal; the panel refuses "Enter dungeon" with visible copy instead of failing at the
+  engine's `Village structure not found`.
+- **No K-14 type-only import was needed.** `GraphCommand` is public and the outcome union
+  is narrowed from `dispatchGraph` by `value.command`; the Creator types are host-local.
+
 ## Rollback
 
 Delete `src/creator/`, `src/ui/creatorPanel.ts`, the Guild Hall Creator overlay, and the
@@ -254,4 +353,10 @@ host simply shows more portals. Remove the first-run seed flag if it should re-s
 
 | Date (UTC) | Task/Gate | Commit | Command or artifact | Result | Notes |
 |---|---|---|---|---|---|
-| | | | | | |
+| 2026-11-24 | P6-T1 | uncommitted | `explore` report cross-checked against `src/creatorEngine.ts`, `src/core/graph/types.ts`, `src/application/creatorGraphCommands.ts` | pass | Child ids are engine-minted; portal command routes; Guild Hall already advances the quest step; `activateSubject` starts a session |
+| 2026-11-24 | P6-T2 | uncommitted | `npx vitest run tests/creatorSeeds.test.ts` | pass | 3 subjects, progression per subject, session closed, portals +3, re-run no-op, no resurrection after deletion, partial failure reports |
+| 2026-11-24 | P6-T3/T4 | uncommitted | `tests/creatorProjection.test.ts`, `tests/creatorGraph.test.ts`, `visuals/p6/2026-11-24-g6-01…09` | pass | Depth-first tree, tags normalized, cross-link, reparent, cascade preview matches `removedRoomIds`, typed refusals, rejected write keeps state |
+| 2026-11-24 | P6-T5 | uncommitted | `tests/creatorCampaign.test.ts`; `g6-09-street-portal.png`; `g6-13-keyboard-enter.png` | pass | Created subject entered, cleared, reloaded; portal drawn from `villageStructures()`; demo subjects are ordinary portals |
+| 2026-11-24 | P6-T6 | uncommitted | `npm --prefix examples/side-scroller test` | pass | 26 files / 153 tests (baseline 22 / 135) |
+| 2026-11-24 | P6-T7 | uncommitted | `--creator` capture (normal, `g6`; reduced motion, `g6rm`) and the keyboard-only segment | pass | Create form, tree, cascade confirmation, tags/edge, street portal, refusal, rejected write, keyboard create → add → enter |
+| 2026-11-24 | G6 | uncommitted (base `46e28b3`) | Root: `npm test`, `npm run typecheck`, `npm run build`; example: `npm test`, `npm run typecheck`, `npm run build`; `npx vitest list --config vitest.config.ts`; `git status --short src` | pass | Engine 13 / 280 unchanged; example 26 / 153; isolation probe 0 `examples/` paths; `src` diff empty; visuals under `visuals/p6/` |

@@ -6,6 +6,8 @@ import type {
   ReviewSessionSaveOutcome,
 } from '@/application/reviewCommands';
 import { getState, openExampleEngine, setErrorReporter, setNoticeReporter, subscribeState, takeBootNotice } from './engine';
+import { projectCreator } from './creator/projection';
+import { DEMO_SEED_FLAG_KEY, DEMO_SUBJECT_SEEDS, browserSeedFlagStore, seedDemoSubjectsOnFirstRun } from './creator/seeds';
 import { createFishingBridge, type RecallOutcome } from './fishing/bridge';
 import {
   catchKeepSummary,
@@ -62,12 +64,13 @@ import {
   returnFailedMessage,
 } from './ui/outcomes';
 import { createPrompts } from './ui/prompts';
-import {
-  mountRecallDialog,
-  type RecallDialog,
-  type RecallQuestionView,
-} from './ui/recallDialog';
+import { mountRecallDialog, type RecallDialog, type RecallQuestionView } from './ui/recallDialog';
 import { mountReviewPanel, type ReviewPanel } from './ui/reviewPanel';
+import {
+  mountCreatorPanel,
+  type CreatorCreateInput,
+  type CreatorPanel,
+} from './ui/creatorPanel';
 
 function must<T extends Element>(selector: string): T {
   const element = document.querySelector<T>(selector);
@@ -89,6 +92,7 @@ const promptHost = must<HTMLDivElement>('#prompt');
 const notePanelHost = must<HTMLElement>('#note-panel');
 const fishingPanelHost = must<HTMLElement>('#fishing-panel');
 const reviewPanelHost = must<HTMLElement>('#review-panel');
+const creatorPanelHost = must<HTMLElement>('#creator-panel');
 const leaveFishingButton = must<HTMLButtonElement>('#leave-fishing');
 const recoveryBanner = must<HTMLDivElement>('#recovery');
 const recoveryText = must<HTMLParagraphElement>('#recovery-text');
@@ -182,6 +186,14 @@ let reviewPending = false;
 /** True when the surface shortcut activated the subject and must close it after. */
 let reviewActivatedSubject = false;
 let reviewEntryPending = false;
+
+/** The open Creator panel (P6), or `null`. It also pauses the world. */
+let creatorPanel: CreatorPanel | null = null;
+/** The subject the Creator editor projects; `null` shows only the subject list. */
+let creatorSubjectId: string | null = null;
+/** True when the Creator activated the subject and closing must end its session. */
+let creatorActivatedSubject = false;
+let creatorPending = false;
 
 /** One host clock read per projection. The panel does not tick. */
 function reviewNow(): string {
@@ -321,7 +333,7 @@ function resetDungeonLevel(): void {
 }
 
 function syncPrompt(): void {
-  if (composer || reviewPanel) {
+  if (composer || reviewPanel || creatorPanel) {
     prompts.setRoom(null, true);
     prompts.setTarget(null, true);
     return;
@@ -957,6 +969,7 @@ function onState(state: EngineState): void {
   const previous = screen;
   const route = projectRoute(state);
   const structures = engine ? engine.villageStructures() : [];
+  refreshCreator();
 
   if (route.notice && route.screen === 'surface') hud.announce(route.notice);
 
@@ -1413,6 +1426,343 @@ async function openReviewFromSurface(): Promise<void> {
   }
 }
 
+// ── Creator (P6) ─────────────────────────────────────────────────────────────
+
+/** Re-project the panel from committed state; the panel never mutates its copy. */
+function refreshCreator(): void {
+  if (!creatorPanel) return;
+  creatorPanel.update(projectCreator(getState(), creatorSubjectId));
+}
+
+/** Detach the panel without dispatching or returning to the village. */
+function dropCreatorPanel(): void {
+  if (!creatorPanel) return;
+  creatorPanel.close();
+  creatorPanel = null;
+  creatorSubjectId = null;
+  creatorActivatedSubject = false;
+  creatorPending = false;
+}
+
+/**
+ * Close the panel through the learner's action.
+ *
+ * Editing activates a subject so `dispatchGraph` has one; closing a Creator that
+ * activated it returns to the village, which ends that study session (K-15).
+ */
+function closeCreatorPanel(): void {
+  if (!creatorPanel) return;
+  if (creatorPending) {
+    hud.announce('A Creator command is still pending. Wait for it to finish.');
+    return;
+  }
+  const deactivate = creatorActivatedSubject;
+  dropCreatorPanel();
+  syncPrompt();
+  focusCanvas();
+  if (deactivate && engine && getState().session.world === 'village') {
+    void engine
+      .returnToVillage()
+      .then(() => hud.announce('Creator closed. The study session is closed; you are on the street.'))
+      .catch((error: unknown) => {
+        const message = `Could not close the Creator study session: ${describe(error)}`;
+        hud.showError(message);
+        hud.announce('Could not close the Creator study session.');
+      });
+    return;
+  }
+  hud.announce('Creator closed. Nothing new was committed.');
+}
+
+function showCreatorFailure(error: unknown): void {
+  const message = notSavedMessage(error);
+  creatorPanel?.showError(message);
+  hud.showError(message);
+  hud.announce('The Creator change was not saved.');
+}
+
+function showCreatorRefusal(code: string, message: string): void {
+  creatorPanel?.showError(refusalMessage(code, message));
+  hud.announce(`Creator refused: ${message}.`);
+}
+
+/**
+ * `dispatchGraph` writes to the engine's active subject. The panel projects one
+ * subject; if they ever differ, refuse instead of editing the wrong graph (K-16).
+ */
+function creatorActiveSubjectMatches(): boolean {
+  if (creatorSubjectId !== null && getState().activeSubjectId === creatorSubjectId) return true;
+  creatorPanel?.showError('Refused: the active subject changed. Select the subject again.');
+  hud.announce('Creator refused: select the subject again.');
+  return false;
+}
+
+function openCreator(): void {
+  if (!engine || creatorPanel) return;
+  clearInput();
+  hud.clearError();
+  creatorSubjectId = null;
+  creatorActivatedSubject = false;
+  creatorPanel = mountCreatorPanel(creatorPanelHost, projectCreator(getState(), null), {
+    onCreate: createCreatorSubject,
+    onSelect: selectCreatorSubject,
+    onEnter: enterCreatorSubject,
+    onAddChildren: addCreatorChildren,
+    onReparent: reparentCreatorRoom,
+    onRemove: removeCreatorRoom,
+    onSetTags: setCreatorTags,
+    onAddCrossLink: linkCreatorRooms,
+    onClose: closeCreatorPanel,
+  });
+  syncPrompt();
+  hud.announce('Creator open. Edit or create a subject, or press Escape to close.');
+}
+
+async function createCreatorSubject(input: CreatorCreateInput): Promise<void> {
+  if (!engine || creatorPending) return;
+  creatorPending = true;
+  hud.clearError();
+  try {
+    const state = getState();
+    const name = input.subjectName.trim();
+    const duplicate = Object.values(state.subjects).some(
+      (subject) =>
+        subject.dungeon.subjectName.trim().toLocaleLowerCase() === name.toLocaleLowerCase(),
+    );
+    if (duplicate) {
+      creatorPanel?.showError(`Refused: a subject named “${name}” already exists.`);
+      hud.announce('Subject refused: that name is already in use.');
+      return;
+    }
+
+    const dungeonId = `subject-${crypto.randomUUID()}`;
+    const result = await engine.createSubject({
+      dungeonId,
+      subjectName: name,
+      rootRoomId: `room-${crypto.randomUUID()}`,
+      rootTopic: input.rootTopic.trim(),
+      nowIso: new Date().toISOString(),
+      ...(input.biome === undefined ? {} : { biome: input.biome }),
+    });
+    if (!result.ok) {
+      showCreatorRefusal(result.error.code, result.error.message);
+      return;
+    }
+
+    creatorSubjectId = dungeonId;
+    creatorActivatedSubject = true;
+    creatorPanel?.update(projectCreator(getState(), dungeonId));
+    creatorPanel?.resetCreateDraft();
+    creatorPanel?.showResult(
+      `Created “${name}”. Add rooms below, or close to see its portal on the street.`,
+    );
+    hud.announce(`Subject ${name} created. Add rooms or close the Creator.`);
+  } catch (error) {
+    showCreatorFailure(error);
+  } finally {
+    creatorPending = false;
+  }
+}
+
+async function selectCreatorSubject(subjectId: string): Promise<void> {
+  if (!engine || creatorPending) return;
+  const subject = getState().subjects[subjectId];
+  if (!subject) {
+    creatorPanel?.showError('Refused: that subject no longer exists.');
+    return;
+  }
+  creatorPending = true;
+  hud.clearError();
+  try {
+    if (getState().activeSubjectId !== subjectId) await engine.activateSubject(subjectId);
+    creatorSubjectId = subjectId;
+    creatorActivatedSubject = true;
+    creatorPanel?.update(projectCreator(getState(), subjectId));
+    creatorPanel?.showResult(
+      `Editing ${subject.dungeon.subjectName}. Mutations run only on this active subject.`,
+    );
+    hud.announce(`Editing ${subject.dungeon.subjectName}.`);
+  } catch (error) {
+    showCreatorFailure(error);
+  } finally {
+    creatorPending = false;
+  }
+}
+
+/**
+ * Enter a subject through its engine-provided portal.
+ *
+ * `activateSubject` alone keeps `session.world` at `village` (P6-T1), so the
+ * existing portal command is what routes to the dungeon. The six fixed street
+ * slots mean a seventh subject has no portal; that is reported before the panel
+ * closes rather than kicked out.
+ */
+async function enterCreatorSubject(subjectId: string): Promise<void> {
+  if (!engine || creatorPending) return;
+  const portalId = `portal-${subjectId}`;
+  const portal = engine.villageStructures().find((structure) => structure.id === portalId);
+  if (!portal) {
+    creatorPanel?.showError(
+      'Refused: the village has no free portal slot for this subject. This example shows six portals.',
+    );
+    hud.announce('Enter refused: no free portal slot.');
+    return;
+  }
+
+  dropCreatorPanel();
+  syncPrompt();
+  focusCanvas();
+  hud.clearError();
+  hud.announce('Entering the dungeon…');
+  try {
+    await engine.interactVillageStructure(portalId);
+    // The state subscription routes to the dungeon.
+  } catch (error) {
+    if (getState().activeStudySessionId) {
+      await engine.returnToVillage().catch(() => undefined);
+    }
+    const message = interactionFailedMessage(portal.label, error);
+    hud.showError(message);
+    showToast(message, 'error');
+    hud.announce('Could not enter the dungeon. You stayed on the street.');
+  }
+}
+
+async function addCreatorChildren(parentRoomId: string, topics: string[]): Promise<void> {
+  if (!engine || creatorPending) return;
+  if (!creatorActiveSubjectMatches()) return;
+  creatorPending = true;
+  hud.clearError();
+  try {
+    const result = await engine.dispatchGraph({
+      type: 'graph/children-add',
+      payload: { parentRoomId, topics },
+    });
+    if (!result.ok) {
+      showCreatorRefusal(result.error.code, result.error.message);
+      return;
+    }
+    const created =
+      result.value.command === 'graph/children-add' ? result.value.createdRoomIds.length : 0;
+    refreshCreator();
+    if (created === 0) {
+      creatorPanel?.showError('Refused: every topic was blank or already existed; nothing was added.');
+      hud.announce('No rooms were added.');
+      return;
+    }
+    creatorPanel?.resetAddDraft();
+    creatorPanel?.showResult(`Added ${created} room${created === 1 ? '' : 's'}.`);
+    hud.announce(`Added ${created} room${created === 1 ? '' : 's'}.`);
+  } catch (error) {
+    showCreatorFailure(error);
+  } finally {
+    creatorPending = false;
+  }
+}
+
+async function reparentCreatorRoom(roomId: string, newParentRoomId: string): Promise<void> {
+  if (!engine || creatorPending) return;
+  if (!creatorActiveSubjectMatches()) return;
+  creatorPending = true;
+  hud.clearError();
+  try {
+    const result = await engine.dispatchGraph({
+      type: 'graph/room-reparent',
+      payload: { roomId, newParentRoomId },
+    });
+    if (!result.ok) {
+      showCreatorRefusal(result.error.code, result.error.message);
+      return;
+    }
+    refreshCreator();
+    creatorPanel?.showResult('Room moved to the new parent.');
+    hud.announce('Room moved.');
+  } catch (error) {
+    showCreatorFailure(error);
+  } finally {
+    creatorPending = false;
+  }
+}
+
+async function removeCreatorRoom(roomId: string): Promise<void> {
+  if (!engine || creatorPending) return;
+  if (!creatorActiveSubjectMatches()) return;
+  creatorPending = true;
+  hud.clearError();
+  try {
+    const result = await engine.dispatchGraph({ type: 'graph/room-remove', payload: { roomId } });
+    if (!result.ok) {
+      showCreatorRefusal(result.error.code, result.error.message);
+      return;
+    }
+    const removed =
+      result.value.command === 'graph/room-remove' ? result.value.removedRoomIds.length : 0;
+    refreshCreator();
+    creatorPanel?.showResult(
+      `Removed ${removed} room${removed === 1 ? '' : 's'}, including every unreachable descendant.`,
+    );
+    hud.announce(`Removed ${removed} room${removed === 1 ? '' : 's'}.`);
+  } catch (error) {
+    showCreatorFailure(error);
+  } finally {
+    creatorPending = false;
+  }
+}
+
+async function setCreatorTags(roomId: string, tags: string[]): Promise<void> {
+  if (!engine || creatorPending) return;
+  if (!creatorActiveSubjectMatches()) return;
+  creatorPending = true;
+  hud.clearError();
+  try {
+    const result = await engine.dispatchGraph({
+      type: 'graph/tags-set',
+      payload: { roomId, tags },
+    });
+    if (!result.ok) {
+      showCreatorRefusal(result.error.code, result.error.message);
+      return;
+    }
+    const stored =
+      result.value.command === 'graph/tags-set' ? result.value.tags : [];
+    refreshCreator();
+    creatorPanel?.showResult(
+      stored.length === 0
+        ? 'Tags cleared. The engine stores tags normalized: lowercase, punctuation removed.'
+        : `Tags saved: ${stored.join(', ')}. Tags are stored normalized.`,
+    );
+    hud.announce(stored.length === 0 ? 'Tags cleared.' : `Tags saved: ${stored.join(', ')}.`);
+  } catch (error) {
+    showCreatorFailure(error);
+  } finally {
+    creatorPending = false;
+  }
+}
+
+async function linkCreatorRooms(fromRoomId: string, toRoomId: string): Promise<void> {
+  if (!engine || creatorPending) return;
+  if (!creatorActiveSubjectMatches()) return;
+  creatorPending = true;
+  hud.clearError();
+  try {
+    const result = await engine.dispatchGraph({
+      type: 'graph/cross-link-add',
+      payload: { fromRoomId, toRoomId },
+    });
+    if (!result.ok) {
+      showCreatorRefusal(result.error.code, result.error.message);
+      return;
+    }
+    refreshCreator();
+    creatorPanel?.showResult('Cross-link added. It is drawn below the room tree.');
+    hud.announce('Cross-link added.');
+  } catch (error) {
+    showCreatorFailure(error);
+  } finally {
+    creatorPending = false;
+  }
+}
+
 async function useInteractable(target: SurfaceInteractable): Promise<void> {
   if (!engine || interactionPending) return;
   interactionPending = true;
@@ -1422,6 +1772,13 @@ async function useInteractable(target: SurfaceInteractable): Promise<void> {
   try {
     if (target.type === 'fishing-pond') {
       await beginFishing(target);
+      return;
+    }
+    if (target.type === 'guild-hall') {
+      // P6: keep the engine's quest-step write, then open the Creator overlay.
+      await engine.interactVillageStructure(target.id);
+      openCreator();
+      hud.announce(`Guild Hall. Quest step: ${getState().session.questStep}. Creator open.`);
       return;
     }
     const result = await engine.interactVillageStructure(target.id);
@@ -1467,6 +1824,17 @@ function installInput(): void {
       return;
     }
 
+    // The Creator panel owns Escape, Tab, and every native control. Window-level
+    // events (synthetic checks, or a key when focus escaped the panel) still close it.
+    if (creatorPanel) {
+      const insidePanel = event.target instanceof Node && creatorPanelHost.contains(event.target);
+      if (event.code === 'Escape' && !insidePanel) {
+        event.preventDefault();
+        closeCreatorPanel();
+      }
+      return;
+    }
+
     if (isTypingTarget(event.target)) return;
 
     if (screen === 'fishing' && fishing) {
@@ -1500,6 +1868,12 @@ function installInput(): void {
         if (activeRoomId) openComposer(activeRoomId);
         else hud.announce('Move into a room to write a note.');
       }
+    }
+    if (event.code === 'KeyC' && !event.repeat && screen === 'surface') {
+      event.preventDefault();
+      if (returnPending || interactionPending || reviewEntryPending) return;
+      openCreator();
+      return;
     }
     if (event.code === 'KeyR' && !event.repeat) {
       event.preventDefault();
@@ -1715,8 +2089,8 @@ function frame(nowMs: number): void {
   jumpQueued = false;
 
   if (level && body && context) {
-    // The composer and the review panel pause the world: no movement, no visits.
-    if (!composer && !reviewPanel) {
+    // The composer, the review panel, and the Creator pause the world.
+    if (!composer && !reviewPanel && !creatorPanel) {
       body = stepBody(body, intent, level, deltaMs);
       if (screen === 'dungeon') {
         updateRoomVisit();
@@ -1791,6 +2165,12 @@ function wireActions(storage: ReturnType<typeof createIndexedDbStorage>): void {
     void storage
       .clear()
       .then(() => {
+        // A reset is a first run again: drop the demo-seed flag with the save.
+        try {
+          window.localStorage.removeItem(DEMO_SEED_FLAG_KEY);
+        } catch {
+          // Storage may be unavailable; the save itself is already cleared.
+        }
         hud.announce('Saved state cleared. Reloading.');
         window.location.reload();
       })
@@ -1811,9 +2191,28 @@ function boot(): void {
 
   const storage = createIndexedDbStorage();
   void openExampleEngine(storage)
-    .then((opened) => {
+    .then(async (opened) => {
       engine = opened;
       hud.clearError();
+
+      // P6: the first-run demo campaign runs before the subscription, so the
+      // first routed state already lists the demo portals.
+      let seededNotice: string | null = null;
+      try {
+        const seeded = await seedDemoSubjectsOnFirstRun(
+          opened,
+          DEMO_SUBJECT_SEEDS,
+          browserSeedFlagStore(),
+        );
+        if (seeded.seeded.length > 0) {
+          seededNotice = `Demo campaign seeded: ${seeded.seeded.length} subjects. Their portals are on the street; press C or visit the Guild Hall to edit them.`;
+        } else if (seeded.failed.length > 0) {
+          hud.showError(`Some demo subjects could not be seeded: ${seeded.failed.join(', ')}.`);
+        }
+      } catch (error) {
+        hud.showError(`Could not seed the demo campaign: ${describe(error)}`);
+      }
+
       startButton.disabled = false;
       wireActions(storage);
       const bootState = getState();
@@ -1824,6 +2223,9 @@ function boot(): void {
       if (bootNotice) {
         showRecovery(bootNotice);
         hud.announce(bootNotice);
+      } else if (seededNotice) {
+        hud.announce(seededNotice);
+        showToast(seededNotice);
       } else if (getState().session.world === 'village') {
         hud.announce('Engine ready. Walk to a door and press E. The Training Grounds leads to the tutorial.');
       }

@@ -2,8 +2,8 @@
 
 | Field | Value |
 |---|---|
-| Plan version | 2.1 |
-| Status | In progress — P0–P5 done; P6 next (P6–P10 planned) |
+| Plan version | 2.3 |
+| Status | In progress — P0–P6 done; P7 next (P7–P10 planned) |
 | Created | 2026-11-23 |
 | Owner | Unassigned |
 | Phase documents | [P0](phase-0-scaffold.md) · [P1](phase-1-dungeon-level.md) · [P2](phase-2-note-loop.md) · [P3](phase-3-surface-village.md) · [P4](phase-4-fishing.md) · [P5](phase-5-review.md) · [P6](phase-6-creator.md) · [P7](phase-7-village.md) · [P8](phase-8-journal.md) · [P9](phase-9-shell-mobile.md) · [P10](phase-10-polish.md) |
@@ -49,10 +49,11 @@ Both README and the host guide state that a side-scrolling host must supply its 
 movement and collision while reusing learning and progression rules
 ([README](../../../README.md#about), [host guide](../../host-ui-guide.md#screen-and-flow-design)).
 
-P0–P4 delivered a playable Scribe + fishing slice. P5–P10 complete the example as a game:
-the missing Creator and Archaeologist phases, a village where every labelled building
-serves a purpose, a journal/settings shell, save portability, touch controls, and a local
-ship pass. They remain strictly additive to the engine; every boundary decision is in
+P0–P4 delivered a playable Scribe + fishing slice. P5 added the Archaeologist review and
+P6 added the Creator, three synthetic demo subjects, and a room-tree editor. P7–P10
+complete the example as a game: a village where every labelled building serves a purpose,
+a journal/settings shell, save portability, touch controls, and a local ship pass. They
+remain strictly additive to the engine; every boundary decision is in
 [ENGINE-BOUNDARY.md](ENGINE-BOUNDARY.md).
 
 ## 2. Confirmed decisions
@@ -502,13 +503,13 @@ Rules:
 | P3 | Done — G3 passed | G3 passed 2026-11-23 | [phase-3 evidence](phase-3-surface-village.md#execution-evidence) |
 | P4 | Done — G4 passed | G4 passed 2026-11-24 | [phase-4 evidence](phase-4-fishing.md#execution-evidence) |
 | P5 | Done — G5 passed | G5 passed 2026-11-24 | [phase-5 evidence](phase-5-review.md#execution-evidence) |
-| P6 | Not started | G6 pending | — |
+| P6 | Done — G6 passed | G6 passed 2026-11-24 | [phase-6 evidence](phase-6-creator.md#execution-evidence) |
 | P7 | Not started | G7 pending | — |
 | P8 | Not started | G8 pending | — |
 | P9 | Not started | G9 pending | — |
 | P10 | Not started | G10 pending | — |
 
-Visual record: [VISUALS.md](VISUALS.md) — P1/G1, P2/G2, P3/G3 frames captured 2026-11-23; P3 layout follow-up 2026-11-24; P3 polish frames 2026-11-24; P4/G4 pond loop frames 2026-11-24 and the interaction-feedback follow-up (`g4b`); P5/G5 review frames 2026-11-24 in a normal and a reduced-motion run (`g5`, `g5rm`), plus the shared-player follow-up (`g5player`). P6–P10 append their own `visuals/pN/` folders as they ship.
+Visual record: [VISUALS.md](VISUALS.md) — P1/G1, P2/G2, P3/G3 frames captured 2026-11-23; P3 layout follow-up 2026-11-24; P3 polish frames 2026-11-24; P4/G4 pond loop frames 2026-11-24 and the interaction-feedback follow-up (`g4b`); P5/G5 review frames 2026-11-24 in a normal and a reduced-motion run (`g5`, `g5rm`), plus the shared-player follow-up (`g5player`); P6/G6 Creator frames 2026-11-24 in a normal run with a keyboard-only segment (`g6`) and a reduced-motion run (`g6rm`). P7–P10 append their own `visuals/pN/` folders as they ship.
 
 ## 15. Assumptions
 
@@ -542,3 +543,4 @@ phase relies on a changed answer.
 | 2026-11-24 | 2.0 | Post-P4 roadmap planned: P5 review, P6 Creator + three demo subjects, P7 village services, P8 journal/settings/assistance, P9 title/save/touch, P10 local polish/docs. Placeholder art and silence remain; local-only release; strict example-only boundary plus [ENGINE-BOUNDARY.md](ENGINE-BOUNDARY.md) |
 | 2026-11-24 | 2.1 | P5 executed and G5 passed; 0–5 review panel, due queue and HUD count, `R` from a room and the street, save/resume/discard across reload, duplicate ledger proof, rejected-write path, `--review` capture mode with a reduced-motion re-run; frames under `visuals/p5/`; engine count unchanged and no `src/` diff |
 | 2026-11-24 | 2.2 | Post-P5 fix: the fishing pond draws the same capsule player as the dungeon and street through `src/render/playerFigure.ts`, replacing its separate rectangular-torso avatar; `g5player` comparison frames in `visuals/p5/` |
+| 2026-11-24 | 2.3 | P6 executed and G6 passed; Creator subject list and room-tree editor, `C`/Guild Hall entry, idempotent three-subject demo seed with a first-run flag, depth-first projection, engine-accurate cascade confirmation, tags and cross-links, typed refusals and rejected writes, created subject entered → cleared → reloaded, four new test files (26 / 153), `--creator` capture mode with keyboard-only and reduced-motion runs; frames under `visuals/p6/`; engine count unchanged and no `src/` diff |
