@@ -1,0 +1,200 @@
+{
+  "capturedAt": "2026-11-24T15:40:36.185Z",
+  "app": "http://localhost:5174/",
+  "viewport": "default headless Firefox (captured window)",
+  "prefix": "2026-11-24-g7rm",
+  "services": true,
+  "reducedMotion": true,
+  "result": {
+    "cleared": {
+      "activeSubjectId": "tutorial-first-walkthrough",
+      "activeStudy": true,
+      "subjects": 4,
+      "world": "dungeon",
+      "rooms": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "visited": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "sessions": 4,
+      "xp": 86,
+      "inventory": 3,
+      "equipped": 0,
+      "xpTotal": 86,
+      "fish": 0,
+      "cleared": 3,
+      "artifacts": 1,
+      "reviewPasses": 0,
+      "reviewPassesTotal": 0,
+      "reviewPassCounts": {
+        "tut-note": 0,
+        "tut-tools": 0,
+        "tut-map": 0
+      },
+      "nextReview": {
+        "tut-note": null,
+        "tut-tools": null,
+        "tut-map": null
+      },
+      "marker": null
+    },
+    "seeded": {
+      "subjectId": "tutorial-first-walkthrough",
+      "added": false,
+      "inventory": 3,
+      "equipped": 0
+    },
+    "reloaded": {
+      "activeSubjectId": null,
+      "activeStudy": false,
+      "subjects": 4,
+      "world": "village",
+      "rooms": [],
+      "visited": [],
+      "sessions": 4,
+      "xp": null,
+      "inventory": 3,
+      "equipped": 0,
+      "xpTotal": 86,
+      "fish": 0,
+      "cleared": 0,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassesTotal": 0,
+      "reviewPassCounts": {},
+      "nextReview": {},
+      "marker": null
+    },
+    "reducedMotion": true,
+    "frames": [
+      {
+        "file": "2026-11-24-g7rm-01-villager.png",
+        "label": "Villager dialogue",
+        "detail": "openedIn=53ms; nearby=\"Wandering Scholar\"; focus=panel-title; text as node=true"
+      },
+      {
+        "file": "2026-11-24-g7rm-02-villager-second-line.png",
+        "label": "Villager cursor advanced",
+        "detail": "second line differs=true; closedIn=25ms"
+      },
+      {
+        "file": "2026-11-24-g7rm-03-library.png",
+        "label": "Library",
+        "detail": "walk found=true; openIn=89ms; role=dialog modal=true; review desk=true; artifact=true; notes=true; focus=service-panel-title"
+      },
+      {
+        "file": "2026-11-24-g7rm-04-library-review.png",
+        "label": "Review opened from the Library",
+        "detail": "openIn=23ms; keyboard focus on \"Review\"; focus=review-rating-0; prompt shown=true; service closed=true; rating controls=6"
+      },
+      {
+        "file": "2026-11-24-g7rm-05-library-review-rated.png",
+        "label": "Review rated from the Library",
+        "detail": "shownIn=32ms; reward copy=true; next review copy=true"
+      },
+      {
+        "file": "2026-11-24-g7rm-06-library-review-closed.png",
+        "label": "Library review closed",
+        "detail": "closedIn=136ms; world=village; activeSubject=null; study session open=false; reviewPasses total=1"
+      },
+      {
+        "file": "2026-11-24-g7rm-07-fish-stand.png",
+        "label": "Fish Stand (display only)",
+        "detail": "walk found=true; openIn=113ms; selling notice=true; buttons=1; focus=service-panel-title"
+      },
+      {
+        "file": "2026-11-24-g7rm-08-workshop.png",
+        "label": "Workshop inventory",
+        "detail": "walk found=true; openIn=98ms; subject=true; equip button=workshop-equip-gear-mwuv1sx7-u579; inventory=3; focus=service-panel-title"
+      },
+      {
+        "file": "2026-11-24-g7rm-09-workshop-not-saved.png",
+        "label": "Workshop save failure",
+        "detail": "shownIn=53ms; not saved=true; panel open=true; equipped 0→0; inventory 3→3"
+      },
+      {
+        "file": "2026-11-24-g7rm-10-workshop-equipped.png",
+        "label": "Workshop equipped",
+        "detail": "shownIn=13ms; equipped=1; result=\"Equipped. The change survives a reload.\""
+      },
+      {
+        "file": "2026-11-24-g7rm-11-trophy-hall.png",
+        "label": "Trophy Hall",
+        "detail": "walk found=true; openIn=43ms; badges section=true; records=true; zeroes shown=true; focus=service-panel-title"
+      },
+      {
+        "file": "2026-11-24-g7rm-12-guild-hall.png",
+        "label": "Guild Hall",
+        "detail": "walk found=true; openIn=30ms; quest board=true; roster=true; creator entry=true; focus=service-panel-title"
+      }
+    ],
+    "error": ""
+  },
+  "frames": [
+    {
+      "file": "2026-11-24-g7rm-01-villager.png",
+      "label": "Villager dialogue",
+      "detail": "openedIn=53ms; nearby=\"Wandering Scholar\"; focus=panel-title; text as node=true"
+    },
+    {
+      "file": "2026-11-24-g7rm-02-villager-second-line.png",
+      "label": "Villager cursor advanced",
+      "detail": "second line differs=true; closedIn=25ms"
+    },
+    {
+      "file": "2026-11-24-g7rm-03-library.png",
+      "label": "Library",
+      "detail": "walk found=true; openIn=89ms; role=dialog modal=true; review desk=true; artifact=true; notes=true; focus=service-panel-title"
+    },
+    {
+      "file": "2026-11-24-g7rm-04-library-review.png",
+      "label": "Review opened from the Library",
+      "detail": "openIn=23ms; keyboard focus on \"Review\"; focus=review-rating-0; prompt shown=true; service closed=true; rating controls=6"
+    },
+    {
+      "file": "2026-11-24-g7rm-05-library-review-rated.png",
+      "label": "Review rated from the Library",
+      "detail": "shownIn=32ms; reward copy=true; next review copy=true"
+    },
+    {
+      "file": "2026-11-24-g7rm-06-library-review-closed.png",
+      "label": "Library review closed",
+      "detail": "closedIn=136ms; world=village; activeSubject=null; study session open=false; reviewPasses total=1"
+    },
+    {
+      "file": "2026-11-24-g7rm-07-fish-stand.png",
+      "label": "Fish Stand (display only)",
+      "detail": "walk found=true; openIn=113ms; selling notice=true; buttons=1; focus=service-panel-title"
+    },
+    {
+      "file": "2026-11-24-g7rm-08-workshop.png",
+      "label": "Workshop inventory",
+      "detail": "walk found=true; openIn=98ms; subject=true; equip button=workshop-equip-gear-mwuv1sx7-u579; inventory=3; focus=service-panel-title"
+    },
+    {
+      "file": "2026-11-24-g7rm-09-workshop-not-saved.png",
+      "label": "Workshop save failure",
+      "detail": "shownIn=53ms; not saved=true; panel open=true; equipped 0→0; inventory 3→3"
+    },
+    {
+      "file": "2026-11-24-g7rm-10-workshop-equipped.png",
+      "label": "Workshop equipped",
+      "detail": "shownIn=13ms; equipped=1; result=\"Equipped. The change survives a reload.\""
+    },
+    {
+      "file": "2026-11-24-g7rm-11-trophy-hall.png",
+      "label": "Trophy Hall",
+      "detail": "walk found=true; openIn=43ms; badges section=true; records=true; zeroes shown=true; focus=service-panel-title"
+    },
+    {
+      "file": "2026-11-24-g7rm-12-guild-hall.png",
+      "label": "Guild Hall",
+      "detail": "walk found=true; openIn=30ms; quest board=true; roster=true; creator entry=true; focus=service-panel-title"
+    }
+  ]
+}

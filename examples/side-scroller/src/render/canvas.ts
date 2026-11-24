@@ -1,6 +1,7 @@
 import type { LevelModel, LevelRoom, Rect } from '../level/model';
 import type { SurfaceFacade, SurfaceModel } from '../level/surfaceLevel';
 import type { Body } from '../physics';
+import type { SurfaceNpc } from '../village/npc';
 import { drawPlayerFigure, PLAYER_COLORS } from './playerFigure';
 
 /**
@@ -37,6 +38,10 @@ export interface RenderInput {
   surface?: SurfaceModel | null;
   /** P3: the facade the player can interact with right now. */
   activeInteractableId?: string | null;
+  /** P7: labelled placeholder figures from `VILLAGE_MAP.npcs`. */
+  npcs?: readonly SurfaceNpc[];
+  /** P7: the NPC the player can talk to right now. */
+  activeNpcId?: string | null;
   badges: Readonly<Record<string, RoomBadge>>;
   reducedMotion: boolean;
 }
@@ -668,6 +673,97 @@ function drawFacadeSign(
   context.setLineDash([]);
 }
 
+/**
+ * One NPC placeholder: a muted capsule with a head, a ground shadow, and a
+ * label pill. Deliberately not the player figure, so the player can tell at a
+ * glance which silhouette is theirs. Static and deterministic; `reducedMotion`
+ * changes nothing because there is no animation to drop.
+ */
+function drawNpc(
+  context: CanvasRenderingContext2D,
+  npc: SurfaceNpc,
+  tileSize: number,
+  active: boolean,
+): void {
+  const top = npc.feetY - npc.h;
+  const bodyW = npc.w * 0.7;
+  const left = npc.x - bodyW / 2;
+  const headRadius = npc.w * 0.32;
+  const bodyTop = top + headRadius * 1.6;
+  const weight = Math.max(1, tileSize * 0.03);
+
+  context.save();
+  context.fillStyle = 'rgba(5, 8, 14, 0.32)';
+  context.beginPath();
+  context.ellipse(npc.x, npc.feetY, npc.w * 0.42, Math.max(1.5, tileSize * 0.05), 0, 0, Math.PI * 2);
+  context.fill();
+
+  context.fillStyle = '#9aa8d6';
+  roundedRectPath(context, left, bodyTop, bodyW, npc.feetY - bodyTop, bodyW * 0.28);
+  context.fill();
+  context.strokeStyle = '#5f6d99';
+  context.lineWidth = weight;
+  context.stroke();
+
+  context.fillStyle = '#c6d0ef';
+  context.beginPath();
+  context.arc(npc.x, top + headRadius, headRadius, 0, Math.PI * 2);
+  context.fill();
+  context.strokeStyle = '#5f6d99';
+  context.stroke();
+
+  // Two ink dots read as eyes without an extra sprite sheet.
+  context.fillStyle = PALETTE.doorInk;
+  context.beginPath();
+  context.arc(npc.x - headRadius * 0.35, top + headRadius * 0.95, Math.max(1, headRadius * 0.14), 0, Math.PI * 2);
+  context.arc(npc.x + headRadius * 0.35, top + headRadius * 0.95, Math.max(1, headRadius * 0.14), 0, Math.PI * 2);
+  context.fill();
+
+  const pad = Math.max(3, tileSize * 0.08);
+  const fontSize = Math.max(9, tileSize * 0.19);
+  context.font = `600 ${fontSize}px ${FONT_STACK}`;
+  const labelWidth = Math.min(
+    Math.max(tileSize * 1.4, context.measureText(npc.label).width + pad * 2),
+    tileSize * 3,
+  );
+  const labelHeight = fontSize + pad * 1.2;
+  const labelX = npc.x - labelWidth / 2;
+  const labelY = top - labelHeight - pad;
+  roundedRectPath(context, labelX, labelY, labelWidth, labelHeight, labelHeight * 0.28);
+  context.fillStyle = active ? 'rgba(47, 107, 93, 0.92)' : PALETTE.labelBackdrop;
+  context.fill();
+  context.strokeStyle = active ? PALETTE.accent : 'rgba(127, 209, 185, 0.22)';
+  context.lineWidth = Math.max(1, tileSize * 0.015);
+  context.stroke();
+
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.fillStyle = PALETTE.facadeInk;
+  context.fillText(
+    fitText(context, npc.label, labelWidth - pad * 1.2),
+    npc.x,
+    labelY + labelHeight / 2,
+  );
+  context.textAlign = 'left';
+  context.textBaseline = 'alphabetic';
+  context.restore();
+}
+
+function drawNpcs(
+  context: CanvasRenderingContext2D,
+  npcs: readonly SurfaceNpc[],
+  activeNpcId: string | null,
+  view: Rect,
+  tileSize: number,
+): void {
+  const ordered = [...npcs].sort((left, right) => left.depth - right.depth || left.id.localeCompare(right.id));
+  for (const npc of ordered) {
+    const bounds: Rect = { x: npc.x - npc.w, y: npc.feetY - npc.h * 2, w: npc.w * 2, h: npc.h * 2 };
+    if (!isVisible(bounds, view, tileSize * 2)) continue;
+    drawNpc(context, npc, tileSize, npc.id === activeNpcId);
+  }
+}
+
 function fitText(context: CanvasRenderingContext2D, text: string, maxWidth: number): string {
   if (maxWidth <= 0 || text.length === 0) return '';
   if (context.measureText(text).width <= maxWidth) return text;
@@ -988,7 +1084,7 @@ function drawVignette(context: CanvasRenderingContext2D, view: Rect): void {
  * (or a zero-sized body) cannot produce negative fills or NaNs.
  */
 export function renderWorld(context: CanvasRenderingContext2D, input: RenderInput): void {
-  const { level, body, camera, activeRoomId, surface, activeInteractableId, badges, reducedMotion } = input;
+  const { level, body, camera, activeRoomId, surface, activeInteractableId, npcs, activeNpcId, badges, reducedMotion } = input;
 
   const view: Rect = {
     x: finiteOr(camera.x, 0),
@@ -1008,6 +1104,9 @@ export function renderWorld(context: CanvasRenderingContext2D, input: RenderInpu
   drawLadders(context, level, view);
   // Labels come after ladders so rungs never cross the text.
   drawRoomLabels(context, level, badges, view);
+  if (surface && npcs && npcs.length > 0) {
+    drawNpcs(context, npcs, activeNpcId ?? null, view, level.tileSize);
+  }
   drawPlayer(context, body, reducedMotion);
 
   context.restore();

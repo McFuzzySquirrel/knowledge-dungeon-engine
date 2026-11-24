@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Knowledge Dungeon — Side-Scroller (P6)</title>
+    <title>Knowledge Dungeon — Side-Scroller (P7)</title>
     <style>
       :root {
         color-scheme: dark;
@@ -113,7 +113,7 @@
       }
       #recovery[hidden] { display: none; }
       #recovery p { margin: 0; flex: 1; color: var(--ink); }
-      #note-panel, #fishing-panel, #review-panel, #creator-panel {
+      #note-panel, #fishing-panel, #review-panel, #creator-panel, #service-panel {
         position: absolute;
         inset: 0;
         z-index: 3;
@@ -122,7 +122,7 @@
         border-radius: 0.5rem;
         background: rgb(11 13 19 / 92%);
       }
-      #note-panel[hidden], #fishing-panel[hidden], #review-panel[hidden], #creator-panel[hidden] { display: none; }
+      #note-panel[hidden], #fishing-panel[hidden], #review-panel[hidden], #creator-panel[hidden], #service-panel[hidden] { display: none; }
       .note-form {
         max-width: 44rem;
         margin: 0 auto;
@@ -170,14 +170,14 @@
         color: var(--ink);
         font: 0.85rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
       }
-      #note-error, #fishing-error, #review-error, #creator-error {
+      #note-error, #fishing-error, #review-error, #creator-error, #service-error {
         padding: 0.5rem 0.75rem;
         border: 1px solid #7a3535;
         border-radius: 0.35rem;
         background: #2a1518;
         color: var(--danger);
       }
-      #note-error[hidden], #fishing-error[hidden], #review-error[hidden], #creator-error[hidden] { display: none; }
+      #note-error[hidden], #fishing-error[hidden], #review-error[hidden], #creator-error[hidden], #service-error[hidden] { display: none; }
       #prompt .prompt-line { display: block; }
       .review-ratings {
         margin: 0.5rem 0;
@@ -258,6 +258,76 @@
         white-space: pre-line;
       }
       .creator-result[hidden] { display: none; }
+      .service-form { max-width: 48rem; }
+      .service-header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 1rem;
+        align-items: baseline;
+        border-bottom: 1px solid #2b3550;
+        padding-bottom: 0.5rem;
+      }
+      .service-header h2 { margin: 0; color: var(--ink); }
+      .service-header p { flex: 1 1 16rem; margin: 0; }
+      .service-section {
+        margin: 0.75rem 0;
+        padding: 0.6rem 0.75rem;
+        border: 1px solid #2b3550;
+        border-radius: 0.35rem;
+      }
+      .service-section h3 { margin-top: 0; }
+      .service-list { padding-left: 0; }
+      .service-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: baseline;
+        margin: 0.3rem 0;
+        color: var(--ink);
+      }
+      .service-row span:first-child { flex: 1 1 16rem; }
+      .service-row.current span:first-child { color: var(--accent); font-weight: 600; }
+      .service-records { grid-template-columns: 14rem 1fr; margin: 0.5rem 0; }
+      .service-artifact {
+        margin: 0.25rem 0 0.5rem;
+        padding: 0.75rem;
+        max-height: 18rem;
+        overflow: auto;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        background: #0b0d13;
+        border: 1px solid #2b3550;
+        border-radius: 0.35rem;
+        color: var(--ink);
+        font: 0.85rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      .service-artifact[hidden] { display: none; }
+      .service-notice {
+        border-left: 3px solid var(--accent);
+        padding: 0.4rem 0.6rem;
+        background: #101725;
+        color: var(--ink);
+      }
+      #npc-dialogue {
+        position: absolute;
+        left: 50%;
+        bottom: 0.75rem;
+        transform: translateX(-50%);
+        z-index: 2;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem 0.75rem;
+        align-items: baseline;
+        max-width: min(30rem, calc(100% - 1.5rem));
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #3a4a6d;
+        border-radius: 0.5rem;
+        background: rgb(20 26 40 / 96%);
+        color: var(--ink);
+      }
+      #npc-dialogue[hidden] { display: none; }
+      #npc-dialogue strong { color: var(--accent); flex: 1 1 100%; }
+      .npc-dialogue-body { margin: 0; flex: 1 1 16rem; color: var(--ink); }
       aside {
         background: var(--panel);
         border: 1px solid #2b3550;
@@ -332,7 +402,7 @@
   <body>
     <main>
       <h1>Knowledge Dungeon — Side-Scroller</h1>
-      <p>Phase P6: walk the village street, create subjects and room graphs in the Creator, enter any portal, write notes, review cleared rooms, and fish with a recall check.</p>
+      <p>Phase P7: walk the village street, open every labelled building as a service, talk to the villagers, create and enter subject portals, write notes, review cleared rooms, and fish with a recall check.</p>
 
       <div class="stage">
         <canvas
@@ -340,7 +410,7 @@
           width="960"
           height="540"
           tabindex="0"
-          aria-label="Side-view village street above a dungeon. Move with A and D or the arrow keys, jump with Space, climb with W and S, press E at a door to enter a portal or visit a building, press C to open the Creator, and press R to review the last-studied dungeon. In a dungeon room, press E to write a note and R to review a cleared room."
+          aria-label="Side-view village street above a dungeon. Move with A and D or the arrow keys, jump with Space, climb with W and S, press E at a door to enter a portal or open a village service, press E beside a person to talk, press C to open the Creator, and press R to review the last-studied dungeon. In a dungeon room, press E to write a note and R to review a cleared room."
           aria-describedby="game-help"
         ></canvas>
         <div id="prompt" hidden></div>
@@ -381,13 +451,22 @@
           aria-labelledby="creator-panel-title"
           hidden
         ></section>
+        <section
+          id="service-panel"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="service-panel-title"
+          aria-describedby="service-panel-subtitle"
+          hidden
+        ></section>
+        <div id="npc-dialogue" role="group" aria-labelledby="npc-dialogue-label" hidden></div>
       </div>
       <p id="game-help" class="controls">
         <kbd>A</kbd>/<kbd>←</kbd> left · <kbd>D</kbd>/<kbd>→</kbd> right · <kbd>Space</kbd> jump ·
         <kbd>W</kbd>/<kbd>↑</kbd> climb up · <kbd>S</kbd>/<kbd>↓</kbd> climb down ·
-        <kbd>E</kbd> enter a door or write a note · <kbd>C</kbd> open the Creator ·
+        <kbd>E</kbd> enter a door, open a service, or write a note · <kbd>C</kbd> open the Creator ·
         <kbd>R</kbd> review a cleared room or the
-        street queue · <kbd>Esc</kbd> close the composer, review, or Creator.
+        street queue · <kbd>Esc</kbd> close the composer, review, Creator, service, or a villager bubble.
         In a review, <kbd>0</kbd>–<kbd>5</kbd> rate recall, <kbd>Enter</kbd> submits,
         <kbd>S</kbd> saves for later, <kbd>D</kbd> discards.
         At a pond, hold and release <kbd>Space</kbd> to cast, press <kbd>Space</kbd> at a bite,

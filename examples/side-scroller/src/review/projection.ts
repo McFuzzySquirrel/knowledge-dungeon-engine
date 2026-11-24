@@ -153,11 +153,21 @@ function compareCandidates(a: ReviewCandidateView, b: ReviewCandidateView): numb
   return (a.nextReviewIso ?? '').localeCompare(b.nextReviewIso ?? '');
 }
 
-/** Project the active subject's review queue. `null` means no active subject. */
-export function projectReview(state: EngineState, nowIso: string): ReviewView | null {
-  const active = subjectOf(state);
-  if (!active) return null;
-  const { subjectId, subject } = active;
+/**
+ * Project one subject's review queue, whether or not it is active.
+ *
+ * P7's Library desk reads the last-studied subject from the street, where
+ * `returnToVillage()` has already cleared `activeSubjectId`. This is the same
+ * projection as {@link projectReview}, without the "must be active" test.
+ * `null` means the subject no longer exists.
+ */
+export function projectReviewForSubject(
+  state: EngineState,
+  subjectId: string,
+  nowIso: string,
+): ReviewView | null {
+  const subject = state.subjects[subjectId];
+  if (!subject) return null;
 
   const candidates: ReviewCandidateView[] = [];
   for (const summary of subject.dungeon.rooms) {
@@ -183,6 +193,13 @@ export function projectReview(state: EngineState, nowIso: string): ReviewView | 
     hasInterrupted: marker !== null,
     interruptedRoomId: marker?.roomId ?? null,
   };
+}
+
+/** Project the active subject's review queue. `null` means no active subject. */
+export function projectReview(state: EngineState, nowIso: string): ReviewView | null {
+  const active = subjectOf(state);
+  if (!active) return null;
+  return projectReviewForSubject(state, active.subjectId, nowIso);
 }
 
 /**

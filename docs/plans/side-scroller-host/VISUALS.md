@@ -23,8 +23,14 @@ passed.
 
 P5 was captured on 2026-11-24 (`visuals/p5/`, two runs: normal and reduced motion).
 P6 was captured on 2026-11-24 (`visuals/p6/`, three runs: normal, reduced motion, and a
-keyboard-only segment). P7–P10 are planned; their `visuals/p7/`–`visuals/p10/` folders
-will be added as each gate is captured.
+keyboard-only segment). P7 was captured on 2026-11-24 (`visuals/p7/`, two runs: normal and
+reduced motion) and shows every village service plus the Library-to-review handoff.
+P8–P10 are planned; their `visuals/p8/`–`visuals/p10/` folders will be added as each gate
+is captured.
+
+The P7 run uses the tutorial fixture and the three synthetic demo subjects. The Workshop
+gear shown is from the engine's own room-clear loot; no learner subject or note appears in
+the record.
 
 The P6 demo subject names — Rivers & Bridges, Sky & Weather, Kitchen Chemistry — are
 synthetic authored content. No learner subject or note appears in the P6 record.
@@ -125,6 +131,31 @@ synthetic authored content. No learner subject or note appears in the P6 record.
 | 2026-11-24 | G6 | uncommitted | Keyboard-only portal entry | [`13-keyboard-enter.png`](visuals/p6/2026-11-24-g6-13-keyboard-enter.png) | Escape returns focus to `#game`; D/E enters the new subject's dungeon |
 | 2026-11-24 | G6 reduced motion | uncommitted | Subject list | [`01-subject-list.png`](visuals/p6/2026-11-24-g6rm-01-subject-list.png) | `prefers-reduced-motion=1`; Creator open; same engine data |
 | 2026-11-24 | G6 reduced motion | uncommitted | Creator panel | [`02-reduced-motion.png`](visuals/p6/2026-11-24-g6rm-02-reduced-motion.png) | No panel animation; reduced-motion flag recorded |
+| 2026-11-24 | G7 | uncommitted | Villager dialogue | [`01-villager.png`](visuals/p7/2026-11-24-g7-01-villager.png) | Wandering Scholar; `E talk` prompt; line as a text node; only "speaks" announced |
+| 2026-11-24 | G7 | uncommitted | Villager cursor advanced | [`02-villager-second-line.png`](visuals/p7/2026-11-24-g7-02-villager-second-line.png) | Second `E` returns a different deterministic line; Escape closes |
+| 2026-11-24 | G7 | uncommitted | Library | [`03-library.png`](visuals/p7/2026-11-24-g7-03-library.png) | Three review candidates; one collected artifact; two uncollected; note topics/dates |
+| 2026-11-24 | G7 | uncommitted | Review opened from the Library | [`04-library-review.png`](visuals/p7/2026-11-24-g7-04-library-review.png) | Keyboard Tab from Close to the first Review button, Enter; service dropped; P5 panel focused |
+| 2026-11-24 | G7 | uncommitted | Review rated from the Library | [`05-library-review-rated.png`](visuals/p7/2026-11-24-g7-05-library-review-rated.png) | Rating 5 via keys; XP and next-review copy; pass recorded |
+| 2026-11-24 | G7 | uncommitted | Library review closed | [`06-library-review-closed.png`](visuals/p7/2026-11-24-g7-06-library-review-closed.png) | World village; active subject null; study session closed; one review pass total |
+| 2026-11-24 | G7 | uncommitted | Fish Stand (display only) | [`07-fish-stand.png`](visuals/p7/2026-11-24-g7-07-fish-stand.png) | Visible "Selling and trading are not part of this build"; empty collection; only Close is a button |
+| 2026-11-24 | G7 | uncommitted | Workshop inventory | [`08-workshop.png`](visuals/p7/2026-11-24-g7-08-workshop.png) | Per-subject inventory from engine loot; equip controls; subject named |
+| 2026-11-24 | G7 | uncommitted | Workshop save failure | [`09-workshop-not-saved.png`](visuals/p7/2026-11-24-g7-09-workshop-not-saved.png) | Simulated quota failure; "Not saved"; equipped 0→0; inventory 3→3 |
+| 2026-11-24 | G7 | uncommitted | Workshop equipped | [`10-workshop-equipped.png`](visuals/p7/2026-11-24-g7-10-workshop-equipped.png) | Enter on the focused Equip button; result copy; equipped=1 |
+| 2026-11-24 | G7 | uncommitted | Trophy Hall | [`11-trophy-hall.png`](visuals/p7/2026-11-24-g7-11-trophy-hall.png) | Labelled badges; fish empty state; records from `statistics` with real zeroes |
+| 2026-11-24 | G7 | uncommitted | Guild Hall | [`12-guild-hall.png`](visuals/p7/2026-11-24-g7-12-guild-hall.png) | Quest step advanced by the door; next step; archetype; roster; Creator entry |
+| 2026-11-24 | G7 | uncommitted | Equipment after reload | [`13-workshop-reload.png`](visuals/p7/2026-11-24-g7-13-workshop-reload.png) | Equipped=1 after reload; Workshop shows Unequip for the same item |
+| 2026-11-24 | G7 reduced motion | uncommitted | Villager dialogue | [`01-villager.png`](visuals/p7/2026-11-24-g7rm-01-villager.png) | `prefers-reduced-motion=1`; same NPC and service path |
+| 2026-11-24 | G7 reduced motion | uncommitted | Villager cursor advanced | [`02-villager-second-line.png`](visuals/p7/2026-11-24-g7rm-02-villager-second-line.png) | Second line differs; Escape closes |
+| 2026-11-24 | G7 reduced motion | uncommitted | Library | [`03-library.png`](visuals/p7/2026-11-24-g7rm-03-library.png) | Three candidates; same engine data with motion disabled |
+| 2026-11-24 | G7 reduced motion | uncommitted | Library review | [`04-library-review.png`](visuals/p7/2026-11-24-g7rm-04-library-review.png) | Keyboard-open review from the desk; focus lands on rating 0 |
+| 2026-11-24 | G7 reduced motion | uncommitted | Review rated | [`05-library-review-rated.png`](visuals/p7/2026-11-24-g7rm-05-library-review-rated.png) | Rating 5 via keys; reward and next-review copy |
+| 2026-11-24 | G7 reduced motion | uncommitted | Library review closed | [`06-library-review-closed.png`](visuals/p7/2026-11-24-g7rm-06-library-review-closed.png) | World village; session closed; one pass total |
+| 2026-11-24 | G7 reduced motion | uncommitted | Fish Stand | [`07-fish-stand.png`](visuals/p7/2026-11-24-g7rm-07-fish-stand.png) | Read-only notice; no transaction |
+| 2026-11-24 | G7 reduced motion | uncommitted | Workshop inventory | [`08-workshop.png`](visuals/p7/2026-11-24-g7rm-08-workshop.png) | Per-subject inventory; equip controls |
+| 2026-11-24 | G7 reduced motion | uncommitted | Workshop save failure | [`09-workshop-not-saved.png`](visuals/p7/2026-11-24-g7rm-09-workshop-not-saved.png) | Same rejected-write path with reduced motion |
+| 2026-11-24 | G7 reduced motion | uncommitted | Workshop equipped | [`10-workshop-equipped.png`](visuals/p7/2026-11-24-g7rm-10-workshop-equipped.png) | Keyboard equip succeeds; equipped=1 |
+| 2026-11-24 | G7 reduced motion | uncommitted | Trophy Hall | [`11-trophy-hall.png`](visuals/p7/2026-11-24-g7rm-11-trophy-hall.png) | Records and empty fish state |
+| 2026-11-24 | G7 reduced motion | uncommitted | Guild Hall | [`12-guild-hall.png`](visuals/p7/2026-11-24-g7rm-12-guild-hall.png) | Quest board, roster, and Creator entry with motion disabled |
 
 Manifests: [`2026-11-23-g1-manifest.json`](visuals/p1/2026-11-23-g1-manifest.json),
 [`2026-11-23-g2-manifest.json`](visuals/p2/2026-11-23-g2-manifest.json),
@@ -134,7 +165,9 @@ Manifests: [`2026-11-23-g1-manifest.json`](visuals/p1/2026-11-23-g1-manifest.jso
 [`2026-11-24-g4-manifest.json`](visuals/p4/2026-11-24-g4-manifest.json),
 [`2026-11-24-g4b-manifest.json`](visuals/p4/2026-11-24-g4b-manifest.json),
 [`2026-11-24-g6-manifest.json`](visuals/p6/2026-11-24-g6-manifest.json),
-[`2026-11-24-g6rm-manifest.json`](visuals/p6/2026-11-24-g6rm-manifest.json).
+[`2026-11-24-g6rm-manifest.json`](visuals/p6/2026-11-24-g6rm-manifest.json),
+[`2026-11-24-g7-manifest.json`](visuals/p7/2026-11-24-g7-manifest.json),
+[`2026-11-24-g7rm-manifest.json`](visuals/p7/2026-11-24-g7rm-manifest.json).
 
 P0 predates this record: it proved boot and storage with a debug panel and captured no
 frames. The record starts at P1.
@@ -593,6 +626,75 @@ no animation; the underlying street camera snaps instead of easing.
 
 Manifests: [`2026-11-24-g6-manifest.json`](visuals/p6/2026-11-24-g6-manifest.json),
 [`2026-11-24-g6rm-manifest.json`](visuals/p6/2026-11-24-g6rm-manifest.json).
+
+## P7 — Village services and interiors
+
+Captured 2026-11-24 from the real app over WebDriver. The run clears all three tutorial
+rooms, collects the root artifact, returns to the street, and opens every service. The
+Library desk hands a due room to the P5 panel with the keyboard; the Workshop write is
+rejected once and then retried with Enter, and the equipped item survives a reload. The
+reduced-motion run repeats the path with `ui.prefersReducedMotion=1`.
+
+```sh
+node examples/side-scroller/scripts/capture-dungeon.mjs \
+  --out docs/plans/side-scroller-host/visuals/p7 \
+  --prefix 2026-11-24-g7 --services
+```
+
+### A villager speaks, and a second press advances the engine cursor
+
+![Villager dialogue](visuals/p7/2026-11-24-g7-01-villager.png)
+
+![Villager second line](visuals/p7/2026-11-24-g7-02-villager-second-line.png)
+
+### The Library: review desk, archive, and collected notes
+
+![Library](visuals/p7/2026-11-24-g7-03-library.png)
+
+### The Library hands a due room to the P5 review, keyboard-only
+
+![Review from the Library](visuals/p7/2026-11-24-g7-04-library-review.png)
+
+![Rated from the Library](visuals/p7/2026-11-24-g7-05-library-review-rated.png)
+
+![Library review closed](visuals/p7/2026-11-24-g7-06-library-review-closed.png)
+
+### The Fish Stand is visibly display-only
+
+![Fish Stand](visuals/p7/2026-11-24-g7-07-fish-stand.png)
+
+### Workshop: a rejected write, then a keyboard equip
+
+![Workshop inventory](visuals/p7/2026-11-24-g7-08-workshop.png)
+
+![Workshop not saved](visuals/p7/2026-11-24-g7-09-workshop-not-saved.png)
+
+![Workshop equipped](visuals/p7/2026-11-24-g7-10-workshop-equipped.png)
+
+### Trophy Hall and Guild Hall
+
+![Trophy Hall](visuals/p7/2026-11-24-g7-11-trophy-hall.png)
+
+![Guild Hall](visuals/p7/2026-11-24-g7-12-guild-hall.png)
+
+### Equipment survives a reload
+
+![Workshop after reload](visuals/p7/2026-11-24-g7-13-workshop-reload.png)
+
+### Reduced motion
+
+![Villager dialogue — reduced motion](visuals/p7/2026-11-24-g7rm-01-villager.png)
+
+![Library — reduced motion](visuals/p7/2026-11-24-g7rm-03-library.png)
+
+![Review from the Library — reduced motion](visuals/p7/2026-11-24-g7rm-04-library-review.png)
+
+![Workshop — reduced motion](visuals/p7/2026-11-24-g7rm-09-workshop-not-saved.png)
+
+![Guild Hall — reduced motion](visuals/p7/2026-11-24-g7rm-12-guild-hall.png)
+
+Manifests: [`2026-11-24-g7-manifest.json`](visuals/p7/2026-11-24-g7-manifest.json),
+[`2026-11-24-g7rm-manifest.json`](visuals/p7/2026-11-24-g7rm-manifest.json).
 
 ## Capturing the next phase
 

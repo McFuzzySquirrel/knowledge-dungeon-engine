@@ -33,18 +33,13 @@ export function interactionFailedMessage(label: string, error: unknown): string 
 }
 
 /**
- * What a non-portal facade does when the learner presses `E`.
+ * What a labelled, non-service facade does when the learner presses `E`.
  *
- * The example has one dungeon screen per subject. Only a subject portal or the
- * Training Grounds opens one; the other buildings are presentation and, for the
- * guild hall, the engine's quest-step advance. The message says so instead of
- * leaving the learner waiting for a screen that will never open.
+ * `keeper-tower` and the central fountain are presentation only in this build;
+ * saying so is more honest than opening a fake interior or a dead prompt.
  */
-export function buildingInteractionMessage(type: string, label: string, questStep: string): string {
-  if (type === 'guild-hall') {
-    return `${label}. Quest step: ${questStep}.`;
-  }
-  return `${label} is a facade in this example. Only subject portals and the Training Grounds open a dungeon.`;
+export function sceneryMessage(label: string): string {
+  return `${label} is scenery in this example; it has no service.`;
 }
 
 /** Shown when `E` is pressed with no structure in reach. */

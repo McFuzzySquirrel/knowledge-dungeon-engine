@@ -1,0 +1,255 @@
+{
+  "capturedAt": "2026-11-24T15:39:15.405Z",
+  "app": "http://localhost:5174/",
+  "viewport": "default headless Firefox (captured window)",
+  "prefix": "2026-11-24-g7",
+  "services": true,
+  "reducedMotion": false,
+  "result": {
+    "cleared": {
+      "activeSubjectId": "tutorial-first-walkthrough",
+      "activeStudy": true,
+      "subjects": 4,
+      "world": "dungeon",
+      "rooms": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "visited": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "sessions": 4,
+      "xp": 86,
+      "inventory": 3,
+      "equipped": 0,
+      "xpTotal": 86,
+      "fish": 0,
+      "cleared": 3,
+      "artifacts": 1,
+      "reviewPasses": 0,
+      "reviewPassesTotal": 0,
+      "reviewPassCounts": {
+        "tut-note": 0,
+        "tut-tools": 0,
+        "tut-map": 0
+      },
+      "nextReview": {
+        "tut-note": null,
+        "tut-tools": null,
+        "tut-map": null
+      },
+      "marker": null
+    },
+    "seeded": {
+      "subjectId": "tutorial-first-walkthrough",
+      "added": false,
+      "inventory": 3,
+      "equipped": 0
+    },
+    "reloaded": {
+      "activeSubjectId": null,
+      "activeStudy": false,
+      "subjects": 4,
+      "world": "village",
+      "rooms": [],
+      "visited": [],
+      "sessions": 4,
+      "xp": null,
+      "inventory": 3,
+      "equipped": 0,
+      "xpTotal": 86,
+      "fish": 0,
+      "cleared": 0,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassesTotal": 0,
+      "reviewPassCounts": {},
+      "nextReview": {},
+      "marker": null
+    },
+    "afterReload": {
+      "activeSubjectId": null,
+      "activeStudy": false,
+      "subjects": 4,
+      "world": "village",
+      "rooms": [],
+      "visited": [],
+      "sessions": 6,
+      "xp": null,
+      "inventory": 3,
+      "equipped": 1,
+      "xpTotal": 92,
+      "fish": 0,
+      "cleared": 0,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassesTotal": 1,
+      "reviewPassCounts": {},
+      "nextReview": {},
+      "marker": null
+    },
+    "reducedMotion": false,
+    "library": {
+      "walked": {
+        "found": true,
+        "nearby": "Library"
+      },
+      "openedMs": 42,
+      "state": {
+        "hidden": false,
+        "text": "Library\n\nReview desk, artifact archive, and collected notes\n\nClose\nReview desk\n\nFirst Dungeon (Tutorial) — 3 reviewable rooms, 3 due now.\n\nThe Note — Not yet reviewed\nReview\nTools of the Trade — Not yet reviewed\nReview\nThe Map & Beyond — Not yet reviewed\nReview\nArtifact archive\nThe Note — Collected 2026-11-24\nShow artifact\nTools of the Trade — Not collected\nTake it from the room note panel first.\nThe Map & Beyond — Not collected\nTake it from the room note panel first.\n\nCollected artifacts open here as plain text. An uncollected artifact stays hidden until you take it from the room.\n\nCollected notes\nThe Note — collected 2026-11-24\n\nTopics and dates only. Note text stays in the room where it was written.",
+        "focus": "service-panel-title",
+        "role": "dialog",
+        "modal": "true",
+        "error": "",
+        "result": "",
+        "npc": null
+      }
+    },
+    "fishStand": {
+      "walked": {
+        "found": true,
+        "nearby": "Fish Stand"
+      },
+      "openedMs": 45,
+      "state": {
+        "hidden": false,
+        "text": "Fish Stand\n\nThe fish collection — display only\n\nClose\nFish collection\n\nSelling and trading are not part of this build. The stand displays the fish you have kept.\n\nNo fish yet. Clear a room, then cast at a fishing pond and keep a catch to display it here.",
+        "focus": "service-panel-title",
+        "role": "dialog",
+        "modal": "true",
+        "error": "",
+        "result": "",
+        "npc": null
+      }
+    },
+    "workshop": {
+      "walked": {
+        "found": true,
+        "nearby": "Artisan Workshop"
+      },
+      "openedMs": 15,
+      "state": {
+        "hidden": false,
+        "text": "Artisan Workshop\n\nInventory and equipment for the active subject\n\nClose\nInventory — First Dungeon (Tutorial)\n\nEquipment is stored per subject. Equip or unequip one item at a time; changes are saved through the engine and survive a reload.\n\nInkwell Charm — common — accessory\nEquip\nQuill of Quick Thought — common — weapon\nEquip\nScholar's Cap — common — head\nEquip",
+        "focus": "service-panel-title",
+        "role": "dialog",
+        "modal": "true",
+        "error": "",
+        "result": "",
+        "npc": null
+      }
+    },
+    "equipButton": {
+      "id": "workshop-equip-gear-mwuuzncv-e5fu",
+      "disabled": false
+    },
+    "trophy": {
+      "walked": {
+        "found": true,
+        "nearby": "Trophy Hall"
+      },
+      "openedMs": 43,
+      "state": {
+        "hidden": false,
+        "text": "Trophy Hall\n\nBadges, fish, and records from the engine\n\nClose\nBadges\nCreator phase complete\nScribe phase complete\nFish collection\n\nNo fish yet. Clear a room, then cast at a fishing pond and keep a catch to display it here.\n\nRecords\n\nDevice totals from the engine’s statistics. A fresh save reports zero, not an error.\n\nSessions completed\n6\nStudy time\n0 min\nNotes submitted\n3\nReviews completed\n1\nFish kept\n0\nDistinct fish species\n0\nRooms visited\n3\nActive days\n1\nConsecutive study day streak\n1\nConsecutive review day streak\n1\nSubjects with proven mastery\n0",
+        "focus": "service-panel-title",
+        "role": "dialog",
+        "modal": "true",
+        "error": "",
+        "result": "",
+        "npc": null
+      }
+    },
+    "guild": {
+      "walked": {
+        "found": true,
+        "nearby": "Guild Hall"
+      },
+      "openedMs": 76,
+      "state": {
+        "hidden": false,
+        "text": "Guild Hall\n\nQuest board, archetype, and the subject roster\n\nClose\nQuest board\nCurrent step\nclear-room\nNext step\nwrite-note\nArchetype\nscholar\n\nThe Guild Hall advances the quest step when you use its door. Quests and rewards are the engine’s, not the host’s.\n\nSubject roster\nKitchen Chemistry — 0 / 4 rooms cleared\nRivers & Bridges — 0 / 4 rooms cleared\nSky & Weather — 0 / 5 rooms cleared\nFirst Dungeon (Tutorial) — 3 / 3 rooms cleared\nOpen Creator\n\nThe Creator edits the active subject. The street shortcut C opens it too.",
+        "focus": "service-panel-title",
+        "role": "dialog",
+        "modal": "true",
+        "error": "",
+        "result": "",
+        "npc": null
+      }
+    },
+    "unequipShown": true,
+    "streetMs": 3453,
+    "error": ""
+  },
+  "frames": [
+    {
+      "file": "2026-11-24-g7-01-villager.png",
+      "label": "Villager dialogue",
+      "detail": "openedIn=79ms; nearby=\"Wandering Scholar\"; focus=panel-title; text as node=true"
+    },
+    {
+      "file": "2026-11-24-g7-02-villager-second-line.png",
+      "label": "Villager cursor advanced",
+      "detail": "second line differs=true; closedIn=29ms"
+    },
+    {
+      "file": "2026-11-24-g7-03-library.png",
+      "label": "Library",
+      "detail": "walk found=true; openIn=42ms; role=dialog modal=true; review desk=true; artifact=true; notes=true; focus=service-panel-title"
+    },
+    {
+      "file": "2026-11-24-g7-04-library-review.png",
+      "label": "Review opened from the Library",
+      "detail": "openIn=72ms; keyboard focus on \"Review\"; focus=review-rating-0; prompt shown=true; service closed=true; rating controls=6"
+    },
+    {
+      "file": "2026-11-24-g7-05-library-review-rated.png",
+      "label": "Review rated from the Library",
+      "detail": "shownIn=98ms; reward copy=true; next review copy=true"
+    },
+    {
+      "file": "2026-11-24-g7-06-library-review-closed.png",
+      "label": "Library review closed",
+      "detail": "closedIn=71ms; world=village; activeSubject=null; study session open=false; reviewPasses total=1"
+    },
+    {
+      "file": "2026-11-24-g7-07-fish-stand.png",
+      "label": "Fish Stand (display only)",
+      "detail": "walk found=true; openIn=45ms; selling notice=true; buttons=1; focus=service-panel-title"
+    },
+    {
+      "file": "2026-11-24-g7-08-workshop.png",
+      "label": "Workshop inventory",
+      "detail": "walk found=true; openIn=15ms; subject=true; equip button=workshop-equip-gear-mwuuzncv-e5fu; inventory=3; focus=service-panel-title"
+    },
+    {
+      "file": "2026-11-24-g7-09-workshop-not-saved.png",
+      "label": "Workshop save failure",
+      "detail": "shownIn=68ms; not saved=true; panel open=true; equipped 0→0; inventory 3→3"
+    },
+    {
+      "file": "2026-11-24-g7-10-workshop-equipped.png",
+      "label": "Workshop equipped",
+      "detail": "shownIn=11ms; equipped=1; result=\"Equipped. The change survives a reload.\""
+    },
+    {
+      "file": "2026-11-24-g7-11-trophy-hall.png",
+      "label": "Trophy Hall",
+      "detail": "walk found=true; openIn=43ms; badges section=true; records=true; zeroes shown=true; focus=service-panel-title"
+    },
+    {
+      "file": "2026-11-24-g7-12-guild-hall.png",
+      "label": "Guild Hall",
+      "detail": "walk found=true; openIn=76ms; quest board=true; roster=true; creator entry=true; focus=service-panel-title"
+    },
+    {
+      "file": "2026-11-24-g7-13-workshop-reload.png",
+      "label": "Equipment after reload",
+      "detail": "equipped=1; walk found=true; subject=true; unequip shown=true; focus=service-panel-title"
+    }
+  ]
+}

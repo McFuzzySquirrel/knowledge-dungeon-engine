@@ -24,12 +24,12 @@ the gate outcome and the baseline facts later gates compare against.
 
 | Field | Value |
 |---|---|
-| Plan version | 2.3 |
+| Plan version | 2.4 |
 | Plan written | 2026-11-23 |
-| Engine test baseline | **13 files / 280 tests at `3951737`; unchanged after P0–P6** |
+| Engine test baseline | **13 files / 280 tests at `3951737`; unchanged after P0–P7** |
 | First gate run | 2026-11-23 |
-| Latest gate passed | G6 (2026-11-24) |
-| Current phase | P0–P6 complete; P7–P10 planned, P7 next |
+| Latest gate passed | G7 (2026-11-24) |
+| Current phase | P0–P7 complete; P8–P10 planned, P8 next |
 | Open failures | None recorded; accepted P2-O1 performance exception and the P4 amendments below |
 
 ## Gate index
@@ -45,7 +45,7 @@ the gate outcome and the baseline facts later gates compare against.
 | G4 | [P4 — fishing](phase-4-fishing.md#execution-evidence) | 2026-11-24 | uncommitted (base `203011d`) | pass | 13 / 280 | 18 / 106 | [P4 evidence](phase-4-fishing.md#execution-evidence) |
 | G5 | [P5 — review](phase-5-review.md#execution-evidence) | 2026-11-24 | uncommitted (base `6525c22`) | pass | 13 / 280 | 22 / 135 | [P5 evidence](phase-5-review.md#execution-evidence) |
 | G6 | [P6 — creator](phase-6-creator.md#execution-evidence) | 2026-11-24 | uncommitted (base `46e28b3`) | pass | 13 / 280 | 26 / 153 | [P6 evidence](phase-6-creator.md#execution-evidence) |
-| G7 | [P7 — village services](phase-7-village.md#execution-evidence) | — | — | Planned | — | — | — |
+| G7 | [P7 — village services](phase-7-village.md#execution-evidence) | 2026-11-24 | uncommitted (base `d775008`) | pass | 13 / 280 | 28 / 176 | [P7 evidence](phase-7-village.md#execution-evidence) |
 | G8 | [P8 — journal](phase-8-journal.md#execution-evidence) | — | — | Planned | — | — | — |
 | G9 | [P9 — shell and touch](phase-9-shell-mobile.md#execution-evidence) | — | — | Planned | — | — | — |
 | G10 | [P10 — local polish](phase-10-polish.md#execution-evidence) | — | — | Planned | — | — | — |
@@ -68,6 +68,7 @@ changes size, add a new baseline row and explain why.
 | 2026-11-24 | uncommitted (base `066844b`) | 13 | 280 | pass | pass | 0 `examples/` paths | Interaction-feedback follow-up; no baseline change; example suite 19 files / 108 tests |
 | 2026-11-24 | uncommitted (base `6525c22`) | 13 | 280 | pass | pass | 0 `examples/` paths | G5 checkpoint; no baseline change; example suite 22 files / 135 tests; `src` diff empty |
 | 2026-11-24 | uncommitted (base `46e28b3`) | 13 | 280 | pass | pass | 0 `examples/` paths | G6 checkpoint; no baseline change; example suite 26 files / 153 tests; `src` diff empty |
+| 2026-11-24 | uncommitted (base `d775008`) | 13 | 280 | pass | pass | 0 `examples/` paths | G7 checkpoint; no baseline change; example suite 28 files / 176 tests; `src` status and diff empty; example-only `happy-dom` dev dependency added for the shell focus test |
 
 ## Per-task evidence links
 

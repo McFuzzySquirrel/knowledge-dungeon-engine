@@ -11,7 +11,7 @@ documented root entries) leaves the engine exactly as it was. The full rule set 
 
 | Field | Value |
 | --- | --- |
-| Status | P0–P6 complete; P7–P10 planned |
+| Status | P0–P7 complete; P8–P10 planned |
 | Stack | Vanilla TypeScript + Vite + Canvas 2D |
 | Storage | IndexedDB, one `EngineState` record |
 | Package | Private, standalone (`package.json`, lockfile, `tsconfig`, Vitest config) |
@@ -44,18 +44,24 @@ discover `examples/**` (the root Vitest config excludes it).
 
 | Area | Behaviour |
 | --- | --- |
-| Village street | Side-view facades and subject portals from `villageStructures()`; the entrance shaft leads down to the dungeon |
+| Village street | Side-view facades, subject portals, and labelled villagers from engine data; the entrance shaft leads down to the dungeon |
 | Dungeon | Generated map in side view, gravity/jump/ladders, AABB collision, continuous camera, one study visit per room entry |
 | Note loop | Composer drives `submitNote`; drafts name the exact missing sections; clears award XP and an artifact |
 | Review | Cleared rooms show `E write a note` and `R review`; ratings 0–5, due labels, save/resume/discard across reload, one reward per (room, pass) |
+| Library | Review desk over the last-studied subject, artifact archive with collected state, and collected-note topics/dates (note text is not reprinted) |
+| Guild Hall | Quest board, next step, archetype, subject roster, and the second Creator entry point |
+| Trophy Hall | Labelled badges, fish collection, and device records from `statistics`; explicit zero/empty states |
+| Workshop | Per-subject inventory; equip/unequip go through `engine.equipItem` / `unequipItem`; failures show "Not saved" and keep the previous equipment |
+| Fish Stand | Display-only fish collection with a visible "Selling and trading are not part of this build" note and no transaction control |
+| Villagers | Labelled placeholder figures; `E` cycles deterministic engine lines, the cursor is host-local and resets on reload, and only "name speaks" is announced |
 | Fishing | Pond entry after a clear, cast/bite/reel, recall question from a cleared room, keep/release |
 | Creator | Subject list, create form, room-tree editor (add, reparent, remove with cascade count, tags, cross-links), typed refusals; `C` or the Guild Hall opens it |
 | Demo campaign | Three synthetic subjects seed on a first boot and appear as ordinary portals; a first-run flag prevents resurrection after deletion |
-| Persistence | Reload keeps rooms, XP, fish, review schedule, and any saved review marker |
+| Persistence | Reload keeps rooms, XP, fish, equipment, review schedule, and any saved review marker |
 
-P7–P10 add village services, the journal and settings, title/save portability, touch
-controls, and local polish. Placeholder rectangles and silence are deliberate: this
-example ships no art or audio.
+P8–P10 add the journal and settings, title/save portability, touch controls, and local
+polish. Placeholder rectangles and silence are deliberate: this example ships no art or
+audio.
 
 ## Controls
 
@@ -64,11 +70,11 @@ example ships no art or audio.
 | `A`/`D` or `←`/`→` | Move |
 | `Space` | Jump (hold/release to cast in a pond; press at a bite to reel) |
 | `W`/`S` or `↑`/`↓` | Climb ladders |
-| `E` | Enter a portal / use a building / write a note |
+| `E` | Enter a portal / open a village service / talk to a villager / write a note |
 | `C` | Open the Creator from the street (the Guild Hall does the same) |
 | `R` | Review a cleared room, or the last-studied subject's queue from the street |
 | `0`–`5`, `Enter`, `S`, `D`, `Escape` | In review: rate, submit, save for later, discard, close |
-| `Escape` | Close a dialog, leave a pond, or close a review |
+| `Escape` | Close a dialog, a service, leave a pond, or close a review |
 
 Everything on the critical path is keyboard-only. The canvas is focusable and the DOM
 side panel mirrors progress and outcomes as text; learner notes and prompts are treated
@@ -84,9 +90,10 @@ src/storage.ts              IndexedDB EngineStorage adapter
 src/level/                  DungeonMap / VillageMapDef -> side-view LevelModel
 src/physics.ts              fixed-step gravity, ladders, AABB movement
 src/render/                 Canvas world and DOM HUD
-src/ui/                     note panel, review panel, Creator panel, recall dialog, prompts
+src/ui/                     note panel, review panel, Creator panel, service shell, interiors, NPC bubble
 src/review/                 pure review projections and copy (P5)
 src/creator/                demo seeds and pure Creator projections (P6)
+src/village/                service projections and NPC placement (P7)
 src/fishing/                pond bridge, machine session, scene (P4)
 src/projection.ts           EngineState -> view models, pure
 tests/                      one suite per phase, isolated from the root suite
@@ -113,7 +120,8 @@ node examples/side-scroller/scripts/capture-dungeon.mjs \
 ```
 
 Modes: default dungeon, `--note-loop`, `--surface`, `--fishing`, `--review`,
-`--creator`; add `--low-fps` or `--reduced-motion` for the environment variants.
+`--creator`, `--services`; add `--low-fps` or `--reduced-motion` for the environment
+variants.
 
 ## Deleting the example
 

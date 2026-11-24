@@ -1,4 +1,4 @@
-import type { village } from '@/index';
+import { village, villageInteractions } from '@/index';
 import type { CollisionWorld, LevelModel, LevelRoom, Rect } from './model';
 
 /**
@@ -38,7 +38,7 @@ const DOOR_HEIGHT_TILES = 2;
 const INTERACTION_WIDTH_TILES = 2.4;
 const INTERACTION_HEIGHT_TILES = 1.5;
 /** Spread the top-down grid horizontally so the side-view street reads openly. */
-const SURFACE_X_SPREAD = 1.6;
+export const SURFACE_X_SPREAD = 1.6;
 /** Minimum gap between two building facades, in tiles. */
 const BUILDING_GAP_TILES = 3;
 /** Left margin before the first building, in tiles. */
@@ -362,11 +362,27 @@ function distanceSqToRect(x: number, y: number, rect: Rect): number {
   return dx * dx + dy * dy;
 }
 
+/** Distance from a point to a rect in world pixels; zero when the point is inside. */
+export function distanceToRect(x: number, y: number, rect: Rect): number {
+  return Math.sqrt(distanceSqToRect(x, y, rect));
+}
+
+/**
+ * The engine's structure-approach radius, expressed in this world's pixels.
+ *
+ * `VILLAGE_NEARBY_RANGES` is authored against the top-down `VILLAGE_TILE_SIZE`;
+ * the side view renders the same village at the dungeon's render scale. Scaling
+ * by the tile ratio keeps one proximity rule instead of a second host constant.
+ */
+export function structureApproachRange(tileSize: number): number {
+  return villageInteractions.VILLAGE_NEARBY_RANGES.structure * (tileSize / village.VILLAGE_TILE_SIZE);
+}
+
 /** The closest labelled facade, or `null` when nothing is within `rangePx`. */
 export function findNearestInteractable(
   surface: SurfaceModel,
   point: { x: number; y: number },
-  rangePx: number = surface.tileSize * 0.6,
+  rangePx: number = structureApproachRange(surface.tileSize),
 ): SurfaceInteractable | null {
   let best: SurfaceInteractable | null = null;
   let bestDistance = rangePx * rangePx;

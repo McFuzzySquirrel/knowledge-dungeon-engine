@@ -1,4 +1,4 @@
-import { fishingState, village, type EngineState, type KnowledgeDungeonEngine } from '@/index';
+import { fishingState, village, villageInteractions, type EngineState, type KnowledgeDungeonEngine } from '@/index';
 import type {
   ReviewPassCompleteOutcome,
   ReviewSessionDiscardOutcome,
@@ -19,7 +19,6 @@ import { fishingControlHint, renderFishingScene } from './fishing/scene';
 import { buildDungeonLevel, DEFAULT_TILE_SIZE, type LevelModel } from './level/model';
 import {
   buildSurface,
-  findNearestInteractable,
   placeDungeonBelow,
   type SurfaceInteractable,
   type SurfaceModel,
@@ -55,13 +54,13 @@ import { projectRoute, type Screen } from './routing';
 import { createIndexedDbStorage } from './storage';
 import { mountNotePanel, type NotePanel } from './ui/notePanel';
 import {
-  buildingInteractionMessage,
   interactionFailedMessage,
   notCollectedMessage,
   notSavedMessage,
   nothingInReachMessage,
   refusalMessage,
   returnFailedMessage,
+  sceneryMessage,
 } from './ui/outcomes';
 import { createPrompts } from './ui/prompts';
 import { mountRecallDialog, type RecallDialog, type RecallQuestionView } from './ui/recallDialog';
@@ -71,6 +70,31 @@ import {
   type CreatorCreateInput,
   type CreatorPanel,
 } from './ui/creatorPanel';
+import { mountServicePanel, type ServicePanel } from './ui/servicePanel';
+import { mountNpcDialog, type NpcDialog } from './ui/npcDialog';
+import { renderLibrary } from './ui/libraryPanel';
+import { renderGuild } from './ui/guildPanel';
+import { renderTrophy } from './ui/trophyPanel';
+import { renderWorkshop } from './ui/workshopPanel';
+import { renderFishStand } from './ui/fishStandPanel';
+import {
+  equipmentSubjectId,
+  projectFishStand,
+  projectGuild,
+  projectLibrary,
+  projectServiceShell,
+  projectTrophy,
+  projectWorkshop,
+  serviceForStructure,
+  type VillageServiceId,
+} from './village/projection';
+import {
+  npcQuoteIndex,
+  placeSurfaceNpcs,
+  projectNpcLine,
+  selectNearbySurfaceTargets,
+  type SurfaceNpc,
+} from './village/npc';
 
 function must<T extends Element>(selector: string): T {
   const element = document.querySelector<T>(selector);
@@ -93,6 +117,8 @@ const notePanelHost = must<HTMLElement>('#note-panel');
 const fishingPanelHost = must<HTMLElement>('#fishing-panel');
 const reviewPanelHost = must<HTMLElement>('#review-panel');
 const creatorPanelHost = must<HTMLElement>('#creator-panel');
+const servicePanelHost = must<HTMLElement>('#service-panel');
+const npcDialogHost = must<HTMLElement>('#npc-dialogue');
 const leaveFishingButton = must<HTMLButtonElement>('#leave-fishing');
 const recoveryBanner = must<HTMLDivElement>('#recovery');
 const recoveryText = must<HTMLParagraphElement>('#recovery-text');
@@ -194,6 +220,21 @@ let creatorSubjectId: string | null = null;
 /** True when the Creator activated the subject and closing must end its session. */
 let creatorActivatedSubject = false;
 let creatorPending = false;
+
+/** The open village service (P7), or `null`. Every service pauses the world. */
+let servicePanel: ServicePanel | null = null;
+let serviceId: VillageServiceId | null = null;
+let servicePending = false;
+/** True when opening the Workshop activated a subject and closing must end it. */
+let serviceActivatedSubject = false;
+let libraryReviewPending = false;
+
+/** P7: NPC figures on the street and host-local conversation state. */
+let surfaceNpcs: SurfaceNpc[] = [];
+let activeNpc: SurfaceNpc | null = null;
+let npcDialog: NpcDialog | null = null;
+const npcCursors = new Map<string, villageInteractions.VillageNpcLineCursor>();
+let lastQuestStep: string | null = null;
 
 /** One host clock read per projection. The panel does not tick. */
 function reviewNow(): string {
@@ -322,6 +363,8 @@ function hideToast(): void {
 
 function resetDungeonLevel(): void {
   dropReviewPanel();
+  dropServicePanel();
+  closeNpcDialog(false);
   level = null;
   body = null;
   view = null;
@@ -333,18 +376,22 @@ function resetDungeonLevel(): void {
 }
 
 function syncPrompt(): void {
-  if (composer || reviewPanel || creatorPanel) {
+  if (composer || reviewPanel || creatorPanel || servicePanel) {
     prompts.setRoom(null, true);
     prompts.setTarget(null, true);
     return;
   }
   if (screen === 'surface') {
-    prompts.setTarget(
-      activeInteractable
-        ? { id: activeInteractable.id, action: interactionVerb(activeInteractable.type), label: activeInteractable.label }
-        : null,
-      interactionPending || returnPending,
-    );
+    const target = activeInteractable
+      ? {
+          id: activeInteractable.id,
+          action: interactionVerb(activeInteractable.type),
+          label: activeInteractable.label,
+        }
+      : activeNpc
+        ? { id: activeNpc.id, action: 'talk', label: activeNpc.label }
+        : null;
+    prompts.setTarget(target, interactionPending || returnPending);
     return;
   }
   if (screen === 'dungeon' && level && body) {
@@ -366,8 +413,12 @@ function interactionVerb(type: string): string {
       return 'enter';
     case 'fishing-pond':
       return 'fish';
+    case 'library':
+      return 'review';
+    case 'workshop':
+      return 'equip';
     default:
-      return 'visit';
+      return 'inspect';
   }
 }
 
@@ -384,7 +435,7 @@ function setCanvasMode(mode: Screen): void {
       ? 'Fishing pond. Hold Space to charge the cast and release to cast. Press Space at a bite to reel in. Use A and D or the arrow keys to walk the shore. Press Escape to leave the pond. Choose keep or release in the dialog when a fish is caught.'
       : mode === 'dungeon'
         ? 'Side-view dungeon. Move with A and D or the arrow keys, jump with Space, climb with W and S, press E in a room to write a note, and press R in a cleared room to review it.'
-        : 'Side-view village street above a dungeon. Move with A and D or the arrow keys, jump with Space, climb with W and S, press E at a door to enter a portal or visit a building, and press R to review the last-studied dungeon.';
+        : 'Side-view village street above a dungeon. Move with A and D or the arrow keys, jump with Space, climb with W and S, press E at a door to enter a portal or open a village service, press E beside a person to talk, press C to open the Creator, and press R to review the last-studied dungeon.';
   canvas.setAttribute('aria-label', label);
 }
 
@@ -749,6 +800,8 @@ function enterFishing(state: EngineState): void {
   const previous = screen;
   screen = 'fishing';
   closeComposer(true);
+  dropServicePanel();
+  closeNpcDialog(false);
   teardownDungeonAndSurface();
 
   const sameSession =
@@ -864,6 +917,11 @@ async function beginFishing(target: SurfaceInteractable): Promise<void> {
 function enterSurface(state: EngineState, structures: village.VillageStructure[], previous: Screen | null): void {
   const model = buildStreet(structures);
   surface = model;
+  surfaceNpcs = placeSurfaceNpcs(surfaceMap().npcs, model);
+  const keptNpcId = activeNpc?.id ?? null;
+  if (keptNpcId !== null) {
+    activeNpc = surfaceNpcs.find((npc) => npc.id === keptNpcId) ?? null;
+  }
   surfaceView = projectSurface(state, structures);
   view = null;
   badges = {};
@@ -874,6 +932,9 @@ function enterSurface(state: EngineState, structures: village.VillageStructure[]
 
   if (previous !== 'surface') {
     resetDungeonLevel();
+    closeNpcDialog(false);
+    activeNpc = null;
+    npcCursors.clear();
     // Returning from the dungeon places the player at the entrance; leaving a
     // pond places them beside that pond; boot uses the engine-authored start.
     const spawn =
@@ -910,7 +971,7 @@ function enterSurface(state: EngineState, structures: village.VillageStructure[]
   const overlayWasVisible = overlay.hidden === false;
   overlay.hidden = true;
   if (overlayWasVisible) panelTitle.focus({ preventScroll: true });
-  hud.updateSurface(surfaceView, null);
+  hud.updateSurface(surfaceView, null, activeNpc ? activeNpc.label : null);
 }
 
 function enterDungeon(
@@ -948,6 +1009,8 @@ function enterDungeon(
 
   screen = 'dungeon';
   lastStudiedSubjectId = subjectId;
+  dropServicePanel();
+  closeNpcDialog(false);
   teardownFishing();
   hideRecovery();
   hideToast();
@@ -970,6 +1033,15 @@ function onState(state: EngineState): void {
   const route = projectRoute(state);
   const structures = engine ? engine.villageStructures() : [];
   refreshCreator();
+  refreshService();
+
+  // A quest step change invalidates every NPC cursor: its index belonged to a
+  // script that is no longer on screen (the engine applies the same rule).
+  if (lastQuestStep !== null && state.session.questStep !== lastQuestStep) {
+    npcCursors.clear();
+    closeNpcDialog(false);
+  }
+  lastQuestStep = state.session.questStep;
 
   if (route.notice && route.screen === 'surface') hud.announce(route.notice);
 
@@ -1763,6 +1835,226 @@ async function linkCreatorRooms(fromRoomId: string, toRoomId: string): Promise<v
   }
 }
 
+// ── Village services (P7) ────────────────────────────────────────────────────
+
+/** Re-project the open service from committed state; the panel never mutates. */
+function refreshService(): void {
+  if (!servicePanel || !serviceId) return;
+  servicePanel.update(renderServiceContent(serviceId));
+}
+
+function renderServiceContent(id: VillageServiceId): HTMLElement {
+  const state = getState();
+  switch (id) {
+    case 'library':
+      return renderLibrary(projectLibrary(state, reviewNow()), {
+        onReview: (roomId) => {
+          void reviewFromLibrary(roomId);
+        },
+      });
+    case 'guild-hall':
+      return renderGuild(projectGuild(state), {
+        onOpenCreator: () => {
+          dropServicePanel();
+          syncPrompt();
+          openCreator();
+        },
+      });
+    case 'trophy-hall':
+      return renderTrophy(projectTrophy(state, reviewNow()));
+    case 'workshop':
+      return renderWorkshop(projectWorkshop(state), {
+        onEquip: (itemId) => {
+          void changeEquipment('equip', itemId);
+        },
+        onUnequip: (itemId) => {
+          void changeEquipment('unequip', itemId);
+        },
+      });
+    case 'fish-stand':
+      return renderFishStand(projectFishStand(state));
+  }
+}
+
+/** Detach the shell without dispatching, focusing, or ending a session. */
+function dropServicePanel(): void {
+  if (!servicePanel) return;
+  servicePanel.close();
+  servicePanel = null;
+  serviceId = null;
+  servicePending = false;
+  serviceActivatedSubject = false;
+}
+
+function closeVillageService(): void {
+  if (!servicePanel) return;
+  if (servicePending) {
+    hud.announce('A service command is still pending. Wait for it to finish.');
+    return;
+  }
+  const deactivate = serviceActivatedSubject;
+  const title = serviceId ? projectServiceShell(serviceId).title : 'Service';
+  dropServicePanel();
+  syncPrompt();
+  if (deactivate && engine && getState().session.world === 'village') {
+    void engine
+      .returnToVillage()
+      .then(() => hud.announce(`${title} closed. The study session is closed; you are on the street.`))
+      .catch((error: unknown) => {
+        const message = `Could not close the service study session: ${describe(error)}`;
+        hud.showError(message);
+        hud.announce('Could not close the service study session.');
+      });
+    return;
+  }
+  hud.announce(`${title} closed.`);
+}
+
+/**
+ * Open one interior.
+ *
+ * The Workshop's equipment commands require an active subject, so opening it
+ * activates the subject the projection names and closing returns to the village
+ * to end that session (K-15). Every other service is read-only until the learner
+ * chooses a review or an equipment change.
+ */
+async function openVillageService(id: VillageServiceId): Promise<void> {
+  if (!engine || servicePanel) return;
+  clearInput();
+  hideToast();
+  hud.clearError();
+  closeNpcDialog(false);
+  serviceActivatedSubject = false;
+
+  if (id === 'workshop') {
+    const subjectId = equipmentSubjectId(getState());
+    if (subjectId && getState().activeSubjectId !== subjectId) {
+      try {
+        await engine.activateSubject(subjectId);
+        serviceActivatedSubject = true;
+      } catch (error) {
+        const message = `Could not open the Workshop: ${describe(error)}`;
+        hud.showError(message);
+        showToast(message, 'error');
+        hud.announce('The Workshop could not be opened.');
+        return;
+      }
+    }
+  }
+
+  serviceId = id;
+  const shell = projectServiceShell(id);
+  servicePanel = mountServicePanel({
+    root: servicePanelHost,
+    shell,
+    content: renderServiceContent(id),
+    returnFocus: canvas,
+    callbacks: { onClose: closeVillageService },
+  });
+  syncPrompt();
+  hud.announce(`${shell.title} open. Tab moves through the service; Escape closes.`);
+}
+
+/**
+ * The Library's review desk hands a room id here.
+ *
+ * Review commands need an active subject. The desk projects the last-studied
+ * one, so the host activates it if needed and records that closing the P5 panel
+ * must return to the village (K-15). The service shell is closed before the
+ * review mounts so only one modal owns focus.
+ */
+async function reviewFromLibrary(roomId: string): Promise<void> {
+  if (!engine || reviewPanel || libraryReviewPending) return;
+  const state = getState();
+  const subjectId = mostRecentStudiedSubject(state) ?? lastStudiedSubjectId;
+  if (!subjectId || !state.subjects[subjectId]) {
+    const message = noReviewSubjectMessage();
+    hud.showError(message);
+    hud.announce(message);
+    return;
+  }
+
+  libraryReviewPending = true;
+  const alreadyActive = state.activeSubjectId === subjectId;
+  try {
+    if (!alreadyActive) await engine.activateSubject(subjectId);
+    dropServicePanel();
+    syncPrompt();
+    const opened = await openReview(roomId, !alreadyActive);
+    if (!opened && !alreadyActive) await engine.returnToVillage();
+  } catch (error) {
+    const message = `Could not open the review: ${describe(error)}`;
+    hud.showError(message);
+    hud.announce('The review could not be opened.');
+    if (!alreadyActive && getState().activeSubjectId === subjectId) {
+      await engine.returnToVillage().catch(() => undefined);
+    }
+  } finally {
+    libraryReviewPending = false;
+  }
+}
+
+/** Equip or unequip one item; one command in flight, previous state intact on failure. */
+async function changeEquipment(action: 'equip' | 'unequip', itemId: string): Promise<void> {
+  if (!engine || servicePending) return;
+  servicePending = true;
+  servicePanel?.setPending(true);
+  hud.clearError();
+  try {
+    const changed =
+      action === 'equip' ? await engine.equipItem(itemId) : await engine.unequipItem(itemId);
+    if (!changed) {
+      servicePanel?.showError(
+        action === 'equip'
+          ? 'Refused: the engine would not equip that item. It may already be equipped or not be gear.'
+          : 'Refused: the engine would not unequip that item. It may not be equipped.',
+      );
+      hud.announce('Equipment unchanged.');
+      return;
+    }
+    refreshService();
+    servicePanel?.showResult(action === 'equip' ? 'Equipped. The change survives a reload.' : 'Unequipped. The change survives a reload.');
+    hud.announce(action === 'equip' ? 'Item equipped.' : 'Item unequipped.');
+  } catch (error) {
+    const message = notSavedMessage(error);
+    servicePanel?.showError(message);
+    hud.showError(message);
+    hud.announce('The equipment change was not saved.');
+  } finally {
+    servicePending = false;
+    servicePanel?.setPending(false);
+  }
+}
+
+// ── NPCs (P7) ────────────────────────────────────────────────────────────────
+
+function closeNpcDialog(returnFocus = false): void {
+  if (!npcDialog) return;
+  npcDialog.close();
+  npcDialog = null;
+  if (returnFocus) focusCanvas();
+}
+
+/** One `E` press: advance the engine's conversation cursor and show the line. */
+function talkToNpc(target: SurfaceNpc): void {
+  if (!engine) return;
+  const source = surfaceMap().npcs.find((npc) => npc.id === target.id);
+  if (!source) return;
+
+  clearInput();
+  const step = getState().session.questStep;
+  const cursor = npcCursors.get(target.id) ?? null;
+  const line = projectNpcLine(source, step, cursor, npcQuoteIndex(source));
+  npcCursors.set(target.id, line.cursor);
+
+  const view = { label: line.label, line: line.line };
+  if (npcDialog) npcDialog.update(view);
+  else npcDialog = mountNpcDialog(npcDialogHost, view, () => closeNpcDialog(true));
+
+  hud.announce(`${line.label} speaks.`);
+}
+
+
 async function useInteractable(target: SurfaceInteractable): Promise<void> {
   if (!engine || interactionPending) return;
   interactionPending = true;
@@ -1774,24 +2066,27 @@ async function useInteractable(target: SurfaceInteractable): Promise<void> {
       await beginFishing(target);
       return;
     }
-    if (target.type === 'guild-hall') {
-      // P6: keep the engine's quest-step write, then open the Creator overlay.
-      await engine.interactVillageStructure(target.id);
-      openCreator();
-      hud.announce(`Guild Hall. Quest step: ${getState().session.questStep}. Creator open.`);
+
+    const service = serviceForStructure(target.type);
+    if (service) {
+      if (service === 'guild-hall') {
+        // The Guild Hall keeps the engine's quest-step write; the service then
+        // renders the returned structure and the new step.
+        await engine.interactVillageStructure(target.id);
+      }
+      await openVillageService(service);
       return;
     }
-    const result = await engine.interactVillageStructure(target.id);
-    const structure = result.structure;
-    if (getState().session.world === 'dungeon') {
+
+    if (target.type === 'portal-icon' || target.type === 'training-gate') {
+      await engine.interactVillageStructure(target.id);
       // The state subscription routes and announces the dungeon transition.
       return;
     }
-    const message = buildingInteractionMessage(
-      structure.type,
-      structure.label,
-      getState().session.questStep,
-    );
+
+    // Labelled scenery: Keeper's Tower and the central fountain have no
+    // interior in this build, and say so instead of opening a dead screen.
+    const message = sceneryMessage(target.label);
     hud.announce(message);
     showToast(message);
   } catch (error) {
@@ -1835,7 +2130,24 @@ function installInput(): void {
       return;
     }
 
+    // The service shell owns Escape, Tab, and every native control. A window
+    // event (focus escaped the panel) still closes it.
+    if (servicePanel) {
+      const insidePanel = event.target instanceof Node && servicePanelHost.contains(event.target);
+      if (event.code === 'Escape' && !insidePanel) {
+        event.preventDefault();
+        closeVillageService();
+      }
+      return;
+    }
+
     if (isTypingTarget(event.target)) return;
+
+    if (npcDialog && event.code === 'Escape') {
+      event.preventDefault();
+      closeNpcDialog(true);
+      return;
+    }
 
     if (screen === 'fishing' && fishing) {
       handleFishingKeyDown(event);
@@ -1857,6 +2169,8 @@ function installInput(): void {
       if (screen === 'surface') {
         if (activeInteractable) {
           void useInteractable(activeInteractable);
+        } else if (activeNpc) {
+          talkToNpc(activeNpc);
         } else {
           const message = nothingInReachMessage();
           hud.announce(message);
@@ -2021,17 +2335,30 @@ function updateRoomVisit(): void {
 
 function updateInteractable(): void {
   if (!surface || !body || screen !== 'surface') return;
-  const nearest = findNearestInteractable(surface, playerCentre(body));
-  const nextId = nearest?.id ?? null;
-  const previous = activeInteractable;
-  if (nextId === (previous?.id ?? null)) return;
+  const targets = selectNearbySurfaceTargets(surface, surfaceNpcs, playerCentre(body));
+  const structureTarget = targets.find((target) => target.kind === 'structure') ?? null;
+  const npcTarget = structureTarget
+    ? null
+    : targets.find((target) => target.kind === 'npc') ?? null;
+  const nearest = structureTarget
+    ? surface.interactables.find((entry) => entry.id === structureTarget.id) ?? null
+    : null;
+  const npc = npcTarget ? surfaceNpcs.find((entry) => entry.id === npcTarget.id) ?? null : null;
+
+  const previousStructureId = activeInteractable?.id ?? null;
+  const previousNpcId = activeNpc?.id ?? null;
+  if ((nearest?.id ?? null) === previousStructureId && (npc?.id ?? null) === previousNpcId) return;
 
   activeInteractable = nearest;
+  activeNpc = npc;
+  if (!npc) closeNpcDialog(false);
   syncPrompt();
-  hud.updateSurface(surfaceView, activeInteractable?.id ?? null);
+  hud.updateSurface(surfaceView, nearest?.id ?? null, npc?.label ?? null);
   if (nearest) {
     hud.announce(`Near ${nearest.label}. Press E to ${interactionVerb(nearest.type)}.`);
-  } else if (previous) {
+  } else if (npc) {
+    hud.announce(`Near ${npc.label}. Press E to talk.`);
+  } else if (previousStructureId !== null || previousNpcId !== null) {
     hud.announce('No door in reach.');
   }
 }
@@ -2089,8 +2416,8 @@ function frame(nowMs: number): void {
   jumpQueued = false;
 
   if (level && body && context) {
-    // The composer, the review panel, and the Creator pause the world.
-    if (!composer && !reviewPanel && !creatorPanel) {
+    // The composer, the review panel, the Creator, and a village service pause the world.
+    if (!composer && !reviewPanel && !creatorPanel && !servicePanel) {
       body = stepBody(body, intent, level, deltaMs);
       if (screen === 'dungeon') {
         updateRoomVisit();
@@ -2107,6 +2434,8 @@ function frame(nowMs: number): void {
       activeRoomId,
       surface,
       activeInteractableId: activeInteractable?.id ?? null,
+      npcs: surfaceNpcs,
+      activeNpcId: activeNpc?.id ?? null,
       badges,
       reducedMotion: reducedMotion.matches,
     });
@@ -2217,6 +2546,7 @@ function boot(): void {
       wireActions(storage);
       const bootState = getState();
       if (bootState.activeSubjectId) lastStudiedSubjectId = bootState.activeSubjectId;
+      lastQuestStep = bootState.session.questStep;
       subscribeState(onState);
       // `onState` runs immediately with the current state and routes the screen.
       const bootNotice = takeBootNotice();

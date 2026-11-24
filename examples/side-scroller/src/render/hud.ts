@@ -16,7 +16,11 @@ export interface HudElements {
 
 export interface Hud {
   updateDungeon(view: DungeonView | null, activeRoomId: string | null): void;
-  updateSurface(view: SurfaceView | null, activeInteractableId: string | null): void;
+  updateSurface(
+    view: SurfaceView | null,
+    activeInteractableId: string | null,
+    nearbyNpcLabel?: string | null,
+  ): void;
   updateFishing(view: FishingView | null, phase: string, hint: string): void;
   announce(message: string): void;
   showError(message: string): void;
@@ -105,7 +109,7 @@ export function createHud(elements: HudElements): Hud {
       );
     },
 
-    updateSurface(view, activeInteractableId) {
+    updateSurface(view, activeInteractableId, nearbyNpcLabel = null) {
       elements.roomsTitle.textContent = 'Places';
       if (!view) {
         elements.summary.replaceChildren(...row('Location', 'Unknown — surface unavailable'));
@@ -114,13 +118,14 @@ export function createHud(elements: HudElements): Hud {
       }
 
       const current = view.entries.find((entry) => entry.id === activeInteractableId);
+      const nearby = current?.label ?? nearbyNpcLabel ?? 'Nothing in reach';
       const rows = [
         ['Location', 'Village street'],
         ['Phase', view.phase],
         ['Subject portals', view.portalCount === 1 ? '1 portal' : `${view.portalCount} portals`],
         ['Rooms cleared (all portals)', `${view.clearedRooms} / ${view.totalRooms}`],
         ['XP (all subjects)', String(view.xpTotal)],
-        ['Nearby', current ? current.label : 'Nothing in reach'],
+        ['Nearby', nearby],
       ];
       elements.summary.replaceChildren(...rows.flatMap(([term, value]) => row(term, value)));
 

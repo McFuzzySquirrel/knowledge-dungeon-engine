@@ -49,6 +49,7 @@ function parseArgs(argv) {
     fishing: false,
     review: false,
     creator: false,
+    services: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -63,6 +64,7 @@ function parseArgs(argv) {
     else if (arg === '--fishing') options.fishing = true;
     else if (arg === '--review') options.review = true;
     else if (arg === '--creator') options.creator = true;
+    else if (arg === '--services') options.services = true;
     else throw new Error(`Unknown argument: ${arg}`);
   }
   return options;
@@ -183,6 +185,16 @@ async function stored(session) {
           visited: state.studySessions.find((x) => x.sessionId === state.activeStudySessionId)?.roomsVisited ?? [],
           sessions: state.studySessions.length,
           xp: state.progression[state.activeSubjectId]?.xpTotal ?? null,
+          inventory:
+            Object.values(state.progression ?? {}).reduce(
+              (sum, record) => sum + (record?.inventory?.length ?? 0),
+              0,
+            ),
+          equipped:
+            Object.values(state.progression ?? {}).reduce(
+              (sum, record) => sum + (record?.equippedItems?.length ?? 0),
+              0,
+            ),
           xpTotal: Object.values(state.progression ?? {})
             .reduce((sum, record) => sum + (record?.xpTotal ?? 0), 0),
           fish: Object.values(state.progression ?? {})
@@ -191,6 +203,10 @@ async function stored(session) {
             .filter((room) => room.validationState.finalPass).length,
           artifacts: state.progression[state.activeSubjectId]?.collectedNotes?.length ?? 0,
           reviewPasses: state.progression[state.activeSubjectId]?.reviewPasses ?? 0,
+          reviewPassesTotal: Object.values(state.progression ?? {}).reduce(
+            (sum, record) => sum + (record?.reviewPasses ?? 0),
+            0,
+          ),
           reviewPassCounts: Object.fromEntries(
             Object.entries(state.subjects[state.activeSubjectId]?.rooms ?? {})
               .map(([id, room]) => [id, room.reviewPassCount ?? 0]),
@@ -996,7 +1012,7 @@ async function captureFishing(prefix, frames) {
 // ── P5 review ───────────────────────────────────────────────────────────────
 
 /** Open the composer with `E`, submit the valid fixture, and close it again. */
-async function clearCurrentRoom(session) {
+async function clearCurrentRoom(session, collect = false) {
   await session.synthDown('KeyE', 'e');
   await session.synthUp('KeyE', 'e');
   const opened = await waitForExpr(session, `document.querySelector('#note-panel')?.hidden === false`);
@@ -1010,6 +1026,10 @@ async function clearCurrentRoom(session) {
   `);
   const cleared = await waitForExpr(session, `document.querySelector('#note-outcome')?.hidden === false`);
   if (!cleared) throw new Error('The note did not clear the room');
+  if (collect) {
+    await session.execute(`document.querySelector('#note-collect').click(); return true;`);
+    await waitForExpr(session, `document.querySelector('#note-feedback')?.innerText.includes('journal') === true`);
+  }
   await session.synthDown('Escape', 'Escape');
   await session.synthUp('Escape', 'Escape');
   await sleep(400);
@@ -1060,6 +1080,23 @@ async function descendToToolsFromMap(session) {
     if (ms !== null) return ms;
     await session.hold(attempt === 0 ? 'a' : 'd', 400);
     await sleep(300);
+  }
+  return null;
+}
+
+/** Climb until the HUD reports the village street, retrying a missed ladder. */
+async function climbToStreet(session) {
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    await session.synthDown('KeyW', 'w');
+    const ms = await waitForExpr(
+      session,
+      `document.querySelector('#summary')?.innerText.includes('Village street') === true`,
+      7000,
+    );
+    await session.synthUp('KeyW', 'w');
+    if (ms !== null) return ms;
+    await session.hold(attempt % 2 === 0 ? 'a' : 'd', 300);
+    await sleep(250);
   }
   return null;
 }
@@ -1874,9 +1911,389 @@ async function keyboardCreatorFlow(session, frames, prefix, baselineSubjects) {
 }
 
 
+// ── P7 village services ─────────────────────────────────────────────────────
+
+async function serviceState(session) {
+  return session.execute(`
+    const root = document.querySelector('#service-panel');
+    return {
+      hidden: root?.hidden ?? null,
+      text: root?.innerText ?? '',
+      focus: document.activeElement?.id ?? '',
+      role: root?.getAttribute('role') ?? '',
+      modal: root?.getAttribute('aria-modal') ?? '',
+      error: document.querySelector('#service-error')?.hidden
+        ? ''
+        : (document.querySelector('#service-error')?.innerText ?? ''),
+      result: document.querySelector('#service-result')?.hidden
+        ? ''
+        : (document.querySelector('#service-result')?.innerText ?? ''),
+      npc: document.querySelector('#npc-dialogue')?.hidden === false
+        ? (document.querySelector('#npc-dialogue')?.innerText ?? '')
+        : null,
+    };
+  `);
+}
+
+async function openServiceAt(session, needle, direction = 'KeyD', key = 'd', timeoutMs = 30000) {
+  const walked = await walkToNearby(session, direction, key, needle, timeoutMs);
+  await pressKey(session, 'e');
+  const openedMs = await waitForExpr(
+    session,
+    `document.querySelector('#service-panel')?.hidden === false`,
+    8000,
+  );
+  const state = await serviceState(session);
+  return { walked, openedMs, state };
+}
+
+async function closeService(session) {
+  await pressKey(session, '\uE00C');
+  return waitForExpr(
+    session,
+    `document.querySelector('#service-panel')?.hidden !== false && document.activeElement?.id === 'game'`,
+    8000,
+  );
+}
+
+/**
+ * Capture a deterministic gear item for the Workshop frame.
+ *
+ * The engine grants gear only on a strong room clear; the fixture clear may or
+ * may not roll one. Writing a synthetic item into the example's own IndexedDB
+ * state is capture tooling, not a page test hook, and it keeps the visual record
+ * reproducible.
+ */
+async function seedWorkshopGear(session) {
+  return session.executeAsync(`
+    const done = arguments[arguments.length - 1];
+    const request = indexedDB.open('knowledge-dungeon-side-scroller');
+    request.onerror = () => done({ error: String(request.error) });
+    request.onsuccess = () => {
+      const db = request.result;
+      const tx = db.transaction('engine-state', 'readwrite');
+      const store = tx.objectStore('engine-state');
+      const get = store.get('state');
+      get.onerror = () => done({ error: String(get.error) });
+      get.onsuccess = () => {
+        const state = get.result;
+        if (!state) return done({ error: 'no state' });
+        const ids = Object.keys(state.subjects ?? {});
+        const subjectId =
+          ids.find((id) => id.startsWith('tutorial')) ??
+          ids[0];
+        const record = subjectId ? state.progression[subjectId] : null;
+        if (!record) return done({ error: 'no progression record' });
+        const existing = record.inventory.find((item) => item.equipSlot);
+        if (!existing) {
+          record.inventory.push({
+            id: 'gear-capture-cap',
+            name: 'Scholar’s Cap',
+            description: 'A capture fixture, not learner data.',
+            rarity: 'common',
+            acquiredAt: new Date().toISOString(),
+            equipSlot: 'head',
+            equipped: false,
+          });
+          store.put(state, 'state');
+        }
+        tx.oncomplete = () =>
+          done({
+            subjectId,
+            added: !existing,
+            inventory: record.inventory.length,
+            equipped: record.equippedItems.length,
+          });
+      };
+    };
+  `);
+}
+
+/**
+ * P7 services run.
+ *
+ * Clears one tutorial room (collecting its artifact), returns to the street, and
+ * opens every labelled service plus a villager. The Workshop frame proves an
+ * equip survives a reload and a rejected write shows "Not saved" without
+ * changing equipment. `--reduced-motion` keeps the same path with the
+ * preference enabled; the panels have no animation.
+ */
+async function captureServices(prefix, frames) {
+  const session = await openSession(options.reducedMotion ? { 'ui.prefersReducedMotion': 1 } : {});
+  try {
+    await wd('POST', session.session('/url'), { url: APP });
+    await sleep(1800);
+
+    await session.execute(`window.confirm = () => true; document.querySelector('#clear-save')?.click(); return true;`);
+    await sleep(1500);
+    await wd('POST', session.session('/refresh'), {});
+    await sleep(2200);
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Village street') === true`);
+
+    await startTutorial(session);
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Subject') === true`);
+    await clearCurrentRoom(session, true);
+    if ((await descendToToolsRoom(session)) === null) {
+      throw new Error('Could not descend to the lower room');
+    }
+    await clearCurrentRoom(session);
+    if ((await climbToMapRoom(session)) === null) {
+      throw new Error('Could not climb to the upper room');
+    }
+    await clearCurrentRoom(session);
+    const cleared = await stored(session);
+    if (cleared.cleared !== 3) {
+      throw new Error(`Expected 3 cleared rooms before the Library review, got ${cleared.cleared}`);
+    }
+
+    // Descend from the upper room to the root, then climb the entrance shaft to
+    // the street. From the root the shaft is a single continuous climb.
+    if ((await holdUntilRoom(session, 'KeyS', 's', 'The Note', 15000)) === null) {
+      throw new Error('Could not descend to the root room');
+    }
+    const streetMs = await climbToStreet(session);
+    if (streetMs === null) throw new Error('Could not return to the village street');
+    await sleep(700);
+
+    // Seed deterministic gear, then reload so the running engine sees it.
+    const seeded = await seedWorkshopGear(session);
+    await wd('POST', session.session('/refresh'), {});
+    await sleep(2600);
+    const reloadStreet = await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Village street') === true`, 8000);
+    if (reloadStreet === null) throw new Error('The reload did not land on the village street');
+    const reloaded = await stored(session);
+
+    // 01 — a villager bubble. Each E press advances the engine cursor.
+    const npcWalk = await walkToNearby(session, 'KeyD', 'd', 'Wandering Scholar', 20000);
+    await pressKey(session, 'e');
+    const firstLineMs = await waitForExpr(session, `document.querySelector('#npc-dialogue')?.hidden === false`, 5000);
+    const firstLine = await serviceState(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-01-villager.png`),
+      label: 'Villager dialogue',
+      detail: `openedIn=${firstLineMs ?? 'timeout'}ms; nearby="${npcWalk.nearby}"; focus=${firstLine.focus}; text as node=${(firstLine.npc ?? '').length > 0}`,
+    });
+    await pressKey(session, 'e');
+    await sleep(200);
+    const secondLine = await serviceState(session);
+    await pressKey(session, '\uE00C');
+    const npcClosedMs = await waitForExpr(session, `document.querySelector('#npc-dialogue')?.hidden !== false`, 5000);
+    frames.push({
+      file: await session.screenshot(`${prefix}-02-villager-second-line.png`),
+      label: 'Villager cursor advanced',
+      detail: `second line differs=${(secondLine.npc ?? '') !== (firstLine.npc ?? '')}; closedIn=${npcClosedMs ?? 'timeout'}ms`,
+    });
+
+    // 02 — Library: review desk, collected artifact, notes list.
+    const library = await openServiceAt(session, 'Library');
+    frames.push({
+      file: await session.screenshot(`${prefix}-03-library.png`),
+      label: 'Library',
+      detail: `walk found=${library.walked.found}; openIn=${library.openedMs ?? 'timeout'}ms; role=${library.state.role} modal=${library.state.modal}; review desk=${library.state.text.includes('Review desk')}; artifact=${library.state.text.includes('Show artifact')}; notes=${library.state.text.includes('Collected notes')}; focus=${library.state.focus}`,
+    });
+    // 03b — review a due room from the open Library desk. The host activates
+    // the last-studied subject for the command and closes the session after.
+    // Keyboard-only: Tab past Close to the first Review button, then Enter.
+    await pressKey(session, '\uE004');
+    await pressKey(session, '\uE004');
+    const reviewFocused = await session.execute(`return document.activeElement?.innerText ?? '';`);
+    await pressKey(session, '\uE007');
+    const clicked = reviewFocused === 'Review';
+    if (!clicked) throw new Error('The Library review desk had no Review button');
+    const reviewOpenMs = await waitForExpr(
+      session,
+      `document.querySelector('#review-panel')?.hidden === false`,
+      10000,
+    );
+    const reviewPanel = await session.execute(`
+      return {
+        focus: document.activeElement?.id ?? '',
+        text: document.querySelector('#review-panel')?.innerText ?? '',
+        serviceHidden: document.querySelector('#service-panel')?.hidden ?? null,
+        promptShown: (document.querySelector('#review-prompt blockquote')?.innerText ?? '').length > 0,
+      };
+    `);
+    frames.push({
+      file: await session.screenshot(`${prefix}-04-library-review.png`),
+      label: 'Review opened from the Library',
+      detail: `openIn=${reviewOpenMs ?? 'timeout'}ms; keyboard focus on "${reviewFocused}"; focus=${reviewPanel.focus}; prompt shown=${reviewPanel.promptShown}; service closed=${reviewPanel.serviceHidden !== false}; rating controls=${(reviewPanel.text.match(/[0-5] · /g) ?? []).length}`,
+    });
+    await session.hold('5', 60);
+    await session.hold('\uE007', 60);
+    const ratedMs = await waitForExpr(session, `document.querySelector('#review-result')?.hidden === false`, 10000);
+    const ratedPanel = await session.execute(`return document.querySelector('#review-result')?.innerText ?? '';`);
+    frames.push({
+      file: await session.screenshot(`${prefix}-05-library-review-rated.png`),
+      label: 'Review rated from the Library',
+      detail: `shownIn=${ratedMs ?? 'timeout'}ms; reward copy=${/XP gained/.test(ratedPanel)}; next review copy=${/Next review/.test(ratedPanel)}`,
+    });
+    await session.hold('\uE00C', 60);
+    const reviewClosedMs = await waitForExpr(
+      session,
+      `document.querySelector('#review-panel')?.hidden !== false && document.querySelector('#summary')?.innerText.includes('Village street') === true`,
+      10000,
+    );
+    await sleep(900);
+    const afterLibraryReview = await stored(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-06-library-review-closed.png`),
+      label: 'Library review closed',
+      detail: `closedIn=${reviewClosedMs ?? 'timeout'}ms; world=${afterLibraryReview.world}; activeSubject=${afterLibraryReview.activeSubjectId}; study session open=${afterLibraryReview.activeStudy}; reviewPasses total=${afterLibraryReview.reviewPassesTotal}`,
+    });
+
+    // 04 — Fish Stand: display-only, explicit notice, no transaction.
+    const fishStand = await openServiceAt(session, 'Fish Stand');
+    frames.push({
+      file: await session.screenshot(`${prefix}-07-fish-stand.png`),
+      label: 'Fish Stand (display only)',
+      detail: `walk found=${fishStand.walked.found}; openIn=${fishStand.openedMs ?? 'timeout'}ms; selling notice=${/Selling and trading are not part of this build/.test(fishStand.state.text)}; buttons=${await session.execute(`return document.querySelectorAll('#service-panel button').length;`)}; focus=${fishStand.state.focus}`,
+    });
+    await closeService(session);
+
+    // 04 — Workshop: gear, a rejected write, then a successful equip.
+    const workshop = await openServiceAt(session, 'Artisan Workshop');
+    const equipButton = await session.execute(`
+      const button = [...document.querySelectorAll('#service-panel button')]
+        .find((node) => node.innerText === 'Equip');
+      if (!button) return null;
+      return { id: button.id, disabled: button.disabled };
+    `);
+    frames.push({
+      file: await session.screenshot(`${prefix}-08-workshop.png`),
+      label: 'Workshop inventory',
+      detail: `walk found=${workshop.walked.found}; openIn=${workshop.openedMs ?? 'timeout'}ms; subject=${/Inventory —/.test(workshop.state.text)}; equip button=${equipButton?.id ?? 'missing'}; inventory=${reloaded.inventory}; focus=${workshop.state.focus}`,
+    });
+
+    if (equipButton) {
+      const beforeFailure = await stored(session);
+      await session.execute(`
+        window.__originalPut = IDBObjectStore.prototype.put;
+        IDBObjectStore.prototype.put = function () {
+          throw new DOMException('simulated quota failure', 'QuotaExceededError');
+        };
+        document.querySelector(${JSON.stringify(`#${equipButton.id}`)}).focus();
+        return true;
+      `);
+      await session.hold('\uE007', 60);
+      const notSavedMs = await waitForExpr(session, `document.querySelector('#service-error')?.hidden === false`, 8000);
+      const failed = await serviceState(session);
+      const afterFailure = await stored(session);
+      frames.push({
+        file: await session.screenshot(`${prefix}-09-workshop-not-saved.png`),
+        label: 'Workshop save failure',
+        detail: `shownIn=${notSavedMs ?? 'timeout'}ms; not saved=${/Not saved/.test(failed.error)}; panel open=${failed.hidden === false}; equipped ${beforeFailure.equipped}→${afterFailure.equipped}; inventory ${beforeFailure.inventory}→${afterFailure.inventory}`,
+      });
+      await session.execute(`IDBObjectStore.prototype.put = window.__originalPut; delete window.__originalPut; return true;`);
+
+      await session.execute(`document.querySelector(${JSON.stringify(`#${equipButton.id}`)}).focus(); return true;`);
+      await session.hold('\uE007', 60);
+      const equippedMs = await waitForExpr(
+        session,
+        `document.querySelector('#service-result')?.innerText.includes('Equipped') === true`,
+        8000,
+      );
+      const equipped = await stored(session);
+      frames.push({
+        file: await session.screenshot(`${prefix}-10-workshop-equipped.png`),
+        label: 'Workshop equipped',
+        detail: `shownIn=${equippedMs ?? 'timeout'}ms; equipped=${equipped.equipped}; result="${(await serviceState(session)).result}"`,
+      });
+    }
+    await closeService(session);
+
+    // 05 — Trophy Hall (badges/records; fish may be empty).
+    const trophy = await openServiceAt(session, 'Trophy Hall');
+    frames.push({
+      file: await session.screenshot(`${prefix}-11-trophy-hall.png`),
+      label: 'Trophy Hall',
+      detail: `walk found=${trophy.walked.found}; openIn=${trophy.openedMs ?? 'timeout'}ms; badges section=${trophy.state.text.includes('Badges')}; records=${trophy.state.text.includes('Records')}; zeroes shown=${trophy.state.text.includes('Notes submitted')}; focus=${trophy.state.focus}`,
+    });
+    await closeService(session);
+
+    // 06 — Guild Hall: quest board, archetype, roster, Creator entry. The Guild
+    // Hall shares gridX with the Trophy Hall and is placed first, so it is west
+    // of the trophy door.
+    const guild = await openServiceAt(session, 'Guild Hall', 'KeyA', 'a', 20000);
+    frames.push({
+      file: await session.screenshot(`${prefix}-12-guild-hall.png`),
+      label: 'Guild Hall',
+      detail: `walk found=${guild.walked.found}; openIn=${guild.openedMs ?? 'timeout'}ms; quest board=${guild.state.text.includes('Quest board')}; roster=${guild.state.text.includes('Subject roster')}; creator entry=${guild.state.text.includes('Open Creator')}; focus=${guild.state.focus}`,
+    });
+    await closeService(session);
+
+    if (options.reducedMotion) {
+      return {
+        cleared,
+        seeded,
+        reloaded,
+        reducedMotion: true,
+        frames,
+        error: (await panel(session)).error,
+      };
+    }
+
+    // 07 — reload: the equip survives, then the Workshop shows Unequip.
+    await wd('POST', session.session('/refresh'), {});
+    await sleep(2800);
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Village street') === true`);
+    const afterReload = await stored(session);
+    const workshopAgain = await openServiceAt(session, 'Artisan Workshop');
+    const unequipShown = await session.execute(`
+      return [...document.querySelectorAll('#service-panel button')].some((node) => node.innerText === 'Unequip');
+    `);
+    frames.push({
+      file: await session.screenshot(`${prefix}-13-workshop-reload.png`),
+      label: 'Equipment after reload',
+      detail: `equipped=${afterReload.equipped}; walk found=${workshopAgain.walked.found}; subject=${/Inventory —/.test(workshopAgain.state.text)}; unequip shown=${unequipShown}; focus=${workshopAgain.state.focus}`,
+    });
+    await closeService(session);
+
+    return {
+      cleared,
+      seeded,
+      reloaded,
+      afterReload,
+      reducedMotion: false,
+      library,
+      fishStand,
+      workshop,
+      equipButton,
+      trophy,
+      guild,
+      unequipShown,
+      streetMs,
+      error: (await panel(session)).error,
+    };
+  } finally {
+    await session.close();
+  }
+}
+
 async function main() {
   await mkdir(OUT, { recursive: true });
   const frames = [];
+
+  if (options.services) {
+    const run = await captureServices(options.prefix, frames);
+    const manifest = {
+      capturedAt: new Date().toISOString(),
+      app: APP,
+      viewport: 'default headless Firefox (captured window)',
+      prefix: options.prefix,
+      services: true,
+      reducedMotion: options.reducedMotion,
+      result: run,
+      frames,
+    };
+    await writeFile(resolve(OUT, `${options.prefix}-manifest.json`), JSON.stringify(manifest, null, 2));
+    console.log(JSON.stringify(manifest, null, 2));
+    const date = new Date().toISOString().slice(0, 10);
+    console.log('\nMarkdown rows:\n');
+    for (const frame of frames) {
+      console.log(`| ${date} | ${frame.label} | \`${frame.file}\` | ${frame.detail} |`);
+    }
+    return;
+  }
 
   if (options.creator) {
     const run = await captureCreator(options.prefix, frames);
