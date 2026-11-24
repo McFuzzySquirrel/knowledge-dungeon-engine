@@ -48,6 +48,30 @@ describe('buildDungeonLevel', () => {
     }
   });
 
+  it('maps every engine door to a room perimeter tile', () => {
+    const subject = tutorial.createTutorialSubject(FIXED_NOW);
+    const map = dungeon.generateDungeonMap(subject.dungeon);
+    const level = buildDungeonLevel(subject);
+
+    expect(level.doors).toHaveLength(map.doors.length);
+    expect(level.doors?.length).toBeGreaterThan(0);
+    for (const door of level.doors ?? []) {
+      const room = level.rooms.find((entry) => entry.roomId === door.roomId);
+      expect(room, `room for ${door.roomId}`).toBeDefined();
+      if (!room) continue;
+      expect(door.rect.w).toBe(level.tileSize);
+      expect(door.rect.h).toBe(level.tileSize);
+      if (door.side === 'W') expect(door.rect.x).toBe(room.rect.x);
+      if (door.side === 'E') {
+        expect(door.rect.x + door.rect.w).toBe(room.rect.x + room.rect.w);
+      }
+      if (door.side === 'N') expect(door.rect.y).toBe(room.rect.y);
+      if (door.side === 'S') {
+        expect(door.rect.y + door.rect.h).toBe(room.rect.y + room.rect.h);
+      }
+    }
+  });
+
   it('does not cover any room interior with a solid', () => {
     const level = tutorialLevel();
     for (const room of level.rooms) {

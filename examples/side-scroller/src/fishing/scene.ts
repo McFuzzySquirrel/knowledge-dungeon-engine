@@ -49,6 +49,8 @@ const FONT_STACK = 'system-ui, -apple-system, "Segoe UI", sans-serif';
 export interface FishingSceneInput {
   readonly state: fishingState.FishingMachineState;
   readonly reducedMotion: boolean;
+  /** P8: `large` scales the canvas labels with the DOM text scale. */
+  readonly textScale?: 'normal' | 'large';
 }
 
 function phaseLabel(phase: fishingState.FishingStateName): string {
@@ -304,6 +306,7 @@ function drawFish(
 function drawPowerMeter(
   context: CanvasRenderingContext2D,
   state: fishingState.FishingMachineState,
+  labelScale: number,
 ): void {
   if (state.phase !== 'powering') return;
   const width = 180;
@@ -320,7 +323,7 @@ function drawPowerMeter(
   context.fillRect(x, y, Math.max(2, width * Math.min(1, Math.max(0, state.power))), 10);
 
   context.fillStyle = COLORS.textMuted;
-  context.font = `12px ${FONT_STACK}`;
+  context.font = `${12 * labelScale}px ${FONT_STACK}`;
   context.textAlign = 'left';
   context.textBaseline = 'alphabetic';
   context.fillText('Cast power', x, y - 14);
@@ -329,26 +332,28 @@ function drawPowerMeter(
 function drawStatus(
   context: CanvasRenderingContext2D,
   state: fishingState.FishingMachineState,
+  labelScale: number,
 ): void {
   const label = phaseLabel(state.phase);
   if (label.length === 0) return;
   const width = Math.min(420, state.viewport.width - 32);
 
-  context.font = `600 16px ${FONT_STACK}`;
+  context.font = `600 ${16 * labelScale}px ${FONT_STACK}`;
   context.textAlign = 'center';
   context.textBaseline = 'middle';
   const textWidth = Math.min(width - 24, context.measureText(label).width);
   const boxX = (state.viewport.width - textWidth) / 2 - 14;
   const boxY = state.viewport.height * 0.11;
+  const boxHeight = 34 * labelScale;
 
   context.fillStyle = COLORS.panel;
-  context.fillRect(boxX, boxY, textWidth + 28, 34);
+  context.fillRect(boxX, boxY, textWidth + 28, boxHeight);
   context.strokeStyle = state.phase === 'biting' ? COLORS.danger : COLORS.meterFrame;
   context.lineWidth = 1;
-  context.strokeRect(boxX, boxY, textWidth + 28, 34);
+  context.strokeRect(boxX, boxY, textWidth + 28, boxHeight);
 
   context.fillStyle = state.phase === 'biting' ? COLORS.danger : COLORS.text;
-  context.fillText(label, state.viewport.width / 2, boxY + 17);
+  context.fillText(label, state.viewport.width / 2, boxY + boxHeight / 2);
 }
 
 /**
@@ -366,6 +371,7 @@ export function renderFishingScene(
   const height = Math.max(1, state.viewport.height);
   const horizonY = fishingState.fishingHorizonY(state.viewport);
   const shoreY = fishingState.fishingShoreY(state.viewport);
+  const labelScale = input.textScale === 'large' ? 1.3 : 1;
 
   context.clearRect(0, 0, width, height);
   drawSky(context, width, height, horizonY);
@@ -375,6 +381,6 @@ export function renderFishingScene(
   drawFish(context, state);
   drawLineAndBobber(context, state, input.reducedMotion);
   drawPlayer(context, state);
-  drawPowerMeter(context, state);
-  drawStatus(context, state);
+  drawPowerMeter(context, state, labelScale);
+  drawStatus(context, state, labelScale);
 }

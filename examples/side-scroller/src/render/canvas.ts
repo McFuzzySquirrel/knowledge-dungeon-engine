@@ -1,4 +1,4 @@
-import type { LevelModel, LevelRoom, Rect } from '../level/model';
+import type { LevelDoor, LevelModel, LevelRoom, Rect } from '../level/model';
 import type { SurfaceFacade, SurfaceModel } from '../level/surfaceLevel';
 import type { Body } from '../physics';
 import type { SurfaceNpc } from '../village/npc';
@@ -44,6 +44,8 @@ export interface RenderInput {
   activeNpcId?: string | null;
   badges: Readonly<Record<string, RoomBadge>>;
   reducedMotion: boolean;
+  /** P8: `large` scales canvas labels with the DOM text scale. */
+  textScale?: 'normal' | 'large';
 }
 
 const PALETTE = {
@@ -351,6 +353,7 @@ function drawSurface(
   surface: SurfaceModel,
   activeInteractableId: string | null,
   view: Rect,
+  labelScale: number,
 ): void {
   const { bounds, groundY, tileSize } = surface;
   const streetBottom = bounds.y + bounds.h;
@@ -408,7 +411,7 @@ function drawSurface(
   );
   for (const facade of facades) {
     if (!isVisible(facade.rect, view, tileSize * 2)) continue;
-    drawFacade(context, facade, tileSize, facade.id === activeInteractableId);
+    drawFacade(context, facade, tileSize, facade.id === activeInteractableId, labelScale);
   }
 }
 
@@ -548,13 +551,14 @@ function drawFacade(
   facade: SurfaceFacade,
   tileSize: number,
   active: boolean,
+  labelScale: number,
 ): void {
   const rect = facade.rect;
   if (rect.w <= 0 || rect.h <= 0) return;
 
   if (!facade.building) {
     drawScenery(context, facade, tileSize);
-    if (facade.interactive) drawFacadeSign(context, facade, tileSize, active);
+    if (facade.interactive) drawFacadeSign(context, facade, tileSize, active, labelScale);
     return;
   }
 
@@ -599,7 +603,7 @@ function drawFacade(
   context.fillStyle = 'rgba(127, 209, 185, 0.18)';
   context.fillRect(door.x - tileSize * 0.05, baseY - tileSize * 0.05, door.w + tileSize * 0.1, tileSize * 0.05);
 
-  drawFacadeSign(context, facade, tileSize, active);
+  drawFacadeSign(context, facade, tileSize, active, labelScale);
 }
 
 function drawFacadeSign(
@@ -607,10 +611,11 @@ function drawFacadeSign(
   facade: SurfaceFacade,
   tileSize: number,
   active: boolean,
+  labelScale: number,
 ): void {
   const rect = facade.rect;
   const pad = Math.max(4, tileSize * 0.1);
-  const signHeight = Math.max(10, tileSize * 0.3);
+  const signHeight = Math.max(10, tileSize * 0.3) * labelScale;
   // Subject names are longer than a two-tile portal; let that sign use the
   // guaranteed gap on either side instead of truncating the name.
   const maxWidth = Math.max(
@@ -635,8 +640,7 @@ function drawFacadeSign(
   while (fontSize > 9 && context.measureText(label).width > maxWidth - pad * 1.4) {
     fontSize -= 1;
     context.font = `600 ${fontSize}px ${FONT_STACK}`;
-  }
-  const signWidth = Math.min(maxWidth, context.measureText(label).width + pad * 1.4);
+  }  const signWidth = Math.min(maxWidth, context.measureText(label).width + pad * 1.4);
   const signX = rect.x + (rect.w - signWidth) / 2;
   roundedRectPath(context, signX, signY, signWidth, signHeight, signHeight * 0.22);
   context.fillStyle = PALETTE.labelBackdrop;
@@ -684,6 +688,7 @@ function drawNpc(
   npc: SurfaceNpc,
   tileSize: number,
   active: boolean,
+  labelScale: number,
 ): void {
   const top = npc.feetY - npc.h;
   const bodyW = npc.w * 0.7;
@@ -720,11 +725,11 @@ function drawNpc(
   context.fill();
 
   const pad = Math.max(3, tileSize * 0.08);
-  const fontSize = Math.max(9, tileSize * 0.19);
+  const fontSize = Math.max(9, tileSize * 0.19) * labelScale;
   context.font = `600 ${fontSize}px ${FONT_STACK}`;
   const labelWidth = Math.min(
     Math.max(tileSize * 1.4, context.measureText(npc.label).width + pad * 2),
-    tileSize * 3,
+    tileSize * 3 * labelScale,
   );
   const labelHeight = fontSize + pad * 1.2;
   const labelX = npc.x - labelWidth / 2;
@@ -755,12 +760,13 @@ function drawNpcs(
   activeNpcId: string | null,
   view: Rect,
   tileSize: number,
+  labelScale: number,
 ): void {
   const ordered = [...npcs].sort((left, right) => left.depth - right.depth || left.id.localeCompare(right.id));
   for (const npc of ordered) {
     const bounds: Rect = { x: npc.x - npc.w, y: npc.feetY - npc.h * 2, w: npc.w * 2, h: npc.h * 2 };
     if (!isVisible(bounds, view, tileSize * 2)) continue;
-    drawNpc(context, npc, tileSize, npc.id === activeNpcId);
+    drawNpc(context, npc, tileSize, npc.id === activeNpcId, labelScale);
   }
 }
 
@@ -850,6 +856,53 @@ function drawRoomShell(
     const inner = inset * 2;
     context.strokeRect(rect.x + inner, rect.y + inner, rect.w - inner * 2, rect.h - inner * 2);
   }
+
+  // Break the chamber outline where a corridor enters. Before this, two
+  // connected rooms looked like two sealed boxes with a line between them.
+  const doors = level.doors?.filter((door) => door.roomId === room.roomId) ?? [];
+  for (const door of doors) drawDoorOpening(context, room, door, level.tileSize);
+}
+
+/** A tunnel-coloured gap in the room border, plus a short threshold mark. */
+function drawDoorOpening(
+  context: CanvasRenderingContext2D,
+  room: LevelRoom,
+  door: LevelDoor,
+  tileSize: number,
+): void {
+  const rect = room.rect;
+  const thickness = Math.max(4, tileSize * 0.12);
+  const half = thickness / 2;
+
+  if (door.side === 'W' || door.side === 'E') {
+    const x = door.side === 'W' ? rect.x - half : rect.x + rect.w - half;
+    context.fillStyle = PALETTE.tunnel;
+    context.fillRect(x, door.rect.y, thickness, door.rect.h);
+
+    // Two short jambs read as a threshold without looking like a wall.
+    context.strokeStyle = 'rgba(127, 209, 185, 0.42)';
+    context.lineWidth = Math.max(1, tileSize * 0.02);
+    context.beginPath();
+    context.moveTo(x - thickness, door.rect.y);
+    context.lineTo(x + thickness * 1.6, door.rect.y);
+    context.moveTo(x - thickness, door.rect.y + door.rect.h);
+    context.lineTo(x + thickness * 1.6, door.rect.y + door.rect.h);
+    context.stroke();
+    return;
+  }
+
+  const y = door.side === 'N' ? rect.y - half : rect.y + rect.h - half;
+  context.fillStyle = PALETTE.tunnel;
+  context.fillRect(door.rect.x, y, door.rect.w, thickness);
+
+  context.strokeStyle = 'rgba(127, 209, 185, 0.42)';
+  context.lineWidth = Math.max(1, tileSize * 0.02);
+  context.beginPath();
+  context.moveTo(door.rect.x, y - thickness);
+  context.lineTo(door.rect.x, y + thickness * 1.6);
+  context.moveTo(door.rect.x + door.rect.w, y - thickness);
+  context.lineTo(door.rect.x + door.rect.w, y + thickness * 1.6);
+  context.stroke();
 }
 
 /**
@@ -866,6 +919,7 @@ function drawRoomLabel(
   room: LevelRoom,
   level: LevelModel,
   badge: RoomBadge | undefined,
+  labelScale: number,
 ): void {
   const rect = room.rect;
   if (rect.w <= 0 || rect.h <= 0) return;
@@ -878,7 +932,7 @@ function drawRoomLabel(
   const maxTextWidth = freeWidth - pad * 2;
   if (maxTextWidth <= 0) return;
 
-  const topicSize = Math.min(Math.max(level.tileSize * 0.24, 11), 22);
+  const topicSize = Math.min(Math.max(level.tileSize * 0.24, 11), 22) * labelScale;
   const statusSize = Math.min(Math.max(topicSize * 0.8, 10), 18);
   const topicY = rect.y + rect.h * 0.45;
   const statusY = topicY + topicSize * 0.62 + statusSize * 0.85;
@@ -964,12 +1018,13 @@ function drawRoomLabels(
   level: LevelModel,
   badges: Readonly<Record<string, RoomBadge>>,
   view: Rect,
+  labelScale: number,
 ): void {
   const margin = level.tileSize;
   for (const room of level.rooms) {
     if (!isVisible(room.rect, view, margin)) continue;
     const badge: RoomBadge | undefined = badges[room.roomId];
-    drawRoomLabel(context, room, level, badge);
+    drawRoomLabel(context, room, level, badge, labelScale);
   }
 }
 
@@ -1085,6 +1140,7 @@ function drawVignette(context: CanvasRenderingContext2D, view: Rect): void {
  */
 export function renderWorld(context: CanvasRenderingContext2D, input: RenderInput): void {
   const { level, body, camera, activeRoomId, surface, activeInteractableId, npcs, activeNpcId, badges, reducedMotion } = input;
+  const labelScale = input.textScale === 'large' ? 1.3 : 1;
 
   const view: Rect = {
     x: finiteOr(camera.x, 0),
@@ -1099,13 +1155,13 @@ export function renderWorld(context: CanvasRenderingContext2D, input: RenderInpu
   context.translate(-view.x, -view.y);
 
   drawTerrain(context, level, view);
-  if (surface) drawSurface(context, level, surface, activeInteractableId ?? null, view);
+  if (surface) drawSurface(context, level, surface, activeInteractableId ?? null, view, labelScale);
   drawRooms(context, level, activeRoomId, view);
   drawLadders(context, level, view);
   // Labels come after ladders so rungs never cross the text.
-  drawRoomLabels(context, level, badges, view);
+  drawRoomLabels(context, level, badges, view, labelScale);
   if (surface && npcs && npcs.length > 0) {
-    drawNpcs(context, npcs, activeNpcId ?? null, view, level.tileSize);
+    drawNpcs(context, npcs, activeNpcId ?? null, view, level.tileSize, labelScale);
   }
   drawPlayer(context, body, reducedMotion);
 

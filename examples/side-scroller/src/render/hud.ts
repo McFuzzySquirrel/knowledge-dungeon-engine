@@ -99,6 +99,7 @@ export function createHud(elements: HudElements): Hud {
           'Review mode',
           view.reviewUnlocked ? 'unlocked' : 'locked — clear every room encounter',
         ],
+        ['Journal', 'J — subjects, records, assistance, settings'],
       ];
       elements.summary.replaceChildren(...rows.flatMap(([term, value]) => row(term, value)));
 
@@ -126,6 +127,7 @@ export function createHud(elements: HudElements): Hud {
         ['Rooms cleared (all portals)', `${view.clearedRooms} / ${view.totalRooms}`],
         ['XP (all subjects)', String(view.xpTotal)],
         ['Nearby', nearby],
+        ['Journal', 'J — subjects, records, assistance, settings'],
       ];
       elements.summary.replaceChildren(...rows.flatMap(([term, value]) => row(term, value)));
 
@@ -154,6 +156,7 @@ export function createHud(elements: HudElements): Hud {
           view.collection.length === 1 ? '1 fish' : `${view.collection.length} fish`,
         ],
         ['Pond session', 'active'],
+        ['Journal', 'J — subjects, records, assistance, settings'],
       ];
       elements.summary.replaceChildren(...rows.flatMap(([term, value]) => row(term, value)));
 

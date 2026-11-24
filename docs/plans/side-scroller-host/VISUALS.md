@@ -25,7 +25,10 @@ P5 was captured on 2026-11-24 (`visuals/p5/`, two runs: normal and reduced motio
 P6 was captured on 2026-11-24 (`visuals/p6/`, three runs: normal, reduced motion, and a
 keyboard-only segment). P7 was captured on 2026-11-24 (`visuals/p7/`, two runs: normal and
 reduced motion) and shows every village service plus the Library-to-review handoff.
-P8–P10 are planned; their `visuals/p8/`–`visuals/p10/` folders will be added as each gate
+P8 was captured on 2026-11-24 (`visuals/p8/`, two runs: normal and reduced motion) and shows
+the journal, assistance, settings, large text, entry from the journal, and a fresh-save
+zero state. A same-day follow-up (`g8b`) moved the key map behind a **Controls (?)** popup.
+P9–P10 are planned; their `visuals/p9/`–`visuals/p10/` folders will be added as each gate
 is captured.
 
 The P7 run uses the tutorial fixture and the three synthetic demo subjects. The Workshop
@@ -156,6 +159,33 @@ synthetic authored content. No learner subject or note appears in the P6 record.
 | 2026-11-24 | G7 reduced motion | uncommitted | Workshop equipped | [`10-workshop-equipped.png`](visuals/p7/2026-11-24-g7rm-10-workshop-equipped.png) | Keyboard equip succeeds; equipped=1 |
 | 2026-11-24 | G7 reduced motion | uncommitted | Trophy Hall | [`11-trophy-hall.png`](visuals/p7/2026-11-24-g7rm-11-trophy-hall.png) | Records and empty fish state |
 | 2026-11-24 | G7 reduced motion | uncommitted | Guild Hall | [`12-guild-hall.png`](visuals/p7/2026-11-24-g7rm-12-guild-hall.png) | Quest board, roster, and Creator entry with motion disabled |
+| 2026-11-24 | G8 | uncommitted | Journal overview | [`2026-11-24-g8-01-journal-overview.png`](visuals/p8/2026-11-24-g8-01-journal-overview.png) | openIn=13ms; focus=journal-panel-title; subjects=active subject row; sections=journal-overview,journal-subjects,journal-progress,journal-badges,journal-records,journal-inventory,journal-fish,journal-due,journal-assistance,journal-settings; records=true; due=true; assistance=true; settings=true |
+| 2026-11-24 | G8 | uncommitted | Journal subjects | [`2026-11-24-g8-02-journal-subjects.png`](visuals/p8/2026-11-24-g8-02-journal-subjects.png) | section=journal-panel-title; room counts=true; enter buttons=4 |
+| 2026-11-24 | G8 | uncommitted | Journal records | [`2026-11-24-g8-03-journal-records.png`](visuals/p8/2026-11-24-g8-03-journal-records.png) | notes=true; active days=true; engine copy=true |
+| 2026-11-24 | G8 | uncommitted | Journal assistance | [`2026-11-24-g8-04-journal-assistance.png`](visuals/p8/2026-11-24-g8-04-journal-assistance.png) | suggestions=6; engine reason labels=true; mode copy=true |
+| 2026-11-24 | G8 | uncommitted | Journal settings | [`2026-11-24-g8-05-journal-settings.png`](visuals/p8/2026-11-24-g8-05-journal-settings.png) | focus=journal-panel-title; values={"reducedMotion":"system","assistance":"gentle","textScale":"normal","touch":"auto"}; local-only copy=true |
+| 2026-11-24 | G8 | uncommitted | Large text applied | [`2026-11-24-g8-06-journal-large-text.png`](visuals/p8/2026-11-24-g8-06-journal-large-text.png) | dataset=large; value=large; same panel open=true |
+| 2026-11-24 | G8 | uncommitted | Assistance mode off | [`2026-11-24-g8-07-journal-assistance-off.png`](visuals/p8/2026-11-24-g8-07-journal-assistance-off.png) | mode=off; off copy=true; suggestions=0 |
+| 2026-11-24 | G8 | uncommitted | Settings after reload | [`2026-11-24-g8-08-journal-settings-persisted.png`](visuals/p8/2026-11-24-g8-08-journal-settings-persisted.png) | dataset text=large; select text=large; assistance=off; reduced motion=system; touch=auto |
+| 2026-11-24 | G8 | uncommitted | Entered from the journal | [`2026-11-24-g8-09-journal-entry.png`](visuals/p8/2026-11-24-g8-09-journal-entry.png) | subject=demo-kitchen; enteredIn=108ms; world=dungeon; study session open=true; focus=game |
+| 2026-11-24 | G8 | uncommitted | Journal on a fresh save | [`2026-11-24-g8-10-journal-empty.png`](visuals/p8/2026-11-24-g8-10-journal-empty.png) | subjects visible=true; active subject=true; due=true; focus=journal-panel-title |
+| 2026-11-24 | G8 | uncommitted | Fresh-save records | [`2026-11-24-g8-11-journal-empty-records.png`](visuals/p8/2026-11-24-g8-11-journal-empty-records.png) | zero notes=true; zero fish=true; badges empty=true; fish empty=true |
+| 2026-11-24 | G8 reduced motion | uncommitted | Journal overview | [`2026-11-24-g8rm-01-journal-overview.png`](visuals/p8/2026-11-24-g8rm-01-journal-overview.png) | openIn=55ms; focus=journal-panel-title; subjects=active subject row; sections=journal-overview,journal-subjects,journal-progress,journal-badges,journal-records,journal-inventory,journal-fish,journal-due,journal-assistance,journal-settings; records=true; due=true; assistance=true; settings=true |
+| 2026-11-24 | G8 reduced motion | uncommitted | Journal subjects | [`2026-11-24-g8rm-02-journal-subjects.png`](visuals/p8/2026-11-24-g8rm-02-journal-subjects.png) | section=journal-panel-title; room counts=true; enter buttons=4 |
+| 2026-11-24 | G8 reduced motion | uncommitted | Journal records | [`2026-11-24-g8rm-03-journal-records.png`](visuals/p8/2026-11-24-g8rm-03-journal-records.png) | notes=true; active days=true; engine copy=true |
+| 2026-11-24 | G8 reduced motion | uncommitted | Journal assistance | [`2026-11-24-g8rm-04-journal-assistance.png`](visuals/p8/2026-11-24-g8rm-04-journal-assistance.png) | suggestions=6; engine reason labels=true; mode copy=true |
+| 2026-11-24 | G8 reduced motion | uncommitted | Journal settings | [`2026-11-24-g8rm-05-journal-settings.png`](visuals/p8/2026-11-24-g8rm-05-journal-settings.png) | focus=journal-panel-title; values={"reducedMotion":"system","assistance":"gentle","textScale":"normal","touch":"auto"}; local-only copy=true |
+| 2026-11-24 | G8 reduced motion | uncommitted | Large text applied | [`2026-11-24-g8rm-06-journal-large-text.png`](visuals/p8/2026-11-24-g8rm-06-journal-large-text.png) | dataset=large; value=large; same panel open=true |
+| 2026-11-24 | G8 reduced motion | uncommitted | Assistance mode off | [`2026-11-24-g8rm-07-journal-assistance-off.png`](visuals/p8/2026-11-24-g8rm-07-journal-assistance-off.png) | mode=off; off copy=true; suggestions=0 |
+| 2026-11-24 | G8 reduced motion | uncommitted | Settings after reload | [`2026-11-24-g8rm-08-journal-settings-persisted.png`](visuals/p8/2026-11-24-g8rm-08-journal-settings-persisted.png) | dataset text=large; select text=large; assistance=off; reduced motion=system; touch=auto |
+| 2026-11-24 | G8 reduced motion | uncommitted | Entered from the journal | [`2026-11-24-g8rm-09-journal-entry.png`](visuals/p8/2026-11-24-g8rm-09-journal-entry.png) | subject=demo-kitchen; enteredIn=114ms; world=dungeon; study session open=true; focus=game |
+| 2026-11-24 | G8 reduced motion | uncommitted | Journal on a fresh save | [`2026-11-24-g8rm-10-journal-empty.png`](visuals/p8/2026-11-24-g8rm-10-journal-empty.png) | subjects visible=true; active subject=true; due=true; focus=journal-panel-title |
+| 2026-11-24 | G8 reduced motion | uncommitted | Fresh-save records | [`2026-11-24-g8rm-11-journal-empty-records.png`](visuals/p8/2026-11-24-g8rm-11-journal-empty-records.png) | zero notes=true; zero fish=true; badges empty=true; fish empty=true |
+| 2026-11-24 | G8 follow-up | uncommitted | Controls help | [`2026-11-24-g8b-01-controls-help.png`](visuals/p8/2026-11-24-g8b-01-controls-help.png) | openIn=39ms; focus=help-panel-title; groups=Move,Interact,Review,Pond,World; close buttons=1 |
+| 2026-11-24 | G8 follow-up | uncommitted | Controls closed | [`2026-11-24-g8b-02-controls-closed.png`](visuals/p8/2026-11-24-g8b-02-controls-closed.png) | closedIn=24ms; focus returned to open-help; help hidden=true |
+| 2026-11-24 | G8 follow-up | uncommitted | Controls opened with ? | [`2026-11-24-g8b-03-controls-question.png`](visuals/p8/2026-11-24-g8b-03-controls-question.png) | openIn=49ms; focus=help-panel-title; shortcut works without the mouse |
+| 2026-11-24 | G8 follow-up | uncommitted | Root room opening | [`2026-11-24-g8c-01-root-opening.png`](visuals/p8/2026-11-24-g8c-01-root-opening.png) | The chamber outline is cut at the ladder doorway; the room reads as connected to the shaft |
+| 2026-11-24 | G8 follow-up | uncommitted | Lower room opening | [`2026-11-24-g8c-02-lower-opening.png`](visuals/p8/2026-11-24-g8c-02-lower-opening.png) | The lower chamber shows the same doorway gap at the ladder |
 
 Manifests: [`2026-11-23-g1-manifest.json`](visuals/p1/2026-11-23-g1-manifest.json),
 [`2026-11-23-g2-manifest.json`](visuals/p2/2026-11-23-g2-manifest.json),
@@ -167,7 +197,11 @@ Manifests: [`2026-11-23-g1-manifest.json`](visuals/p1/2026-11-23-g1-manifest.jso
 [`2026-11-24-g6-manifest.json`](visuals/p6/2026-11-24-g6-manifest.json),
 [`2026-11-24-g6rm-manifest.json`](visuals/p6/2026-11-24-g6rm-manifest.json),
 [`2026-11-24-g7-manifest.json`](visuals/p7/2026-11-24-g7-manifest.json),
-[`2026-11-24-g7rm-manifest.json`](visuals/p7/2026-11-24-g7rm-manifest.json).
+[`2026-11-24-g7rm-manifest.json`](visuals/p7/2026-11-24-g7rm-manifest.json),
+[`2026-11-24-g8-manifest.json`](visuals/p8/2026-11-24-g8-manifest.json),
+[`2026-11-24-g8rm-manifest.json`](visuals/p8/2026-11-24-g8rm-manifest.json),
+[`2026-11-24-g8b-manifest.json`](visuals/p8/2026-11-24-g8b-manifest.json),
+[`2026-11-24-g8c-manifest.json`](visuals/p8/2026-11-24-g8c-manifest.json).
 
 P0 predates this record: it proved boot and storage with a debug panel and captured no
 frames. The record starts at P1.
@@ -695,6 +729,85 @@ node examples/side-scroller/scripts/capture-dungeon.mjs \
 
 Manifests: [`2026-11-24-g7-manifest.json`](visuals/p7/2026-11-24-g7-manifest.json),
 [`2026-11-24-g7rm-manifest.json`](visuals/p7/2026-11-24-g7rm-manifest.json).
+
+## P8 — Journal, assistance, and settings
+
+Captured 2026-11-24 from the real app over WebDriver. The run clears all three tutorial
+rooms, keeps the three demo subjects, seeds one gear item, reloads, and opens the journal
+with `J`. It captures the overview, subjects, records, assistance, and settings, switches
+to large text and assistance off, reloads to prove both persisted, enters a subject from
+the journal's own Enter button, then clears the save for the fresh-save zero state. The
+reduced-motion run repeats the path with `ui.prefersReducedMotion=1`.
+
+```sh
+node examples/side-scroller/scripts/capture-dungeon.mjs \
+  --out docs/plans/side-scroller-host/visuals/p8 \
+  --prefix 2026-11-24-g8 --journal
+```
+
+### Overview, subjects, and records
+
+![Journal overview](visuals/p8/2026-11-24-g8-01-journal-overview.png)
+
+![Journal subjects](visuals/p8/2026-11-24-g8-02-journal-subjects.png)
+
+![Journal records](visuals/p8/2026-11-24-g8-03-journal-records.png)
+
+### Engine-ranked assistance and the settings section
+
+![Journal assistance](visuals/p8/2026-11-24-g8-04-journal-assistance.png)
+
+![Journal settings](visuals/p8/2026-11-24-g8-05-journal-settings.png)
+
+### Large text and assistance off apply immediately
+
+![Large text applied](visuals/p8/2026-11-24-g8-06-journal-large-text.png)
+
+![Assistance mode off](visuals/p8/2026-11-24-g8-07-journal-assistance-off.png)
+
+### Settings survive a reload, and Enter opens a subject
+
+![Settings after reload](visuals/p8/2026-11-24-g8-08-journal-settings-persisted.png)
+
+![Entered from the journal](visuals/p8/2026-11-24-g8-09-journal-entry.png)
+
+### Fresh save: three demo subjects, zero records
+
+![Journal on a fresh save](visuals/p8/2026-11-24-g8-10-journal-empty.png)
+
+![Fresh-save records](visuals/p8/2026-11-24-g8-11-journal-empty-records.png)
+
+### Reduced motion
+
+![Journal overview — reduced motion](visuals/p8/2026-11-24-g8rm-01-journal-overview.png)
+
+![Journal assistance — reduced motion](visuals/p8/2026-11-24-g8rm-04-journal-assistance.png)
+
+![Journal settings — reduced motion](visuals/p8/2026-11-24-g8rm-05-journal-settings.png)
+
+![Large text — reduced motion](visuals/p8/2026-11-24-g8rm-06-journal-large-text.png)
+
+Manifests: [`2026-11-24-g8-manifest.json`](visuals/p8/2026-11-24-g8-manifest.json),
+[`2026-11-24-g8rm-manifest.json`](visuals/p8/2026-11-24-g8rm-manifest.json),
+[`2026-11-24-g8b-manifest.json`](visuals/p8/2026-11-24-g8b-manifest.json).
+
+### Controls live behind a help button and the `?` key
+
+![Controls help](visuals/p8/2026-11-24-g8b-01-controls-help.png)
+
+![Controls closed](visuals/p8/2026-11-24-g8b-02-controls-closed.png)
+
+![Controls opened with ?](visuals/p8/2026-11-24-g8b-03-controls-question.png)
+
+Manifest: [`2026-11-24-g8b-manifest.json`](visuals/p8/2026-11-24-g8b-manifest.json).
+
+### Room outlines break where a corridor enters
+
+![Root room opening](visuals/p8/2026-11-24-g8c-01-root-opening.png)
+
+![Lower room opening](visuals/p8/2026-11-24-g8c-02-lower-opening.png)
+
+Manifest: [`2026-11-24-g8c-manifest.json`](visuals/p8/2026-11-24-g8c-manifest.json).
 
 ## Capturing the next phase
 

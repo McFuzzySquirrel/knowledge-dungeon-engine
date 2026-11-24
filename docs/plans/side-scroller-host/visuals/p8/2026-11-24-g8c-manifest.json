@@ -1,0 +1,24 @@
+{
+  "capturedAt": "2026-11-24T19:34:38.884Z",
+  "app": "http://localhost:5174/",
+  "viewport": "default headless Firefox (captured window)",
+  "prefix": "2026-11-24-g8c",
+  "openings": true,
+  "reducedMotion": false,
+  "result": {
+    "doors": 4,
+    "reducedMotion": false
+  },
+  "frames": [
+    {
+      "file": "2026-11-24-g8c-01-root-opening.png",
+      "label": "Root room opening",
+      "detail": "The chamber outline is cut at the ladder doorway; the room reads as connected to the shaft"
+    },
+    {
+      "file": "2026-11-24-g8c-02-lower-opening.png",
+      "label": "Lower room opening",
+      "detail": "The lower chamber shows the same doorway gap at the ladder"
+    }
+  ]
+}

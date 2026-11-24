@@ -1,7 +1,6 @@
 import {
   nextQuestStep,
   progression,
-  statistics,
   type EngineState,
 } from '@/index';
 import {
@@ -9,6 +8,7 @@ import {
   projectReviewForSubject,
   reviewDueCount,
 } from '../review/projection';
+import { computeDeviceStatistics } from '../statistics/projection';
 
 /**
  * Pure village-service projections (P7).
@@ -298,33 +298,6 @@ export function trophyBadgeLabel(id: string): string {
   return humanizeId(id);
 }
 
-function statisticsInput(state: EngineState, nowIso: string): statistics.StatisticsComputationInput {
-  return {
-    now: nowIso,
-    sessions: state.studySessions.map((session) => ({
-      sessionId: session.sessionId,
-      startedAt: session.startedAt,
-      endedAt: session.endedAt,
-      subjectId: session.subjectId,
-      subjectName: session.subjectName,
-      roomsVisited: session.roomsVisited,
-      notesSubmitted: session.notesSubmitted,
-      reviewsCompleted: session.reviewsCompleted,
-      xpEarned: session.xpEarned,
-    })),
-    subjects: Object.entries(state.subjects).map(([subjectId, subject]) => {
-      const record = state.progression[subjectId] ?? null;
-      return {
-        subjectId,
-        subjectName: subject.dungeon.subjectName,
-        snapshot: subject,
-        progression: record,
-        events: statistics.readStatisticsEventLedgerFromFields(record?.extraFields).events,
-      };
-    }),
-  };
-}
-
 /**
  * Project the Trophy Hall.
  *
@@ -341,8 +314,18 @@ export function projectTrophy(state: EngineState, nowIso: string): TrophyView {
     }
   }
 
-  const snapshot = statistics.computeStatisticsSnapshot(statisticsInput(state, nowIso));
-  const totals = snapshot.totals;
+  const totals = computeDeviceStatistics(state, nowIso)?.totals;
+  if (!totals) {
+    return {
+      badges: [...badgeIds].map(trophyBadgeLabel).sort((left, right) => left.localeCompare(right)),
+      fish,
+      metrics: [],
+      emptyMessage:
+        'Records are unavailable for this save. Badges and fish still come from the engine.',
+      fishEmptyMessage:
+        'No fish yet. Clear a room, then cast at a fishing pond and keep a catch to display it here.',
+    };
+  }
   const metrics: TrophyMetric[] = [
     { label: 'Sessions completed', value: String(totals.sessionsCompleted) },
     { label: 'Study time', value: `${totals.studyTimeMinutes} min` },

@@ -48,6 +48,17 @@ import {
   projectReviewGate,
   projectReviewRoom,
 } from './review/projection';
+import {
+  loadSettings,
+  resetSettings,
+  saveSettings,
+  applySettings,
+  effectiveReducedMotion,
+  type HostSettings,
+} from './settings';
+import { projectAssistance, projectJournal, type JournalView } from './journal/projection';
+import { mountJournalPanel, type JournalPanel } from './ui/journalPanel';
+import { mountHelpPanel, type HelpPanel } from './ui/helpPanel';
 import { createHud } from './render/hud';
 import { createCamera, prepareCanvas, renderWorld, updateCamera } from './render/canvas';
 import { projectRoute, type Screen } from './routing';
@@ -118,6 +129,9 @@ const fishingPanelHost = must<HTMLElement>('#fishing-panel');
 const reviewPanelHost = must<HTMLElement>('#review-panel');
 const creatorPanelHost = must<HTMLElement>('#creator-panel');
 const servicePanelHost = must<HTMLElement>('#service-panel');
+const journalPanelHost = must<HTMLElement>('#journal-panel');
+const helpPanelHost = must<HTMLElement>('#help-panel');
+const openHelpButton = must<HTMLButtonElement>('#open-help');
 const npcDialogHost = must<HTMLElement>('#npc-dialogue');
 const leaveFishingButton = must<HTMLButtonElement>('#leave-fishing');
 const recoveryBanner = must<HTMLDivElement>('#recovery');
@@ -140,7 +154,18 @@ setNoticeReporter((message) => hud.announce(message));
 
 const prompts = createPrompts(promptHost, (message) => hud.announce(message));
 
-const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+/** P8: host-local preferences, never part of `EngineState`. */
+let hostSettings: HostSettings = loadSettings();
+applySettings(hostSettings);
+
+const systemReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+systemReducedMotion.addEventListener?.('change', () => applySettings(hostSettings));
+
+/** One answer for every consumer: `system` follows the OS, `on` forces it. */
+function reducedMotionActive(): boolean {
+  return effectiveReducedMotion(hostSettings, systemReducedMotion.matches);
+}
+
 const camera = createCamera();
 const visits = createVisitTracker();
 
@@ -228,6 +253,14 @@ let servicePending = false;
 /** True when opening the Workshop activated a subject and closing must end it. */
 let serviceActivatedSubject = false;
 let libraryReviewPending = false;
+
+/** The open journal (P8), or `null`. It pauses the world like every other modal. */
+let journalPanel: JournalPanel | null = null;
+let journalPending = false;
+let journalSelectedSubjectId: string | null = null;
+
+/** The open controls help (post-P8), or `null`. It pauses the world too. */
+let helpPanel: HelpPanel | null = null;
 
 /** P7: NPC figures on the street and host-local conversation state. */
 let surfaceNpcs: SurfaceNpc[] = [];
@@ -376,7 +409,10 @@ function resetDungeonLevel(): void {
 }
 
 function syncPrompt(): void {
-  if (composer || reviewPanel || creatorPanel || servicePanel) {
+  openHelpButton.disabled = Boolean(
+    composer || reviewPanel || creatorPanel || servicePanel || journalPanel || helpPanel,
+  );
+  if (composer || reviewPanel || creatorPanel || servicePanel || journalPanel || helpPanel) {
     prompts.setRoom(null, true);
     prompts.setTarget(null, true);
     return;
@@ -432,10 +468,10 @@ function pondLabelFor(pondId: string): string {
 function setCanvasMode(mode: Screen): void {
   const label =
     mode === 'fishing'
-      ? 'Fishing pond. Hold Space to charge the cast and release to cast. Press Space at a bite to reel in. Use A and D or the arrow keys to walk the shore. Press Escape to leave the pond. Choose keep or release in the dialog when a fish is caught.'
+      ? 'Fishing pond. Hold Space to charge the cast and release to cast. Press Space at a bite to reel in. Use A and D or the arrow keys to walk the shore. Press Escape to leave the pond. Choose keep or release in the dialog when a fish is caught. Press J to open the journal.'
       : mode === 'dungeon'
-        ? 'Side-view dungeon. Move with A and D or the arrow keys, jump with Space, climb with W and S, press E in a room to write a note, and press R in a cleared room to review it.'
-        : 'Side-view village street above a dungeon. Move with A and D or the arrow keys, jump with Space, climb with W and S, press E at a door to enter a portal or open a village service, press E beside a person to talk, press C to open the Creator, and press R to review the last-studied dungeon.';
+        ? 'Side-view dungeon. Move with A and D or the arrow keys, jump with Space, climb with W and S, press E in a room to write a note, press R in a cleared room to review it, and press J to open the journal.'
+        : 'Side-view village street above a dungeon. Move with A and D or the arrow keys, jump with Space, climb with W and S, press E at a door to enter a portal or open a village service, press E beside a person to talk, press C to open the Creator, press R to review the last-studied dungeon, and press J to open the journal.';
   canvas.setAttribute('aria-label', label);
 }
 
@@ -1034,6 +1070,7 @@ function onState(state: EngineState): void {
   const structures = engine ? engine.villageStructures() : [];
   refreshCreator();
   refreshService();
+  refreshJournal();
 
   // A quest step change invalidates every NPC cursor: its index belonged to a
   // script that is no longer on screen (the engine applies the same rule).
@@ -1859,6 +1896,11 @@ function renderServiceContent(id: VillageServiceId): HTMLElement {
           syncPrompt();
           openCreator();
         },
+        onOpenJournal: () => {
+          dropServicePanel();
+          syncPrompt();
+          openJournal();
+        },
       });
     case 'trophy-hall':
       return renderTrophy(projectTrophy(state, reviewNow()));
@@ -2026,6 +2068,191 @@ async function changeEquipment(action: 'equip' | 'unequip', itemId: string): Pro
   }
 }
 
+// ── Controls help (post-P8 polish) ───────────────────────────────────────────
+
+function closeHelpPanel(): void {
+  if (!helpPanel) return;
+  const panel = helpPanel;
+  // Re-enable the trigger before handing focus back to it; a disabled button
+  // cannot receive focus.
+  helpPanel = null;
+  syncPrompt();
+  panel.close();
+  hud.announce('Controls closed.');
+}
+
+function openHelp(trigger: HTMLElement = canvas): void {
+  if (helpPanel) return;
+  if (composer || reviewPanel || creatorPanel || servicePanel || journalPanel) {
+    hud.announce('Close the open panel before opening Controls.');
+    return;
+  }
+  clearInput();
+  hideToast();
+  hud.clearError();
+  helpPanel = mountHelpPanel(helpPanelHost, trigger, { onClose: closeHelpPanel });
+  syncPrompt();
+  hud.announce('Controls open. Tab moves through the list; Escape or ? closes.');
+}
+
+// ── Journal and settings (P8) ────────────────────────────────────────────────
+
+/** Project the journal and fill in the separately computed assistance result. */
+function journalView(state: EngineState, nowIso: string): JournalView {
+  return {
+    ...projectJournal(state, nowIso),
+    assistance: projectAssistance(state, hostSettings, nowIso),
+  };
+}
+
+/** Re-project the open journal from committed state; settings changes call this too. */
+function refreshJournal(): void {
+  if (!journalPanel) return;
+  journalPanel.update(journalView(getState(), reviewNow()), hostSettings, journalSelectedSubjectId);
+}
+
+/** Detach the panel without focusing or announcing. */
+function dropJournalPanel(): void {
+  if (!journalPanel) return;
+  journalPanel.close();
+  journalPanel = null;
+  journalPending = false;
+}
+
+function closeJournalPanel(): void {
+  if (!journalPanel) return;
+  if (journalPending) {
+    hud.announce('A journal command is still pending. Wait for it to finish.');
+    return;
+  }
+  dropJournalPanel();
+  journalSelectedSubjectId = null;
+  syncPrompt();
+  focusCanvas();
+  hud.announce('Journal closed.');
+}
+
+function openJournal(): void {
+  if (!engine || journalPanel) return;
+  if (composer || reviewPanel || creatorPanel || servicePanel || helpPanel) {
+    hud.announce('Close the open panel before opening the journal.');
+    return;
+  }
+  if (fishing?.dialog) {
+    hud.announce('Finish the fish choice before opening the journal.');
+    return;
+  }
+
+  clearInput();
+  hideToast();
+  hud.clearError();
+  journalSelectedSubjectId = getState().activeSubjectId;
+  journalPanel = mountJournalPanel(
+    journalPanelHost,
+    journalView(getState(), reviewNow()),
+    hostSettings,
+    journalSelectedSubjectId,
+    canvas,
+    {
+      onClose: closeJournalPanel,
+      onOpenSettings: () => journalPanel?.focusSettings(),
+      onSelectSubject(subjectId) {
+        if (!getState().subjects[subjectId]) {
+          journalPanel?.showError('That subject no longer exists.');
+          return;
+        }
+        journalSelectedSubjectId = subjectId;
+        refreshJournal();
+        hud.announce('Subject selected. The Enter button opens its portal.');
+      },
+      onEnterSubject(subjectId) {
+        void enterJournalSubject(subjectId);
+      },
+      onSettingsChange(next) {
+        changeHostSettings(next);
+      },
+      onResetSettings() {
+        resetHostSettings();
+      },
+    },
+  );
+  syncPrompt();
+  hud.announce(
+    'Journal open. Subjects, progress, records, due rooms, assistance, and settings. Press J or Escape to close.',
+  );
+}
+
+/** Save, apply, and re-project after one settings change. */
+function changeHostSettings(next: HostSettings): void {
+  hostSettings = next;
+  saveSettings(hostSettings);
+  applySettings(hostSettings);
+  refreshJournal();
+  hud.announce('Settings saved on this device.');
+}
+
+function resetHostSettings(): void {
+  hostSettings = resetSettings();
+  saveSettings(hostSettings);
+  applySettings(hostSettings);
+  refreshJournal();
+  hud.announce('Settings reset to defaults. Engine state was not touched.');
+}
+
+/**
+ * Enter one subject through the same village portal the street uses.
+ *
+ * A dungeon or pond session must be closed first so the engine starts one study
+ * session, not two. A subject past the six portal slots reports that honestly
+ * and keeps the journal open.
+ */
+async function enterJournalSubject(subjectId: string): Promise<void> {
+  if (!engine || journalPending) return;
+  const state = getState();
+  if (!state.subjects[subjectId]) {
+    journalPanel?.showError('That subject no longer exists.');
+    return;
+  }
+
+  const portal = engine
+    .villageStructures()
+    .find(
+      (structure) =>
+        structure.subjectId === subjectId &&
+        (structure.type === 'portal-icon' || structure.type === 'training-gate'),
+    );
+  if (!portal) {
+    const message =
+      'This subject has no free portal slot. This example shows six portals; delete another subject to make room.';
+    journalPanel?.showError(message);
+    hud.announce(message);
+    return;
+  }
+
+  journalPending = true;
+  dropJournalPanel();
+  journalSelectedSubjectId = null;
+  syncPrompt();
+  focusCanvas();
+  hud.clearError();
+  try {
+    if (getState().session.world !== 'village') await engine.returnToVillage();
+    await engine.interactVillageStructure(portal.id);
+    // The state subscription routes to the dungeon and starts the study session.
+    hud.announce(`Entering ${state.subjects[subjectId]?.dungeon.subjectName ?? 'the subject'}…`);
+  } catch (error) {
+    if (getState().activeStudySessionId) {
+      await engine.returnToVillage().catch(() => undefined);
+    }
+    const message = interactionFailedMessage(portal.label, error);
+    hud.showError(message);
+    showToast(message, 'error');
+    hud.announce('Could not enter the subject. You stayed on the street.');
+  } finally {
+    journalPending = false;
+  }
+}
+
 // ── NPCs (P7) ────────────────────────────────────────────────────────────────
 
 function closeNpcDialog(returnFocus = false): void {
@@ -2141,7 +2368,44 @@ function installInput(): void {
       return;
     }
 
+    // The journal owns Escape/J, Tab, arrows, and every native control.
+    if (journalPanel) {
+      const insidePanel = event.target instanceof Node && journalPanelHost.contains(event.target);
+      if ((event.code === 'Escape' || event.code === 'KeyJ') && !insidePanel) {
+        event.preventDefault();
+        closeJournalPanel();
+      }
+      return;
+    }
+
+    // The controls popup owns Escape/?, Tab, and its Close button.
+    if (helpPanel) {
+      const insidePanel = event.target instanceof Node && helpPanelHost.contains(event.target);
+      if ((event.key === 'Escape' || event.key === '?') && !insidePanel) {
+        event.preventDefault();
+        closeHelpPanel();
+      }
+      return;
+    }
+
     if (isTypingTarget(event.target)) return;
+
+    if (event.key === '?' || (event.code === 'Slash' && event.shiftKey)) {
+      event.preventDefault();
+      openHelp(
+        document.activeElement instanceof HTMLElement && document.activeElement !== document.body
+          ? document.activeElement
+          : canvas,
+      );
+      return;
+    }
+
+    if (event.code === 'KeyJ' && !event.repeat) {
+      event.preventDefault();
+      if (returnPending || interactionPending || reviewEntryPending) return;
+      openJournal();
+      return;
+    }
 
     if (npcDialog && event.code === 'Escape') {
       event.preventDefault();
@@ -2401,12 +2665,13 @@ function frame(nowMs: number): void {
   firstFrame = false;
   lastFrameMs = nowMs;
 
-  if (screen === 'fishing' && fishing && context) {
+  if (screen === 'fishing' && fishing && context && !journalPanel && !helpPanel) {
     fishing.clockMs += deltaMs;
     reduceFishingEvent({ type: 'tick', nowMs: fishing.clockMs });
     renderFishingScene(context, {
       state: fishing.machine,
-      reducedMotion: reducedMotion.matches,
+      reducedMotion: reducedMotionActive(),
+      textScale: hostSettings.textScale,
     });
     requestAnimationFrame(frame);
     return;
@@ -2416,8 +2681,9 @@ function frame(nowMs: number): void {
   jumpQueued = false;
 
   if (level && body && context) {
-    // The composer, the review panel, the Creator, and a village service pause the world.
-    if (!composer && !reviewPanel && !creatorPanel && !servicePanel) {
+    // The composer, the review panel, the Creator, a village service, the
+    // journal, and Controls pause the world.
+    if (!composer && !reviewPanel && !creatorPanel && !servicePanel && !journalPanel && !helpPanel) {
       body = stepBody(body, intent, level, deltaMs);
       if (screen === 'dungeon') {
         updateRoomVisit();
@@ -2426,7 +2692,7 @@ function frame(nowMs: number): void {
         updateInteractable();
       }
     }
-    updateCamera(camera, body, level, deltaMs, reducedMotion.matches);
+    updateCamera(camera, body, level, deltaMs, reducedMotionActive());
     renderWorld(context, {
       level,
       body,
@@ -2437,7 +2703,8 @@ function frame(nowMs: number): void {
       npcs: surfaceNpcs,
       activeNpcId: activeNpc?.id ?? null,
       badges,
-      reducedMotion: reducedMotion.matches,
+      reducedMotion: reducedMotionActive(),
+      textScale: hostSettings.textScale,
     });
   }
 
@@ -2470,6 +2737,10 @@ function wireActions(storage: ReturnType<typeof createIndexedDbStorage>): void {
 
   leaveFishingButton.addEventListener('click', () => {
     void leavePond();
+  });
+
+  openHelpButton.addEventListener('click', () => {
+    openHelp(openHelpButton);
   });
 
   startButton.addEventListener('click', () => {

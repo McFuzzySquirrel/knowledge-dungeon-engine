@@ -14,6 +14,7 @@ import type { GuildView } from '../village/projection';
 
 export interface GuildPanelCallbacks {
   onOpenCreator(): void;
+  onOpenJournal(): void;
 }
 
 function element<K extends keyof HTMLElementTagNameMap>(
@@ -82,8 +83,12 @@ export function renderGuild(view: GuildView, callbacks: GuildPanelCallbacks): HT
   creator.type = 'button';
   creator.addEventListener('click', callbacks.onOpenCreator);
 
+  const journal = element('button', { id: 'guild-open-journal', text: 'Open journal' });
+  journal.type = 'button';
+  journal.addEventListener('click', callbacks.onOpenJournal);
+
   const actions = element('div', { className: 'note-actions' });
-  actions.append(creator);
+  actions.append(creator, journal);
 
   root.append(
     questSection(view),
@@ -91,7 +96,7 @@ export function renderGuild(view: GuildView, callbacks: GuildPanelCallbacks): HT
     actions,
     element('p', {
       className: 'note-hint',
-      text: 'The Creator edits the active subject. The street shortcut C opens it too.',
+      text: 'The Creator edits the active subject. The street shortcut C opens it too; the journal opens with J.',
     }),
   );
   return root;

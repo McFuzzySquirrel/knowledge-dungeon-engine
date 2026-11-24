@@ -17,6 +17,11 @@ selection, a portable save bundle (export/import), and touch controls that feed 
 movement and fishing intents as the keyboard. The engine still owns all durable state; the
 host adds the shell and the input layer.
 
+The canvas also becomes the viewport rather than a 16:9 card inside a document. The title,
+HUD, journal, services, help, and touch controls all sit inside the world; the progress
+panel becomes an overlay or sheet. This is the P9 shell decision made after P8, and it
+replaces P9-T5's earlier "canvas stays 16:9" wording.
+
 This is also where S-01 changes from desktop-only to current mobile Safari/Chrome.
 
 ## Non-goals
@@ -135,10 +140,14 @@ export interface TouchControls {
       the action button label changes with context.
 - [ ] Visible focus still works for keyboard users on a hybrid device.
 
-### P9-T5 — Responsive layout
+### P9-T5 — Responsive full-viewport layout
 
-- [ ] Below 900 px the side panel becomes a collapsible sheet or a tab; the canvas stays
-      16:9 and controls do not cover the prompt.
+- [ ] The canvas fills the viewport (`100dvh`, no 16:9 card, no document column beside it).
+- [ ] The progress panel becomes an overlay or collapsible sheet over the world; the page
+      does not scroll while playing.
+- [ ] Below 900 px the panel becomes a sheet or tab; prompt, toast, recovery, and touch
+      controls do not cover one another.
+- [ ] The title/loading overlay and every modal render inside the world viewport.
 - [ ] Safe-area insets for notches; controls respect `env(safe-area-inset-*)`.
 - [ ] Large text (P8) does not clip the HUD or dialogue.
 - [ ] Orientation change resizes the canvas and leaves the world state intact.
@@ -214,8 +223,12 @@ intent state; no agent edits `src/`.
   existing loud failure path; do not silently fall back to memory.
 - **Touch/keyboard divergence.** Both must produce the same intents. A second movement
   implementation is a fail.
-- **Overlay collisions.** Prompt, toast, recovery banner, note panel, and touch controls
-  share the canvas; define stacking and test on a 390×844 viewport.
+- **Overlay collisions.** Prompt, toast, recovery banner, note panel, touch controls, the
+  progress sheet, and the title all share one viewport; define stacking and test on a
+  390×844 viewport.
+- **Viewport chrome.** A full-viewport canvas changes camera framing and can hide the
+  focus outline behind overlays; test that the world still frames the player and that
+  keyboard focus remains visible.
 - **S-01 change.** Mobile Safari/Chrome becomes supported; document the tested versions.
 
 ## Rollback

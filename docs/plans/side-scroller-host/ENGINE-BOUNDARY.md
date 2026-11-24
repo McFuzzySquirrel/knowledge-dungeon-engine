@@ -109,6 +109,13 @@ A new UI starts with a copy of this checklist in its own plan, not by editing th
 P7 exposes the Fish Stand as a **collection display** and NPCs as **read-only lines**.
 Those are honest host features, not stubs pretending to mutate state.
 
+P8 keeps `HostSettings` in `localStorage` under one host key: the engine has no settings
+command and no settings field in `EngineState`, so motion, text scale, assistance mode,
+and touch preference never enter a save. The assistance engine accepts a boolean
+`flagEnabled`; the host names that flag `VITE_ADAPTIVE_ASSISTANCE`. Journal data is a pure
+projection over the public `progression`, `statistics`, `review`, and `assistance`
+namespaces.
+
 ## 7. Compat and review
 
 - Every gate runs the engine and example suites, both typechecks, both builds, and the

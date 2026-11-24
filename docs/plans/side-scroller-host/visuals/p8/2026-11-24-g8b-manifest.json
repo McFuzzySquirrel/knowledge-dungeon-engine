@@ -1,0 +1,36 @@
+{
+  "capturedAt": "2026-11-24T19:27:06.242Z",
+  "app": "http://localhost:5174/",
+  "viewport": "default headless Firefox (captured window)",
+  "prefix": "2026-11-24-g8b",
+  "help": true,
+  "reducedMotion": false,
+  "result": {
+    "opened": {
+      "focus": "help-panel-title",
+      "text": "Controls\n\nKeyboard and pointer controls. Press ? or Escape to close.\n\nClose\nMove\nWalk\nA / D / ← / →\nJump\nSpace\nClimb\nW / S / ↑ / ↓\nInteract\nDoor, service, villager, or note\nE\nCreator\nC\nReview\nR\nJournal and settings\nJ\nClose a dialog or panel\nEsc\nThis help\n?\nReview\nRate recall\n0 / 1 / 2 / 3 / 4 / 5\nSubmit the rating\nEnter\nSave for later\nS\nDiscard the saved review\nD\nPond\nCharge the cast\nHold Space\nCast\nRelease Space\nReel in at a bite\nSpace\nLeave the pond\nEsc\nWorld\nStreet and dungeon\nOne world\nReturn to the street\nClimb the entrance shaft",
+      "closeButtons": 1
+    },
+    "openMs": 39,
+    "closedMs": 24,
+    "questionMs": 49,
+    "reducedMotion": false
+  },
+  "frames": [
+    {
+      "file": "2026-11-24-g8b-01-controls-help.png",
+      "label": "Controls help",
+      "detail": "openIn=39ms; focus=help-panel-title; groups=Move,Interact,Review,Pond,World; close buttons=1"
+    },
+    {
+      "file": "2026-11-24-g8b-02-controls-closed.png",
+      "label": "Controls closed",
+      "detail": "closedIn=24ms; focus returned to open-help; help hidden=true"
+    },
+    {
+      "file": "2026-11-24-g8b-03-controls-question.png",
+      "label": "Controls opened with ?",
+      "detail": "openIn=49ms; focus=help-panel-title; shortcut works without the mouse"
+    }
+  ]
+}

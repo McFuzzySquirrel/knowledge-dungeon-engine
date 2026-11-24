@@ -24,13 +24,13 @@ the gate outcome and the baseline facts later gates compare against.
 
 | Field | Value |
 |---|---|
-| Plan version | 2.4 |
+| Plan version | 2.8 |
 | Plan written | 2026-11-23 |
-| Engine test baseline | **13 files / 280 tests at `3951737`; unchanged after P0–P7** |
+| Engine test baseline | **13 files / 280 tests at `3951737`; unchanged after P0–P8** |
 | First gate run | 2026-11-23 |
-| Latest gate passed | G7 (2026-11-24) |
-| Current phase | P0–P7 complete; P8–P10 planned, P8 next |
-| Open failures | None recorded; accepted P2-O1 performance exception and the P4 amendments below |
+| Latest gate passed | G8 (2026-11-24) |
+| Current phase | P0–P8 complete; P9–P10 planned, P9 next |
+| Open failures | None recorded; accepted P2-O1 performance exception, the P4 amendments, and the P8-O1 touch deferral below |
 
 ## Gate index
 
@@ -46,7 +46,9 @@ the gate outcome and the baseline facts later gates compare against.
 | G5 | [P5 — review](phase-5-review.md#execution-evidence) | 2026-11-24 | uncommitted (base `6525c22`) | pass | 13 / 280 | 22 / 135 | [P5 evidence](phase-5-review.md#execution-evidence) |
 | G6 | [P6 — creator](phase-6-creator.md#execution-evidence) | 2026-11-24 | uncommitted (base `46e28b3`) | pass | 13 / 280 | 26 / 153 | [P6 evidence](phase-6-creator.md#execution-evidence) |
 | G7 | [P7 — village services](phase-7-village.md#execution-evidence) | 2026-11-24 | uncommitted (base `d775008`) | pass | 13 / 280 | 28 / 176 | [P7 evidence](phase-7-village.md#execution-evidence) |
-| G8 | [P8 — journal](phase-8-journal.md#execution-evidence) | — | — | Planned | — | — | — |
+| G8 | [P8 — journal](phase-8-journal.md#execution-evidence) | 2026-11-24 | uncommitted (base `3e8039b`) | pass | 13 / 280 | 31 / 199 | [P8 evidence](phase-8-journal.md#execution-evidence) |
+| G8 follow-up | [P8 — controls help](phase-8-journal.md#execution-evidence) | 2026-11-24 | uncommitted (base `3e8039b`) | pass | 13 / 280 | 32 / 201 | [P8 follow-up evidence](phase-8-journal.md#execution-evidence) |
+| G8 follow-up | [P8 — room openings](phase-8-journal.md#execution-evidence) | 2026-11-24 | uncommitted (base `3e8039b`) | pass | 13 / 280 | 32 / 202 | [P8 follow-up evidence](phase-8-journal.md#execution-evidence) |
 | G9 | [P9 — shell and touch](phase-9-shell-mobile.md#execution-evidence) | — | — | Planned | — | — | — |
 | G10 | [P10 — local polish](phase-10-polish.md#execution-evidence) | — | — | Planned | — | — | — |
 
@@ -69,6 +71,9 @@ changes size, add a new baseline row and explain why.
 | 2026-11-24 | uncommitted (base `6525c22`) | 13 | 280 | pass | pass | 0 `examples/` paths | G5 checkpoint; no baseline change; example suite 22 files / 135 tests; `src` diff empty |
 | 2026-11-24 | uncommitted (base `46e28b3`) | 13 | 280 | pass | pass | 0 `examples/` paths | G6 checkpoint; no baseline change; example suite 26 files / 153 tests; `src` diff empty |
 | 2026-11-24 | uncommitted (base `d775008`) | 13 | 280 | pass | pass | 0 `examples/` paths | G7 checkpoint; no baseline change; example suite 28 files / 176 tests; `src` status and diff empty; example-only `happy-dom` dev dependency added for the shell focus test |
+| 2026-11-24 | uncommitted (base `3e8039b`) | 13 | 280 | pass | pass | 0 `examples/` paths | G8 checkpoint; no baseline change; example suite 31 files / 199 tests; `src` status and diff empty; three new P8 suites, no new dependency |
+| 2026-11-24 | uncommitted (base `3e8039b`) | 13 | 280 | pass | pass | 0 `examples/` paths | Post-G8 controls follow-up; example suite 32 files / 201 tests; `src` status and diff empty; `--help` capture mode and `g8b` frames |
+| 2026-11-24 | uncommitted (base `3e8039b`) | 13 | 280 | pass | pass | 0 `examples/` paths | Room-opening follow-up; example suite 32 files / 202 tests; `src` status and diff empty; `--openings` capture mode and `g8c` frames |
 
 ## Per-task evidence links
 
@@ -128,6 +133,7 @@ Notes:
 | Review scheduling | Test for one SM-2 update and at most one reward per (room, pass), plus save/resume/discard across a reload |
 | Creator and seeds | Graph mutation tests with typed refusals, idempotent seed test, and portal count from `villageStructures()` |
 | Village services | Projection fixtures for populated and empty states, an equipment round-trip, and a frame showing every read-only label |
+| Journal and settings | Projection fixtures for empty/one/multi-subject saves, assistance modes/flag, and settings load/save/reset plus a reload observation of all four values |
 | Save portability | `Uint8Array` round trip, malformed-import rejection leaving the prior save intact, and one manual export/import |
 | Touch operation | Dated touch-only checklist on a phone-sized viewport plus an intent-mapping test against the keyboard path |
 | Boundary compliance | [ENGINE-BOUNDARY.md](ENGINE-BOUNDARY.md) is current, and both `src` diff checks are empty at the gate |
@@ -146,3 +152,4 @@ Notes:
 | P4-O1 | G4 | The engine clears `activeSubjectId` in `returnToVillage()`, so P3's return flow reaches the street with no active subject. `resolveFishingSubject` uses active → host-remembered → most-cleared, and the pond payload uses that subject (never the nearest portal). | Host example | Accepted — P4 Amendment 1 |
 | P4-O2 | G4 | `pullRecallQuestion` draws with `Math.random`, so recall selection is not seedable. Replay covers phase, candidate, cast number, and effects; recall tests pass a fixed `roomId`, and the UI presents the engine's own `catch.recall`. | Host example | Accepted — documented in P4 Findings |
 | P4-O3 | G4 | Headless Firefox software compositing measures 16.79 ms average with 319/596 frames just over 16.7 ms during the 10 s pond capture (max 33.74 ms, one dropped frame). This is within the headless software-compositing variance recorded in P2-O1 and is not attributable to fishing. | Host example | Accepted — environment exception (P2-O1) |
+| P8-O1 | G8 | P8 stores the touch-layout preference, resolves `auto` against `(pointer: coarse)`, and publishes `data-touch-layout`, but there is no touch control surface until P9. The P8-T5 "adds/removes controls immediately" checkbox is deferred rather than marked passed. | Host example | Accepted — P9 consumes the attribute; documented in P8 amendments |

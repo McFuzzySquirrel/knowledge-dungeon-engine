@@ -8,7 +8,7 @@
 | Blocks | [P9](phase-9-shell-mobile.md), [P10](phase-10-polish.md) |
 | Requirements | R-19, R-22 |
 | Exit gate | [G8](#exit-gate-g8) |
-| Status | Not started |
+| Status | Done — G8 passed 2026-11-24 |
 
 ## Objective
 
@@ -120,81 +120,81 @@ state and must not be written into `EngineState`.
 
 ### P8-T1 — Confirm projection inputs
 
-- [ ] Explore reports the exact `StatisticsComputationInput` fields and the
+- [x] Explore reports the exact `StatisticsComputationInput` fields and the
       `toAssistanceSubject(s)` mapping from `EngineState`.
-- [ ] Confirm the assistance feature flag input and how to pass it; record the flag name.
-- [ ] Confirm the progression fields for inventory items and equipped slots.
-- [ ] Confirm no projection needs a value import outside the public namespaces.
+- [x] Confirm the assistance feature flag input and how to pass it; record the flag name.
+- [x] Confirm the progression fields for inventory items and equipped slots.
+- [x] Confirm no projection needs a value import outside the public namespaces.
 
 ### P8-T2 — Journal projection
 
-- [ ] One subject row per subject: XP, rank, cleared/total, badges, fish, due rooms,
+- [x] One subject row per subject: XP, rank, cleared/total, badges, fish, due rooms,
       last played from study sessions or statistics.
-- [ ] Active subject and quest step from `EngineState`, never inferred.
-- [ ] Inventory and fish rows are read from progression.
-- [ ] Statistics are computed with the engine's `computeStatisticsSnapshot`, not a host
+- [x] Active subject and quest step from `EngineState`, never inferred.
+- [x] Inventory and fish rows are read from progression.
+- [x] Statistics are computed with the engine's `computeStatisticsSnapshot`, not a host
       sum. If the input is unavailable, `stats: null` and the UI says "no records yet".
-- [ ] Pure and unit-tested; no DOM, no commands.
+- [x] Pure and unit-tested; no DOM, no commands.
 
 ### P8-T3 — Assistance projection
 
-- [ ] Map rooms and edges with the engine's `toAssistanceSubject` helpers.
-- [ ] Pass `mode`, `nowIso`, the feature flag, and a study aggregate derived from
+- [x] Map rooms and edges with the engine's `toAssistanceSubject` helpers.
+- [x] Pass `mode`, `nowIso`, the feature flag, and a study aggregate derived from
       statistics (or omit `study` when unavailable).
-- [ ] Show only suggestions whose `surface` matches the current screen; the journal shows
+- [x] Show only suggestions whose `surface` matches the current screen; the journal shows
       `device` and a general list.
-- [ ] `off` returns the engine's empty reason and shows no suggestions.
-- [ ] Suggestion copy is the engine's; the host does not invent advice.
+- [x] `off` returns the engine's empty reason and shows no suggestions.
+- [x] Suggestion copy is the engine's; the host does not invent advice.
 
 ### P8-T4 — Journal panel
 
-- [ ] Open with `J` (and from the Guild Hall), pause the world, and trap focus.
-- [ ] Sections: Overview, Subjects, Progress, Badges, Records, Inventory, Fish, Due,
+- [x] Open with `J` (and from the Guild Hall), pause the world, and trap focus.
+- [x] Sections: Overview, Subjects, Progress, Badges, Records, Inventory, Fish, Due,
       Assistance, Settings.
-- [ ] Selecting a subject highlights it but does not enter it; a separate button routes to
+- [x] Selecting a subject highlights it but does not enter it; a separate button routes to
       the P6/P3 entry path.
-- [ ] Keyboard navigation: `J`/`Escape` close, arrow keys or Tab move, `Enter` activates.
-- [ ] Live-region summaries are short and never include learner note text.
-- [ ] `large` text scale is applied to the panel and HUD without clipping.
+- [x] Keyboard navigation: `J`/`Escape` close, arrow keys or Tab move, `Enter` activates.
+- [x] Live-region summaries are short and never include learner note text.
+- [x] `large` text scale is applied to the panel and HUD without clipping.
 
 ### P8-T5 — Settings
 
-- [ ] Settings panel is reachable from the journal and the title screen (P9).
-- [ ] Changing reduced motion takes effect immediately for camera and transitions.
-- [ ] Changing assistance mode recomputes suggestions without a reload.
-- [ ] Changing touch layout adds/removes controls immediately.
-- [ ] Settings persist across reloads; malformed values fall back to defaults.
-- [ ] A "Reset settings" action restores defaults without touching engine state.
+- [x] Settings panel is reachable from the journal and the title screen (P9).
+- [x] Changing reduced motion takes effect immediately for camera and transitions.
+- [x] Changing assistance mode recomputes suggestions without a reload.
+- [ ] Changing touch layout adds/removes controls immediately. **Deferred to P9:** the P9 touch overlay is the first control surface; P8 stores the setting, resolves `auto` against the pointer, applies the `data-touch-layout` attribute, and tests all of it. There is no control to add or remove yet.
+- [x] Settings persist across reloads; malformed values fall back to defaults.
+- [x] A "Reset settings" action restores defaults without touching engine state.
 
 ### P8-T6 — Tests
 
-- [ ] Journal projection fixtures: one subject, multiple subjects, empty save, badges,
+- [x] Journal projection fixtures: one subject, multiple subjects, empty save, badges,
       fish, inventory, due rooms.
-- [ ] Settings: default, load/save round trip, malformed JSON fallback, partial object
+- [x] Settings: default, load/save round trip, malformed JSON fallback, partial object
       fallback.
-- [ ] Assistance mapping: `off`, no suggestions, one suggestion, study aggregate present,
+- [x] Assistance mapping: `off`, no suggestions, one suggestion, study aggregate present,
       feature flag false.
-- [ ] Text-scale and touch-layout application are pure and tested.
-- [ ] No `snapshot()` in the frame loop; the journal reads the cached state.
+- [x] Text-scale and touch-layout application are pure and tested.
+- [x] No `snapshot()` in the frame loop; the journal reads the cached state.
 
 ### P8-T7 — Manual proof and visuals
 
-- [ ] Open the journal from a fresh save, a cleared save, and a multi-subject save.
-- [ ] Inspect badges, records, fish, inventory, due rooms, and assistance.
-- [ ] Toggle each setting, reload, and confirm it persisted.
-- [ ] Keyboard-only run; reduced-motion and large-text passes.
-- [ ] Capture frames for: overview, subjects, records, assistance, settings, empty state.
+- [x] Open the journal from a fresh save, a cleared save, and a multi-subject save.
+- [x] Inspect badges, records, fish, inventory, due rooms, and assistance.
+- [x] Toggle each setting, reload, and confirm it persisted.
+- [x] Keyboard-only run; reduced-motion and large-text passes.
+- [x] Capture frames for: overview, subjects, records, assistance, settings, empty state.
 
 ## Exit gate G8
 
-- [ ] The journal shows every subject and the active player's progress from engine data.
-- [ ] Statistics come from the engine; the host does not re-sum progress.
-- [ ] Assistance is ranked by the engine and respects mode/flag.
-- [ ] Settings persist, apply immediately, and never enter `EngineState`.
-- [ ] Large text and keyboard operation work without clipping or focus loss.
-- [ ] Root and example suites, typechecks, and builds green; engine count unchanged.
-- [ ] No engine source diff.
-- [ ] G8 entry written in [EVIDENCE.md](EVIDENCE.md), with visuals under `visuals/p8/`.
+- [x] The journal shows every subject and the active player's progress from engine data.
+- [x] Statistics come from the engine; the host does not re-sum progress.
+- [x] Assistance is ranked by the engine and respects mode/flag.
+- [x] Settings persist, apply immediately, and never enter `EngineState`.
+- [x] Large text and keyboard operation work without clipping or focus loss.
+- [x] Root and example suites, typechecks, and builds green; engine count unchanged.
+- [x] No engine source diff.
+- [x] G8 entry written in [EVIDENCE.md](EVIDENCE.md), with visuals under `visuals/p8/`.
 
 ## Validation commands
 
@@ -243,4 +243,47 @@ ignored or be cleared with the save.
 
 | Date (UTC) | Task/Gate | Commit | Command or artifact | Result | Notes |
 |---|---|---|---|---|---|
-| | | | | | |
+| 2026-11-24 | P8-T1 projection inputs | uncommitted (base `3e8039b`) | Explore of `core/statistics`, `core/assistance`, `core/progression`, `storage.ts` | pass | `StatisticsComputationInput` = `sessions`, `subjects` (`subjectId`, `subjectName`, `snapshot`, `progression`, `events`), injected `now`, optional window limits. `AssistanceEngineInput` = `mode`, `signals`, `subjects` from `toAssistanceSubjects`, `nowIso`, optional `study`, optional `fishing`, boolean `flagEnabled`. Progression exposes `inventory` (`CanonicalLootItem[]`) and `equippedItems`, with `progression.isEquippable` and `equipSlot`; no value import outside a public namespace was needed. |
+| 2026-11-24 | P8-T2/T3 projections | uncommitted (base `3e8039b`) | `src/journal/projection.ts`, `src/statistics/projection.ts`, `src/review/projection.ts` | pass | One subject row per subject including XP, rank, cleared/total, human badge labels, fish count, due count, and the newest study-session timestamp. Statistics come from `computeStatisticsSnapshot`; `stats: null` only when projection fails. Assistance uses `toAssistanceSubjects`, `collectAssistanceSignals`, the engine study aggregate, and `rankAssistance`. `isDueCandidate` was exported from P5 so the HUD count and Due section share one rule. |
+| 2026-11-24 | P8-T4/T5 panel and settings | uncommitted (base `3e8039b`) | `src/ui/journalPanel.ts`, `src/settings.ts`, `src/main.ts`, `index.html`, `src/render/canvas.ts`, `src/fishing/scene.ts`, `src/render/hud.ts`, `src/ui/guildPanel.ts` | pass | `J` opens and closes, the world pauses, focus is trapped and restored; `J`/`Escape`, Tab, arrows, and Enter work. Sections: Overview, Subjects, Progress, Badges, Records, Inventory, Fish, Due, Assistance, Settings. Selecting highlights; Enter routes through the subject's portal. Settings are localStorage-only, validated field by field, applied immediately, and reset without touching `EngineState`. Large text scales the DOM base size and canvas labels. |
+| 2026-11-24 | P8-T6 tests | uncommitted (base `3e8039b`) | `npm --prefix examples/side-scroller test` | pass | 31 files / 199 tests. New: `journalProjection.test.ts` (empty, one, multi-subject, cleared/badges/inventory/fish/due, last-played, assistance off/empty/one/aggregate/flag/purity), `settings.test.ts` (defaults, round trip, malformed and partial objects, resolved motion/touch/text, root attributes), `journalPanel.test.ts` (focus trap, Tab/arrows, J/Escape, selection vs entry, settings callbacks, engine reason labels). |
+| 2026-11-24 | P8-T7 settings manual | uncommitted (base `3e8039b`) | WebDriver: set all four selects, reload, reset; J/Escape open/close | pass | Applied dataset `reduce/large/on/standard`; after reload the dataset and all four selects still matched; Reset restored `full/normal/off/gentle` and the four default selects. `J` closes and a second, separate `J` reopens; `Escape` closes with focus back on `#game`. Confirms persistence, immediate application, and reset without an engine write. |
+| 2026-11-24 | G8 gate | uncommitted (base `3e8039b`) | `npm test`; `npm run typecheck`; `npm run build`; `npx vitest list --config vitest.config.ts`; example typecheck/test/build; `git status --short src`; `git diff --stat src` | pass | Engine 13 files / 280 tests unchanged; isolation probe 0 `examples/` paths; example 31 / 199; both typechecks and builds clean; `src` status and diff empty. |
+| 2026-11-24 | P8-T7 visuals | uncommitted (base `3e8039b`) | `node examples/side-scroller/scripts/capture-dungeon.mjs --out docs/plans/side-scroller-host/visuals/p8 --prefix 2026-11-24-g8 --journal` and the `--reduced-motion` re-run (`g8rm`) | pass | 11 normal and 11 reduced-motion frames: overview, subjects, records, assistance, settings, large text, assistance off, settings after reload, journal-to-dungeon entry, fresh-save overview, and fresh-save records. Manifests under `visuals/p8/`; indexed in [VISUALS.md](VISUALS.md). |
+| 2026-11-24 | P8 follow-up controls help | uncommitted (base `3e8039b`) | `src/ui/helpPanel.ts`, `tests/helpPanel.test.ts`, `src/main.ts`, `index.html`; `npm --prefix examples/side-scroller test`; `node examples/side-scroller/scripts/capture-dungeon.mjs --out docs/plans/side-scroller-host/visuals/p8 --prefix 2026-11-24-g8b --help` | pass | The long controls paragraph moved into a focus-trapped popup behind a top-of-panel **Controls (?)** button and the `?` key; the page keeps one short hint. Tab traps, Escape/`?` close, and focus returns to the button or canvas. Example suite 32 files / 201 tests; three `g8b` frames and a manifest under `visuals/p8/`. No engine change. |
+| 2026-11-24 | P8 follow-up room openings | uncommitted (base `3e8039b`) | `src/level/model.ts`, `src/level/dungeonLevel.ts`, `src/render/canvas.ts`, `tests/level.test.ts`; `node examples/side-scroller/scripts/capture-dungeon.mjs --out docs/plans/side-scroller-host/visuals/p8 --prefix 2026-11-24-g8c --openings` | pass | `LevelModel` now carries each engine door tile; the chamber outline is cut at N/S/E/W doorways with a short threshold mark, so a corridor or ladder visibly connects the rooms. The new test proves every engine door maps to the matching perimeter tile. Example suite 32 files / 202 tests; two `g8c` frames and a manifest under `visuals/p8/`. No engine change. |
+
+### Execution notes and amendments
+
+- **`src/statistics/projection.ts` added.** The P7 Trophy Hall already held the only
+  `StatisticsComputationInput` builder. P8 needs the same input for Records and for the
+  assistance study aggregate, so the builder moved to one shared module and the Trophy
+  Hall delegates to it. This is an additive host refactor, not an engine change.
+- **The assistance flag is host-named.** The engine has no `src/config/featureFlags.ts`;
+  `AssistanceEngineInput` takes a boolean `flagEnabled`. The host names the flag
+  `VITE_ADAPTIVE_ASSISTANCE`, defaults it on, and passes the resolved boolean.
+  `projectAssistance` also accepts an optional flag argument so the disabled path is
+  directly tested.
+- **Touch layout is stored but cannot move controls yet.** P9 owns the first touch
+  overlay. P8 stores the preference, resolves `auto` against `(pointer: coarse)`, and
+  publishes `data-touch-layout`; P9's overlay will read that attribute. The P8-T5 checkbox
+  is left unchecked with this reason rather than claiming a control surface that does not
+  exist.
+- **`JournalView` gained a `due` array.** The frozen interface exposed only per-subject
+  due counts, which cannot render the Due section. Each entry is still the engine's
+  `projectReviewForSubject` candidate and the P5 due rule; no due arithmetic was added.
+- **Panel callbacks are additive.** `JournalPanelCallbacks` adds `onEnterSubject` and the
+  two settings callbacks because "select" and "enter" are separate actions and settings
+  are host-owned. The frozen three callbacks remain.
+- **Last played uses study sessions.** `StatisticsSnapshot` has a local date key, not a
+  timestamp, so the row uses the newest `endedAt ?? startedAt` for that subject. A subject
+  with events but no session reports `null` rather than inventing a time.
+- **A "fresh save" still has the three demo subjects.** P6's first-run seeding runs
+  before the journal opens, so the fresh-save frames show three subjects with zero
+  progress and zero notes, not an empty subject list. That is the real first-run state.
+- **`GuildPanelCallbacks.onOpenJournal` added.** The Guild Hall is the second entry point
+  the plan names; it closes its shell before mounting the journal so only one modal owns
+  focus.
+
+- **Controls moved behind a help popup.** The always-visible key paragraph was long enough to dominate the page and would crowd P9 touch chrome. The full map now lives in `src/ui/helpPanel.ts`, opened by the side-panel **Controls (?)** button or `?`, with a focus trap and focus return. A short hint remains below the canvas so the shortcut is discoverable. This is presentation-only; the key handling is unchanged.
+- **Room outlines break at doorways.** The side-view adapter now projects `map.doors` as `LevelDoor` tiles and the renderer cuts the chamber border at each one. The engine map already owned door and corridor geometry; this is presentation of existing data, not a new walkability rule.

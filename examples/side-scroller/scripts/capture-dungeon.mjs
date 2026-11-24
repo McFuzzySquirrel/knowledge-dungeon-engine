@@ -50,6 +50,9 @@ function parseArgs(argv) {
     review: false,
     creator: false,
     services: false,
+    journal: false,
+    help: false,
+    openings: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -65,6 +68,9 @@ function parseArgs(argv) {
     else if (arg === '--review') options.review = true;
     else if (arg === '--creator') options.creator = true;
     else if (arg === '--services') options.services = true;
+    else if (arg === '--journal') options.journal = true;
+    else if (arg === '--help') options.help = true;
+    else if (arg === '--openings') options.openings = true;
     else throw new Error(`Unknown argument: ${arg}`);
   }
   return options;
@@ -1956,6 +1962,59 @@ async function closeService(session) {
   );
 }
 
+async function journalState(session) {
+  return session.execute(`
+    const root = document.querySelector('#journal-panel');
+    return {
+      hidden: root?.hidden ?? null,
+      text: root?.innerText ?? '',
+      focus: document.activeElement?.id || document.activeElement?.dataset?.focusKey || '',
+      sections: [...(root?.querySelectorAll('section[id]') ?? [])].map((node) => node.id),
+      settings: {
+        reducedMotion: document.querySelector('#journal-setting-reduced-motion')?.value ?? null,
+        assistance: document.querySelector('#journal-setting-assistance')?.value ?? null,
+        textScale: document.querySelector('#journal-setting-text-scale')?.value ?? null,
+        touch: document.querySelector('#journal-setting-touch')?.value ?? null,
+      },
+      dataset: { ...document.documentElement.dataset },
+    };
+  `);
+}
+
+async function openJournalWithJ(session) {
+  await session.synthDown('KeyJ', 'j');
+  await session.synthUp('KeyJ', 'j');
+  return waitForExpr(session, `document.querySelector('#journal-panel')?.hidden === false`, 8000);
+}
+
+async function closeJournal(session) {
+  await session.synthDown('Escape', 'Escape');
+  await session.synthUp('Escape', 'Escape');
+  return waitForExpr(
+    session,
+    `document.querySelector('#journal-panel')?.hidden !== false && document.activeElement?.id === 'game'`,
+    8000,
+  );
+}
+
+async function scrollJournal(session, sectionId) {
+  return session.execute(`
+    const node = document.querySelector('#${sectionId}');
+    node?.scrollIntoView({ block: 'start' });
+    return node ? Math.round(node.getBoundingClientRect().top) : null;
+  `);
+}
+
+async function setJournalSelect(session, id, value) {
+  return session.execute(`
+    const select = document.querySelector('#${id}');
+    if (!select) return false;
+    select.value = ${JSON.stringify(value)};
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    return true;
+  `);
+}
+
 /**
  * Capture a deterministic gear item for the Workshop frame.
  *
@@ -2018,6 +2077,359 @@ async function seedWorkshopGear(session) {
  * changing equipment. `--reduced-motion` keeps the same path with the
  * preference enabled; the panels have no animation.
  */
+/**
+ * P8 journal run.
+ *
+ * A cleared three-room tutorial, three seeded demo subjects, and seeded gear
+ * give the journal real records, due rooms, inventory, and assistance. The run
+ * then changes text scale and assistance mode, proves both survive a reload,
+ * enters a subject from the journal, and finishes on a fresh save's zero records.
+ */
+/**
+ * Room-opening visual check (post-P8 polish).
+ *
+ * The chamber outline is broken at each engine doorway so a corridor or ladder
+ * reads as a connection instead of a wall. Captures the root, lower, and upper
+ * tutorial rooms.
+ */
+async function captureOpenings(prefix, frames) {
+  const session = await openSession(
+    options.reducedMotion ? { 'ui.prefersReducedMotion': 1 } : {},
+  );
+  try {
+    await wd('POST', session.session('/url'), { url: APP });
+    await sleep(1800);
+    await session.execute(
+      `window.confirm = () => true; document.querySelector('#clear-save')?.click(); return true;`,
+    );
+    await sleep(1400);
+    await wd('POST', session.session('/refresh'), {});
+    await sleep(2200);
+    await waitForExpr(
+      session,
+      `document.querySelector('#summary')?.innerText.includes('Village street') === true`,
+      10000,
+    );
+    await startTutorial(session);
+    await waitForExpr(
+      session,
+      `document.querySelector('#summary')?.innerText.includes('First Dungeon') === true`,
+      10000,
+    );
+    await sleep(600);
+    frames.push({
+      file: await session.screenshot(`${prefix}-01-root-opening.png`),
+      label: 'Root room opening',
+      detail: 'The chamber outline is cut at the ladder doorway; the room reads as connected to the shaft',
+    });
+
+    if ((await descendToToolsRoom(session)) === null) {
+      throw new Error('Could not descend to the lower room');
+    }
+    await sleep(500);
+    frames.push({
+      file: await session.screenshot(`${prefix}-02-lower-opening.png`),
+      label: 'Lower room opening',
+      detail: 'The lower chamber shows the same doorway gap at the ladder',
+    });
+
+    return { doors: 4, reducedMotion: options.reducedMotion };
+  } finally {
+    await session.close();
+  }
+}
+
+/**
+ * Controls popup (post-P8 polish).
+ *
+ * Opens the static help panel once from the side-panel button and once with `?`,
+ * and proves focus returns to the trigger or the canvas.
+ */
+async function captureHelp(prefix, frames) {
+  const session = await openSession(
+    options.reducedMotion ? { 'ui.prefersReducedMotion': 1 } : {},
+  );
+  try {
+    await wd('POST', session.session('/url'), { url: APP });
+    await sleep(1800);
+    await waitForExpr(
+      session,
+      `document.querySelector('#summary')?.innerText.includes('Village street') === true`,
+      12000,
+    );
+
+    await session.execute(`document.querySelector('#open-help').click(); return true;`);
+    const openedMs = await waitForExpr(
+      session,
+      `document.querySelector('#help-panel')?.hidden === false`,
+      5000,
+    );
+    const opened = await session.execute(`
+      const root = document.querySelector('#help-panel');
+      return {
+        focus: document.activeElement?.id ?? '',
+        text: root?.innerText ?? '',
+        closeButtons: root?.querySelectorAll('button').length ?? 0,
+      };
+    `);
+    frames.push({
+      file: await session.screenshot(`${prefix}-01-controls-help.png`),
+      label: 'Controls help',
+      detail: `openIn=${openedMs ?? 'timeout'}ms; focus=${opened.focus}; groups=${['Move', 'Interact', 'Review', 'Pond', 'World'].filter((name) => opened.text.includes(name)).join(',')}; close buttons=${opened.closeButtons}`,
+    });
+
+    await session.synthDown('Escape', 'Escape');
+    await session.synthUp('Escape', 'Escape');
+    const closedMs = await waitForExpr(
+      session,
+      `document.querySelector('#help-panel')?.hidden !== false && document.activeElement?.id === 'open-help'`,
+      5000,
+    );
+    frames.push({
+      file: await session.screenshot(`${prefix}-02-controls-closed.png`),
+      label: 'Controls closed',
+      detail: `closedIn=${closedMs ?? 'timeout'}ms; focus returned to open-help; help hidden=true`,
+    });
+
+    await session.execute(`document.querySelector('#game').focus(); return true;`);
+    await session.synthDown('Slash', '?');
+    await session.synthUp('Slash', '?');
+    const questionMs = await waitForExpr(
+      session,
+      `document.querySelector('#help-panel')?.hidden === false`,
+      5000,
+    );
+    frames.push({
+      file: await session.screenshot(`${prefix}-03-controls-question.png`),
+      label: 'Controls opened with ?',
+      detail: `openIn=${questionMs ?? 'timeout'}ms; focus=${(await session.execute(`return document.activeElement?.id ?? '';`))}; shortcut works without the mouse`,
+    });
+    await session.synthDown('Slash', '?');
+    await session.synthUp('Slash', '?');
+
+    return {
+      opened,
+      openMs: openedMs,
+      closedMs,
+      questionMs,
+      reducedMotion: options.reducedMotion,
+    };
+  } finally {
+    await session.close();
+  }
+}
+
+async function captureJournal(prefix, frames) {
+  const session = await openSession(
+    options.reducedMotion ? { 'ui.prefersReducedMotion': 1 } : {},
+  );
+  try {
+    await wd('POST', session.session('/url'), { url: APP });
+    await sleep(1800);
+
+    await session.execute(
+      `window.confirm = () => true; document.querySelector('#clear-save')?.click(); return true;`,
+    );
+    await sleep(1500);
+    await wd('POST', session.session('/refresh'), {});
+    await sleep(2200);
+    await waitForExpr(
+      session,
+      `document.querySelector('#summary')?.innerText.includes('Village street') === true`,
+      10000,
+    );
+
+    await startTutorial(session);
+    await clearCurrentRoom(session, true);
+    if ((await descendToToolsRoom(session)) === null) {
+      throw new Error('Could not descend to the lower room');
+    }
+    await clearCurrentRoom(session);
+    if ((await climbToMapRoom(session)) === null) {
+      throw new Error('Could not climb to the upper room');
+    }
+    await clearCurrentRoom(session);
+    if ((await holdUntilRoom(session, 'KeyS', 's', 'The Note', 15000)) === null) {
+      throw new Error('Could not descend to the root room');
+    }
+    if ((await climbToStreet(session)) === null) {
+      throw new Error('Could not return to the village street');
+    }
+    await sleep(700);
+
+    // One deterministic gear item, then reload so the running engine sees it.
+    const seeded = await seedWorkshopGear(session);
+    await wd('POST', session.session('/refresh'), {});
+    await sleep(2600);
+    await waitForExpr(
+      session,
+      `document.querySelector('#summary')?.innerText.includes('Village street') === true`,
+      10000,
+    );
+    const reloaded = await stored(session);
+    if (reloaded.subjects < 4) {
+      throw new Error(`Expected the tutorial and three demo subjects, got ${reloaded.subjects}`);
+    }
+
+    // 01 — open with J and capture the overview.
+    const openMs = await openJournalWithJ(session);
+    const opened = await journalState(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-01-journal-overview.png`),
+      label: 'Journal overview',
+      detail: `openIn=${openMs ?? 'timeout'}ms; focus=${opened.focus}; subjects=${opened.sections.length ? '' : ''}${(opened.text.match(/Active subject/) ?? []).length > 0 ? 'active subject row' : 'no active row'}; sections=${opened.sections.join(',')}; records=${opened.text.includes('Sessions completed')}; due=${opened.text.includes('Rooms due')}; assistance=${opened.text.includes('Assistance')}; settings=${opened.text.includes('Settings')}`,
+    });
+
+    // 02 — subjects, records, assistance, and settings sections.
+    await scrollJournal(session, 'journal-subjects');
+    await sleep(350);
+    frames.push({
+      file: await session.screenshot(`${prefix}-02-journal-subjects.png`),
+      label: 'Journal subjects',
+      detail: `section=${(await journalState(session)).focus}; room counts=${/rooms ·/.test((await journalState(session)).text)}; enter buttons=${(await session.execute(`return document.querySelectorAll('[data-focus-key^="journal-enter-"]').length;`))}`,
+    });
+
+    await scrollJournal(session, 'journal-records');
+    await sleep(350);
+    const records = await journalState(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-03-journal-records.png`),
+      label: 'Journal records',
+      detail: `notes=${/Notes submitted\s*\n\s*3/.test(records.text)}; active days=${/Active days/.test(records.text)}; engine copy=${records.text.includes('does not re-sum progress')}`,
+    });
+
+    await scrollJournal(session, 'journal-assistance');
+    await sleep(350);
+    const assistance = await journalState(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-04-journal-assistance.png`),
+      label: 'Journal assistance',
+      detail: `suggestions=${(assistance.text.match(/priority \d+/g) ?? []).length}; engine reason labels=${assistance.text.includes('required note section') || assistance.text.includes('rubric criterion')}; mode copy=${assistance.text.includes('Mode: gentle')}`,
+    });
+
+    await scrollJournal(session, 'journal-settings');
+    await sleep(350);
+    frames.push({
+      file: await session.screenshot(`${prefix}-05-journal-settings.png`),
+      label: 'Journal settings',
+      detail: `focus=${(await journalState(session)).focus}; values=${JSON.stringify((await journalState(session)).settings)}; local-only copy=${(await journalState(session)).text.includes('never written into the engine save')}`,
+    });
+
+    // 03 — large text and assistance off apply immediately.
+    await setJournalSelect(session, 'journal-setting-text-scale', 'large');
+    await sleep(450);
+    const large = await journalState(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-06-journal-large-text.png`),
+      label: 'Large text applied',
+      detail: `dataset=${large.dataset.textScale}; value=${large.settings.textScale}; same panel open=${large.hidden === false}`,
+    });
+
+    await setJournalSelect(session, 'journal-setting-assistance', 'off');
+    await sleep(450);
+    await scrollJournal(session, 'journal-assistance');
+    await sleep(350);
+    const assistanceOff = await journalState(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-07-journal-assistance-off.png`),
+      label: 'Assistance mode off',
+      detail: `mode=${assistanceOff.settings.assistance}; off copy=${assistanceOff.text.includes('Assistance is off in Settings.')}; suggestions=${(assistanceOff.text.match(/priority \d+/g) ?? []).length}`,
+    });
+
+    // 04 — settings survive a reload.
+    await closeJournal(session);
+    await wd('POST', session.session('/refresh'), {});
+    await sleep(2600);
+    await waitForExpr(
+      session,
+      `document.querySelector('#summary')?.innerText.includes('Village street') === true`,
+      10000,
+    );
+    const persistedDataset = await session.execute(
+      `return { ...document.documentElement.dataset };`,
+    );
+    await openJournalWithJ(session);
+    await scrollJournal(session, 'journal-settings');
+    await sleep(350);
+    const persisted = await journalState(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-08-journal-settings-persisted.png`),
+      label: 'Settings after reload',
+      detail: `dataset text=${persistedDataset.textScale}; select text=${persisted.settings.textScale}; assistance=${persisted.settings.assistance}; reduced motion=${persisted.settings.reducedMotion}; touch=${persisted.settings.touch}`,
+    });
+
+    // 05 — Enter a subject from the journal's own button.
+    await scrollJournal(session, 'journal-subjects');
+    await sleep(250);
+    const entered = await session.execute(`
+      const button = document.querySelector('[data-focus-key^="journal-enter-"]');
+      if (!button) return null;
+      const subject = button.getAttribute('data-focus-key').replace('journal-enter-', '');
+      button.click();
+      return subject;
+    `);
+    const enteredMs = await waitForExpr(
+      session,
+      `document.querySelector('#journal-panel')?.hidden !== false && document.querySelector('#summary')?.innerText.includes('Subject') === true`,
+      12000,
+    );
+    await sleep(900);
+    const afterEnter = await stored(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-09-journal-entry.png`),
+      label: 'Entered from the journal',
+      detail: `subject=${entered}; enteredIn=${enteredMs ?? 'timeout'}ms; world=${afterEnter.world}; study session open=${afterEnter.activeStudy}; focus=${(await panel(session)).focus}`,
+    });
+
+    // 06 — reset settings, clear the save, and capture the fresh zero state.
+    await session.execute(`window.confirm = () => true; document.querySelector('#clear-save')?.click(); return true;`);
+    await sleep(1500);
+    await wd('POST', session.session('/refresh'), {});
+    await sleep(2400);
+    await waitForExpr(
+      session,
+      `document.querySelector('#summary')?.innerText.includes('Village street') === true`,
+      10000,
+    );
+    await openJournalWithJ(session);
+    const emptyOverview = await journalState(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-10-journal-empty.png`),
+      label: 'Journal on a fresh save',
+      detail: `subjects visible=${emptyOverview.text.includes('Demo') || emptyOverview.text.includes('Kitchen')}; active subject=${emptyOverview.text.includes('No active subject')}; due=${emptyOverview.text.includes('No rooms are due')}; focus=${emptyOverview.focus}`,
+    });
+    await scrollJournal(session, 'journal-records');
+    await sleep(350);
+    const emptyRecords = await journalState(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-11-journal-empty-records.png`),
+      label: 'Fresh-save records',
+      detail: `zero notes=${/Notes submitted\s*\n\s*0/.test(emptyRecords.text)}; zero fish=${/Fish kept\s*\n\s*0/.test(emptyRecords.text)}; badges empty=${emptyRecords.text.includes('No badges yet')}; fish empty=${emptyRecords.text.includes('No fish yet')}`,
+    });
+
+    await closeJournal(session);
+    return {
+      seeded,
+      reloaded,
+      openMs,
+      opened,
+      records,
+      assistance,
+      large,
+      assistanceOff,
+      persisted: { dataset: persistedDataset, state: persisted },
+      entered,
+      afterEnter,
+      emptyOverview,
+      emptyRecords,
+      reducedMotion: options.reducedMotion,
+      error: (await panel(session)).error,
+    };
+  } finally {
+    await session.close();
+  }
+}
+
 async function captureServices(prefix, frames) {
   const session = await openSession(options.reducedMotion ? { 'ui.prefersReducedMotion': 1 } : {});
   try {
@@ -2272,6 +2684,72 @@ async function captureServices(prefix, frames) {
 async function main() {
   await mkdir(OUT, { recursive: true });
   const frames = [];
+
+  if (options.openings) {
+    const run = await captureOpenings(options.prefix, frames);
+    const manifest = {
+      capturedAt: new Date().toISOString(),
+      app: APP,
+      viewport: 'default headless Firefox (captured window)',
+      prefix: options.prefix,
+      openings: true,
+      reducedMotion: options.reducedMotion,
+      result: run,
+      frames,
+    };
+    await writeFile(resolve(OUT, `${options.prefix}-manifest.json`), JSON.stringify(manifest, null, 2));
+    console.log(JSON.stringify(manifest, null, 2));
+    const date = new Date().toISOString().slice(0, 10);
+    console.log('\nMarkdown rows:\n');
+    for (const frame of frames) {
+      console.log(`| ${date} | ${frame.label} | \`${frame.file}\` | ${frame.detail} |`);
+    }
+    return;
+  }
+
+  if (options.help) {
+    const run = await captureHelp(options.prefix, frames);
+    const manifest = {
+      capturedAt: new Date().toISOString(),
+      app: APP,
+      viewport: 'default headless Firefox (captured window)',
+      prefix: options.prefix,
+      help: true,
+      reducedMotion: options.reducedMotion,
+      result: run,
+      frames,
+    };
+    await writeFile(resolve(OUT, `${options.prefix}-manifest.json`), JSON.stringify(manifest, null, 2));
+    console.log(JSON.stringify(manifest, null, 2));
+    const date = new Date().toISOString().slice(0, 10);
+    console.log('\nMarkdown rows:\n');
+    for (const frame of frames) {
+      console.log(`| ${date} | ${frame.label} | \`${frame.file}\` | ${frame.detail} |`);
+    }
+    return;
+  }
+
+  if (options.journal) {
+    const run = await captureJournal(options.prefix, frames);
+    const manifest = {
+      capturedAt: new Date().toISOString(),
+      app: APP,
+      viewport: 'default headless Firefox (captured window)',
+      prefix: options.prefix,
+      journal: true,
+      reducedMotion: options.reducedMotion,
+      result: run,
+      frames,
+    };
+    await writeFile(resolve(OUT, `${options.prefix}-manifest.json`), JSON.stringify(manifest, null, 2));
+    console.log(JSON.stringify(manifest, null, 2));
+    const date = new Date().toISOString().slice(0, 10);
+    console.log('\nMarkdown rows:\n');
+    for (const frame of frames) {
+      console.log(`| ${date} | ${frame.label} | \`${frame.file}\` | ${frame.detail} |`);
+    }
+    return;
+  }
 
   if (options.services) {
     const run = await captureServices(options.prefix, frames);

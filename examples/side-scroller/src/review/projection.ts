@@ -310,16 +310,25 @@ export function lastStudiedSubjectId(state: EngineState): string | null {
 }
 
 /**
+ * Whether one candidate is actually waiting: overdue, due today, or never
+ * reviewed. A room scheduled for next week is not "due".
+ *
+ * Exported so the HUD count and the Journal's Due section cannot disagree.
+ */
+export function isDueCandidate(candidate: ReviewCandidateView): boolean {
+  return (
+    candidate.nextReviewIso === null ||
+    candidate.overdueDays > 0 ||
+    candidate.dueLabel === 'Due today'
+  );
+}
+
+/**
  * How many rooms in the queue are actually waiting: overdue, due today, or never
  * reviewed. A room scheduled for next week is not "due" and does not inflate the
  * HUD count.
  */
 export function reviewDueCount(view: ReviewView | null): number {
   if (!view) return 0;
-  return view.candidates.filter(
-    (candidate) =>
-      candidate.nextReviewIso === null ||
-      candidate.overdueDays > 0 ||
-      candidate.dueLabel === 'Due today',
-  ).length;
+  return view.candidates.filter(isDueCandidate).length;
 }

@@ -41,6 +41,14 @@ export interface LevelRoom {
   isRoot: boolean;
 }
 
+/** One engine doorway on a room perimeter, in world pixels. */
+export interface LevelDoor {
+  roomId: string;
+  side: 'N' | 'S' | 'E' | 'W';
+  /** The door tile's world rectangle. */
+  rect: Rect;
+}
+
 export interface LevelModel extends CollisionWorld {
   subjectId: string;
   /** One engine tile in world pixels (engine tile size × render scale). */
@@ -48,6 +56,8 @@ export interface LevelModel extends CollisionWorld {
   /** Player feet position (bottom-centre) inside the root room. */
   spawn: { x: number; y: number };
   rooms: LevelRoom[];
+  /** Doorway tiles, used to break the room border where a corridor enters. */
+  doors?: LevelDoor[];
   /** The surface ground line when the dungeon was placed below a street, else `null`. */
   surfaceY: number | null;
 }

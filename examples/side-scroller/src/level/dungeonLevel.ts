@@ -1,6 +1,6 @@
 import { dungeon } from '@/index';
 import type { dungeon as dungeonTypes, subjects } from '@/index';
-import type { LevelModel, LevelRoom, Rect } from './model';
+import type { LevelDoor, LevelModel, LevelRoom, Rect } from './model';
 
 /** Engine tiles are 24 px; three host pixels per engine pixel keeps a corridor 72 px wide. */
 export const DEFAULT_RENDER_SCALE = 3;
@@ -192,6 +192,17 @@ export function buildDungeonLevel(
     isRoot: room.isRoot,
   }));
 
+  const doors: LevelDoor[] = map.doors.map((door) => ({
+    roomId: door.roomId,
+    side: door.side,
+    rect: {
+      x: tileToWorld(door.x, originX, tilePx),
+      y: tileToWorld(door.y, originY, tilePx),
+      w: tilePx,
+      h: tilePx,
+    },
+  }));
+
   return {
     subjectId: subject.dungeon.dungeonId,
     tileSize: tilePx,
@@ -205,6 +216,7 @@ export function buildDungeonLevel(
     solids,
     ladders: buildLadders(map, tilePx, originX, originY, isWalkable),
     rooms,
+    doors,
     surfaceY: null,
   };
 }

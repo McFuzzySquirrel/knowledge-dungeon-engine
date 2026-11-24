@@ -1,0 +1,394 @@
+{
+  "capturedAt": "2026-11-24T19:06:40.883Z",
+  "app": "http://localhost:5174/",
+  "viewport": "default headless Firefox (captured window)",
+  "prefix": "2026-11-24-g8rm",
+  "journal": true,
+  "reducedMotion": true,
+  "result": {
+    "seeded": {
+      "subjectId": "tutorial-first-walkthrough",
+      "added": false,
+      "inventory": 3,
+      "equipped": 0
+    },
+    "reloaded": {
+      "activeSubjectId": null,
+      "activeStudy": false,
+      "subjects": 4,
+      "world": "village",
+      "rooms": [],
+      "visited": [],
+      "sessions": 4,
+      "xp": null,
+      "inventory": 3,
+      "equipped": 0,
+      "xpTotal": 86,
+      "fish": 0,
+      "cleared": 0,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassesTotal": 0,
+      "reviewPassCounts": {},
+      "nextReview": {},
+      "marker": null
+    },
+    "openMs": 55,
+    "opened": {
+      "hidden": false,
+      "text": "Journal\n\nSubjects, progress, records, due rooms, assistance, and device settings.\n\nSettings\nClose\nOverview\nActive subject\nNo active subject\nQuest step\nenter-dungeon\nArchetype\nscholar\nSubjects\n4\nRooms due\n3\nXP awarded (records)\n86\nSubjects\nKitchen Chemistry — 0 / 4 rooms · 0 XP · Novice\nEnter\nRivers & Bridges — 0 / 4 rooms · 0 XP · Novice\nEnter\nSky & Weather — 0 / 5 rooms · 0 XP · Novice\nEnter\nFirst Dungeon (Tutorial) — 3 / 3 rooms · 86 XP · Novice\nEnter\n\nSelecting a subject highlights it. Enter opens the same portal the street uses.\n\nProgress\nKitchen Chemistry — 0 / 4 cleared · Novice · 0 XP · 0 rooms due\nRivers & Bridges — 0 / 4 cleared · Novice · 0 XP · 0 rooms due\nSky & Weather — 0 / 5 cleared · Novice · 0 XP · 0 rooms due\nFirst Dungeon (Tutorial) — 3 / 3 cleared · Novice · 86 XP · 3 rooms due\nBadges\nFirst Dungeon (Tutorial) — Creator phase complete\nFirst Dungeon (Tutorial) — Scribe phase complete\nRecords\nSessions completed\n4\nStudy time\n0 min\nNotes submitted\n3\nReviews completed\n0\nFish kept\n0\nDistinct fish species\n0\nRooms visited\n3\nActive days\n1\nStudy day streak\n1\nReview day streak\n0\nSubjects with proven mastery\n0\n\nEvery number is the engine’s statistics snapshot; the host does not re-sum progress.\n\nInventory\nScribe's Robes — body — not equipped\nScribe's Robes — body — not equipped\nScholar's Cap — head — not equipped\nFish\n\nNo fish yet. Clear a room, then keep a catch at a pond.\n\nDue\nFirst Dungeon (Tutorial) — The Map & Beyond — Not yet reviewed\nFirst Dungeon (Tutorial) — The Note — Not yet reviewed\nFirst Dungeon (Tutorial) — Tools of the Trade — Not yet reviewed\nAssistance\n\nMode: gentle. Suggestions are ranked by the engine; this panel adds no advice of its own.\n\nA rubric criterion scored zero. [Scribe · example · priority 54 · sectionCompleteness]\nA rubric criterion scored zero. [Scribe · example · priority 54 · sectionCompleteness]\nA rubric criterion scored zero. [Scribe · example · priority 54 · sectionCompleteness]\nA rubric criterion scored zero. [Scribe · example · priority 54 · sectionCompleteness]\nA rubric criterion scored zero. [Scribe · example · priority 54 · sectionCompleteness]\nA rubric criterion scored zero. [Scribe · example · priority 54 · sectionCompleteness]\nSettings\n\nStored on this device only. Settings are never written into the engine save.\n\nReduced motion\nAssistance\nText size\nTouch controls\nReset settings",
+      "focus": "journal-panel-title",
+      "sections": [
+        "journal-overview",
+        "journal-subjects",
+        "journal-progress",
+        "journal-badges",
+        "journal-records",
+        "journal-inventory",
+        "journal-fish",
+        "journal-due",
+        "journal-assistance",
+        "journal-settings"
+      ],
+      "settings": {
+        "reducedMotion": "system",
+        "assistance": "gentle",
+        "textScale": "normal",
+        "touch": "auto"
+      },
+      "dataset": {
+        "reducedMotion": "reduce",
+        "reducedMotionPreference": "system",
+        "textScale": "normal",
+        "touchLayout": "off",
+        "touchLayoutPreference": "auto",
+        "assistanceMode": "gentle"
+      }
+    },
+    "records": {
+      "hidden": false,
+      "text": "Journal\n\nSubjects, progress, records, due rooms, assistance, and device settings.\n\nSettings\nClose\nOverview\nActive subject\nNo active subject\nQuest step\nenter-dungeon\nArchetype\nscholar\nSubjects\n4\nRooms due\n3\nXP awarded (records)\n86\nSubjects\nKitchen Chemistry — 0 / 4 rooms · 0 XP · Novice\nEnter\nRivers & Bridges — 0 / 4 rooms · 0 XP · Novice\nEnter\nSky & Weather — 0 / 5 rooms · 0 XP · Novice\nEnter\nFirst Dungeon (Tutorial) — 3 / 3 rooms · 86 XP · Novice\nEnter\n\nSelecting a subject highlights it. Enter opens the same portal the street uses.\n\nProgress\nKitchen Chemistry — 0 / 4 cleared · Novice · 0 XP · 0 rooms due\nRivers & Bridges — 0 / 4 cleared · Novice · 0 XP · 0 rooms due\nSky & Weather — 0 / 5 cleared · Novice · 0 XP · 0 rooms due\nFirst Dungeon (Tutorial) — 3 / 3 cleared · Novice · 86 XP · 3 rooms due\nBadges\nFirst Dungeon (Tutorial) — Creator phase complete\nFirst Dungeon (Tutorial) — Scribe phase complete\nRecords\nSessions completed\n4\nStudy time\n0 min\nNotes submitted\n3\nReviews completed\n0\nFish kept\n0\nDistinct fish species\n0\nRooms visited\n3\nActive days\n1\nStudy day streak\n1\nReview day streak\n0\nSubjects with proven mastery\n0\n\nEvery number is the engine’s statistics snapshot; the host does not re-sum progress.\n\nInventory\nScribe's Robes — body — not equipped\nScribe's Robes — body — not equipped\nScholar's Cap — head — not equipped\nFish\n\nNo fish yet. Clear a room, then keep a catch at a pond.\n\nDue\nFirst Dungeon (Tutorial) — The Map & Beyond — Not yet reviewed\nFirst Dungeon (Tutorial) — The Note — Not yet reviewed\nFirst Dungeon (Tutorial) — Tools of the Trade — Not yet reviewed\nAssistance\n\nMode: gentle. Suggestions are ranked by the engine; this panel adds no advice of its own.\n\nA rubric criterion scored zero. [Scribe · example · priority 54 · sectionCompleteness]\nA rubric criterion scored zero. [Scribe · example · priority 54 · sectionCompleteness]\nA rubric criterion scored zero. [Scribe · example · priority 54 · sectionCompleteness]\nA rubric criterion scored zero. [Scribe · example · priority 54 · sectionCompleteness]\nA rubric criterion scored zero. [Scribe · example · priority 54 · sectionCompleteness]\nA rubric criterion scored zero. [Scribe · example · priority 54 · sectionCompleteness]\nSettings\n\nStored on this device only. Settings are never written into the engine save.\n\nReduced motion\nAssistance\nText size\nTouch controls\nReset settings",
+      "focus": "journal-panel-title",
+      "sections": [
+        "journal-overview",
+        "journal-subjects",
+        "journal-progress",
+        "journal-badges",
+        "journal-records",
+        "journal-inventory",
+        "journal-fish",
+        "journal-due",
+        "journal-assistance",
+        "journal-settings"
+      ],
+      "settings": {
+        "reducedMotion": "system",
+        "assistance": "gentle",
+        "textScale": "normal",
+        "touch": "auto"
+      },
+      "dataset": {
+        "reducedMotion": "reduce",
+        "reducedMotionPreference": "system",
+        "textScale": "normal",
+        "touchLayout": "off",
+        "touchLayoutPreference": "auto",
+        "assistanceMode": "gentle"
+      }
+    },
+    "assistance": {
+      "hidden": false,
+      "text": "Journal\n\nSubjects, progress, records, due rooms, assistance, and device settings.\n\nSettings\nClose\nOverview\nActive subject\nNo active subject\nQuest step\nenter-dungeon\nArchetype\nscholar\nSubjects\n4\nRooms due\n3\nXP awarded (records)\n86\nSubjects\nKitchen Chemistry — 0 / 4 rooms · 0 XP · Novice\nEnter\nRivers & Bridges — 0 / 4 rooms · 0 XP · Novice\nEnter\nSky & Weather — 0 / 5 rooms · 0 XP · Novice\nEnter\nFirst Dungeon (Tutorial) — 3 / 3 rooms · 86 XP · Novice\nEnter\n\nSelecting a subject highlights it. Enter opens the same portal the street uses.\n\nProgress\nKitchen Chemistry — 0 / 4 cleared · Novice · 0 XP · 0 rooms due\nRivers & Bridges — 0 / 4 cleared · Novice · 0 XP · 0 rooms due\nSky & Weather — 0 / 5 cleared · Novice · 0 XP · 0 rooms due\nFirst Dungeon (Tutorial) — 3 / 3 cleared · Novice · 86 XP · 3 rooms due\nBadges\nFirst Dungeon (Tutorial) — Creator phase complete\nFirst Dungeon (Tutorial) — Scribe phase complete\nRecords\nSessions completed\n4\nStudy time\n0 min\nNotes submitted\n3\nReviews completed\n0\nFish kept\n0\nDistinct fish species\n0\nRooms visited\n3\nActive days\n1\nStudy day streak\n1\nReview day streak\n0\nSubjects with proven mastery\n0\n\nEvery number is the engine’s statistics snapshot; the host does not re-sum progress.\n\nInventory\nScribe's Robes — body — not equipped\nScribe's Robes — body — not equipped\nScholar's Cap — head — not equipped\nFish\n\nNo fish yet. Clear a room, then keep a catch at a pond.\n\nDue\nFirst Dungeon (Tutorial) — The Map & Beyond — Not yet reviewed\nFirst Dungeon (Tutorial) — The Note — Not yet reviewed\nFirst Dungeon (Tutorial) — Tools of the Trade — Not yet reviewed\nAssistance\n\nMode: gentle. Suggestions are ranked by the engine; this panel adds no advice of its own.\n\nA rubric criterion scored zero. [Scribe · example · priority 54 · sectionCompleteness]\nA rubric criterion scored zero. [Scribe · example · priority 54 · sectionCompleteness]\nA rubric criterion scored zero. [Scribe · example · priority 54 · sectionCompleteness]\nA rubric criterion scored zero. [Scribe · example · priority 54 · sectionCompleteness]\nA rubric criterion scored zero. [Scribe · example · priority 54 · sectionCompleteness]\nA rubric criterion scored zero. [Scribe · example · priority 54 · sectionCompleteness]\nSettings\n\nStored on this device only. Settings are never written into the engine save.\n\nReduced motion\nAssistance\nText size\nTouch controls\nReset settings",
+      "focus": "journal-panel-title",
+      "sections": [
+        "journal-overview",
+        "journal-subjects",
+        "journal-progress",
+        "journal-badges",
+        "journal-records",
+        "journal-inventory",
+        "journal-fish",
+        "journal-due",
+        "journal-assistance",
+        "journal-settings"
+      ],
+      "settings": {
+        "reducedMotion": "system",
+        "assistance": "gentle",
+        "textScale": "normal",
+        "touch": "auto"
+      },
+      "dataset": {
+        "reducedMotion": "reduce",
+        "reducedMotionPreference": "system",
+        "textScale": "normal",
+        "touchLayout": "off",
+        "touchLayoutPreference": "auto",
+        "assistanceMode": "gentle"
+      }
+    },
+    "large": {
+      "hidden": false,
+      "text": "Journal\n\nSubjects, progress, records, due rooms, assistance, and device settings.\n\nSettings\nClose\nOverview\nActive subject\nNo active subject\nQuest step\nenter-dungeon\nArchetype\nscholar\nSubjects\n4\nRooms due\n3\nXP awarded (records)\n86\nSubjects\nKitchen Chemistry — 0 / 4 rooms · 0 XP · Novice\nEnter\nRivers & Bridges — 0 / 4 rooms · 0 XP · Novice\nEnter\nSky & Weather — 0 / 5 rooms · 0 XP · Novice\nEnter\nFirst Dungeon (Tutorial) — 3 / 3 rooms · 86 XP · Novice\nEnter\n\nSelecting a subject highlights it. Enter opens the same portal the street uses.\n\nProgress\nKitchen Chemistry — 0 / 4 cleared · Novice · 0 XP · 0 rooms due\nRivers & Bridges — 0 / 4 cleared · Novice · 0 XP · 0 rooms due\nSky & Weather — 0 / 5 cleared · Novice · 0 XP · 0 rooms due\nFirst Dungeon (Tutorial) — 3 / 3 cleared · Novice · 86 XP · 3 rooms due\nBadges\nFirst Dungeon (Tutorial) — Creator phase complete\nFirst Dungeon (Tutorial) — Scribe phase complete\nRecords\nSessions completed\n4\nStudy time\n0 min\nNotes submitted\n3\nReviews completed\n0\nFish kept\n0\nDistinct fish species\n0\nRooms visited\n3\nActive days\n1\nStudy day streak\n1\nReview day streak\n0\nSubjects with proven mastery\n0\n\nEvery number is the engine’s statistics snapshot; the host does not re-sum progress.\n\nInventory\nScribe's Robes — body — not equipped\nScribe's Robes — body — not equipped\nScholar's Cap — head — not equipped\nFish\n\nNo fish yet. Clear a room, then keep a catch at a pond.\n\nDue\nFirst Dungeon (Tutorial) — The Map & Beyond — Not yet reviewed\nFirst Dungeon (Tutorial) — The Note — Not yet reviewed\nFirst Dungeon (Tutorial) — Tools of the Trade — Not yet reviewed\nAssistance\n\nMode: gentle. Suggestions are ranked by the engine; this panel adds no advice of its own.\n\nA rubric criterion scored zero. [Scribe · example · priority 54 · sectionCompleteness]\nA rubric criterion scored zero. [Scribe · example · priority 54 · sectionCompleteness]\nA rubric criterion scored zero. [Scribe · example · priority 54 · sectionCompleteness]\nA rubric criterion scored zero. [Scribe · example · priority 54 · sectionCompleteness]\nA rubric criterion scored zero. [Scribe · example · priority 54 · sectionCompleteness]\nA rubric criterion scored zero. [Scribe · example · priority 54 · sectionCompleteness]\nSettings\n\nStored on this device only. Settings are never written into the engine save.\n\nReduced motion\nAssistance\nText size\nTouch controls\nReset settings",
+      "focus": "journal-panel-title",
+      "sections": [
+        "journal-overview",
+        "journal-subjects",
+        "journal-progress",
+        "journal-badges",
+        "journal-records",
+        "journal-inventory",
+        "journal-fish",
+        "journal-due",
+        "journal-assistance",
+        "journal-settings"
+      ],
+      "settings": {
+        "reducedMotion": "system",
+        "assistance": "gentle",
+        "textScale": "large",
+        "touch": "auto"
+      },
+      "dataset": {
+        "reducedMotion": "reduce",
+        "reducedMotionPreference": "system",
+        "textScale": "large",
+        "touchLayout": "off",
+        "touchLayoutPreference": "auto",
+        "assistanceMode": "gentle"
+      }
+    },
+    "assistanceOff": {
+      "hidden": false,
+      "text": "Journal\n\nSubjects, progress, records, due rooms, assistance, and device settings.\n\nSettings\nClose\nOverview\nActive subject\nNo active subject\nQuest step\nenter-dungeon\nArchetype\nscholar\nSubjects\n4\nRooms due\n3\nXP awarded (records)\n86\nSubjects\nKitchen Chemistry — 0 / 4 rooms · 0 XP · Novice\nEnter\nRivers & Bridges — 0 / 4 rooms · 0 XP · Novice\nEnter\nSky & Weather — 0 / 5 rooms · 0 XP · Novice\nEnter\nFirst Dungeon (Tutorial) — 3 / 3 rooms · 86 XP · Novice\nEnter\n\nSelecting a subject highlights it. Enter opens the same portal the street uses.\n\nProgress\nKitchen Chemistry — 0 / 4 cleared · Novice · 0 XP · 0 rooms due\nRivers & Bridges — 0 / 4 cleared · Novice · 0 XP · 0 rooms due\nSky & Weather — 0 / 5 cleared · Novice · 0 XP · 0 rooms due\nFirst Dungeon (Tutorial) — 3 / 3 cleared · Novice · 86 XP · 3 rooms due\nBadges\nFirst Dungeon (Tutorial) — Creator phase complete\nFirst Dungeon (Tutorial) — Scribe phase complete\nRecords\nSessions completed\n4\nStudy time\n0 min\nNotes submitted\n3\nReviews completed\n0\nFish kept\n0\nDistinct fish species\n0\nRooms visited\n3\nActive days\n1\nStudy day streak\n1\nReview day streak\n0\nSubjects with proven mastery\n0\n\nEvery number is the engine’s statistics snapshot; the host does not re-sum progress.\n\nInventory\nScribe's Robes — body — not equipped\nScribe's Robes — body — not equipped\nScholar's Cap — head — not equipped\nFish\n\nNo fish yet. Clear a room, then keep a catch at a pond.\n\nDue\nFirst Dungeon (Tutorial) — The Map & Beyond — Not yet reviewed\nFirst Dungeon (Tutorial) — The Note — Not yet reviewed\nFirst Dungeon (Tutorial) — Tools of the Trade — Not yet reviewed\nAssistance\n\nMode: off. Suggestions are ranked by the engine; this panel adds no advice of its own.\n\nAssistance is off in Settings.\n\nSettings\n\nStored on this device only. Settings are never written into the engine save.\n\nReduced motion\nAssistance\nText size\nTouch controls\nReset settings",
+      "focus": "journal-panel-title",
+      "sections": [
+        "journal-overview",
+        "journal-subjects",
+        "journal-progress",
+        "journal-badges",
+        "journal-records",
+        "journal-inventory",
+        "journal-fish",
+        "journal-due",
+        "journal-assistance",
+        "journal-settings"
+      ],
+      "settings": {
+        "reducedMotion": "system",
+        "assistance": "off",
+        "textScale": "large",
+        "touch": "auto"
+      },
+      "dataset": {
+        "reducedMotion": "reduce",
+        "reducedMotionPreference": "system",
+        "textScale": "large",
+        "touchLayout": "off",
+        "touchLayoutPreference": "auto",
+        "assistanceMode": "off"
+      }
+    },
+    "persisted": {
+      "dataset": {
+        "reducedMotion": "reduce",
+        "reducedMotionPreference": "system",
+        "textScale": "large",
+        "touchLayout": "off",
+        "touchLayoutPreference": "auto",
+        "assistanceMode": "off"
+      },
+      "state": {
+        "hidden": false,
+        "text": "Journal\n\nSubjects, progress, records, due rooms, assistance, and device settings.\n\nSettings\nClose\nOverview\nActive subject\nNo active subject\nQuest step\nenter-dungeon\nArchetype\nscholar\nSubjects\n4\nRooms due\n3\nXP awarded (records)\n86\nSubjects\nKitchen Chemistry — 0 / 4 rooms · 0 XP · Novice\nEnter\nRivers & Bridges — 0 / 4 rooms · 0 XP · Novice\nEnter\nSky & Weather — 0 / 5 rooms · 0 XP · Novice\nEnter\nFirst Dungeon (Tutorial) — 3 / 3 rooms · 86 XP · Novice\nEnter\n\nSelecting a subject highlights it. Enter opens the same portal the street uses.\n\nProgress\nKitchen Chemistry — 0 / 4 cleared · Novice · 0 XP · 0 rooms due\nRivers & Bridges — 0 / 4 cleared · Novice · 0 XP · 0 rooms due\nSky & Weather — 0 / 5 cleared · Novice · 0 XP · 0 rooms due\nFirst Dungeon (Tutorial) — 3 / 3 cleared · Novice · 86 XP · 3 rooms due\nBadges\nFirst Dungeon (Tutorial) — Creator phase complete\nFirst Dungeon (Tutorial) — Scribe phase complete\nRecords\nSessions completed\n4\nStudy time\n0 min\nNotes submitted\n3\nReviews completed\n0\nFish kept\n0\nDistinct fish species\n0\nRooms visited\n3\nActive days\n1\nStudy day streak\n1\nReview day streak\n0\nSubjects with proven mastery\n0\n\nEvery number is the engine’s statistics snapshot; the host does not re-sum progress.\n\nInventory\nScribe's Robes — body — not equipped\nScribe's Robes — body — not equipped\nScholar's Cap — head — not equipped\nFish\n\nNo fish yet. Clear a room, then keep a catch at a pond.\n\nDue\nFirst Dungeon (Tutorial) — The Map & Beyond — Not yet reviewed\nFirst Dungeon (Tutorial) — The Note — Not yet reviewed\nFirst Dungeon (Tutorial) — Tools of the Trade — Not yet reviewed\nAssistance\n\nMode: off. Suggestions are ranked by the engine; this panel adds no advice of its own.\n\nAssistance is off in Settings.\n\nSettings\n\nStored on this device only. Settings are never written into the engine save.\n\nReduced motion\nAssistance\nText size\nTouch controls\nReset settings",
+        "focus": "journal-panel-title",
+        "sections": [
+          "journal-overview",
+          "journal-subjects",
+          "journal-progress",
+          "journal-badges",
+          "journal-records",
+          "journal-inventory",
+          "journal-fish",
+          "journal-due",
+          "journal-assistance",
+          "journal-settings"
+        ],
+        "settings": {
+          "reducedMotion": "system",
+          "assistance": "off",
+          "textScale": "large",
+          "touch": "auto"
+        },
+        "dataset": {
+          "reducedMotion": "reduce",
+          "reducedMotionPreference": "system",
+          "textScale": "large",
+          "touchLayout": "off",
+          "touchLayoutPreference": "auto",
+          "assistanceMode": "off"
+        }
+      }
+    },
+    "entered": "demo-kitchen",
+    "afterEnter": {
+      "activeSubjectId": "demo-kitchen",
+      "activeStudy": true,
+      "subjects": 4,
+      "world": "dungeon",
+      "rooms": [
+        "demo-kitchen-root",
+        "6b74de4c-f497-435a-92ce-5ee2ef781fa1",
+        "f66a2567-7f1b-4785-b5d8-eda4ed4aeae4",
+        "0e24e8d8-5ea7-4db2-81b3-7b024a5f54f6"
+      ],
+      "visited": [
+        "demo-kitchen-root"
+      ],
+      "sessions": 5,
+      "xp": 0,
+      "inventory": 3,
+      "equipped": 0,
+      "xpTotal": 86,
+      "fish": 0,
+      "cleared": 0,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassesTotal": 0,
+      "reviewPassCounts": {
+        "demo-kitchen-root": 0,
+        "6b74de4c-f497-435a-92ce-5ee2ef781fa1": 0,
+        "f66a2567-7f1b-4785-b5d8-eda4ed4aeae4": 0,
+        "0e24e8d8-5ea7-4db2-81b3-7b024a5f54f6": 0
+      },
+      "nextReview": {
+        "demo-kitchen-root": null,
+        "6b74de4c-f497-435a-92ce-5ee2ef781fa1": null,
+        "f66a2567-7f1b-4785-b5d8-eda4ed4aeae4": null,
+        "0e24e8d8-5ea7-4db2-81b3-7b024a5f54f6": null
+      },
+      "marker": null
+    },
+    "emptyOverview": {
+      "hidden": false,
+      "text": "Journal\n\nSubjects, progress, records, due rooms, assistance, and device settings.\n\nSettings\nClose\nOverview\nActive subject\nNo active subject\nQuest step\nintro\nArchetype\nNot chosen yet\nSubjects\n3\nRooms due\n0\nXP awarded (records)\n0\nSubjects\nKitchen Chemistry — 0 / 4 rooms · 0 XP · Novice\nEnter\nRivers & Bridges — 0 / 4 rooms · 0 XP · Novice\nEnter\nSky & Weather — 0 / 5 rooms · 0 XP · Novice\nEnter\n\nSelecting a subject highlights it. Enter opens the same portal the street uses.\n\nProgress\nKitchen Chemistry — 0 / 4 cleared · Novice · 0 XP · 0 rooms due\nRivers & Bridges — 0 / 4 cleared · Novice · 0 XP · 0 rooms due\nSky & Weather — 0 / 5 cleared · Novice · 0 XP · 0 rooms due\nBadges\n\nNo badges yet. Clearing rooms and passing reviews unlocks them.\n\nRecords\nSessions completed\n3\nStudy time\n0 min\nNotes submitted\n0\nReviews completed\n0\nFish kept\n0\nDistinct fish species\n0\nRooms visited\n0\nActive days\n1\nStudy day streak\n1\nReview day streak\n0\nSubjects with proven mastery\n0\n\nEvery number is the engine’s statistics snapshot; the host does not re-sum progress.\n\nInventory\n\nNo equipment yet. Clearing a room with a strong note can drop gear.\n\nFish\n\nNo fish yet. Clear a room, then keep a catch at a pond.\n\nDue\n\nNo rooms are due right now.\n\nAssistance\n\nMode: off. Suggestions are ranked by the engine; this panel adds no advice of its own.\n\nAssistance is off in Settings.\n\nSettings\n\nStored on this device only. Settings are never written into the engine save.\n\nReduced motion\nAssistance\nText size\nTouch controls\nReset settings",
+      "focus": "journal-panel-title",
+      "sections": [
+        "journal-overview",
+        "journal-subjects",
+        "journal-progress",
+        "journal-badges",
+        "journal-records",
+        "journal-inventory",
+        "journal-fish",
+        "journal-due",
+        "journal-assistance",
+        "journal-settings"
+      ],
+      "settings": {
+        "reducedMotion": "system",
+        "assistance": "off",
+        "textScale": "large",
+        "touch": "auto"
+      },
+      "dataset": {
+        "reducedMotion": "reduce",
+        "reducedMotionPreference": "system",
+        "textScale": "large",
+        "touchLayout": "off",
+        "touchLayoutPreference": "auto",
+        "assistanceMode": "off"
+      }
+    },
+    "emptyRecords": {
+      "hidden": false,
+      "text": "Journal\n\nSubjects, progress, records, due rooms, assistance, and device settings.\n\nSettings\nClose\nOverview\nActive subject\nNo active subject\nQuest step\nintro\nArchetype\nNot chosen yet\nSubjects\n3\nRooms due\n0\nXP awarded (records)\n0\nSubjects\nKitchen Chemistry — 0 / 4 rooms · 0 XP · Novice\nEnter\nRivers & Bridges — 0 / 4 rooms · 0 XP · Novice\nEnter\nSky & Weather — 0 / 5 rooms · 0 XP · Novice\nEnter\n\nSelecting a subject highlights it. Enter opens the same portal the street uses.\n\nProgress\nKitchen Chemistry — 0 / 4 cleared · Novice · 0 XP · 0 rooms due\nRivers & Bridges — 0 / 4 cleared · Novice · 0 XP · 0 rooms due\nSky & Weather — 0 / 5 cleared · Novice · 0 XP · 0 rooms due\nBadges\n\nNo badges yet. Clearing rooms and passing reviews unlocks them.\n\nRecords\nSessions completed\n3\nStudy time\n0 min\nNotes submitted\n0\nReviews completed\n0\nFish kept\n0\nDistinct fish species\n0\nRooms visited\n0\nActive days\n1\nStudy day streak\n1\nReview day streak\n0\nSubjects with proven mastery\n0\n\nEvery number is the engine’s statistics snapshot; the host does not re-sum progress.\n\nInventory\n\nNo equipment yet. Clearing a room with a strong note can drop gear.\n\nFish\n\nNo fish yet. Clear a room, then keep a catch at a pond.\n\nDue\n\nNo rooms are due right now.\n\nAssistance\n\nMode: off. Suggestions are ranked by the engine; this panel adds no advice of its own.\n\nAssistance is off in Settings.\n\nSettings\n\nStored on this device only. Settings are never written into the engine save.\n\nReduced motion\nAssistance\nText size\nTouch controls\nReset settings",
+      "focus": "journal-panel-title",
+      "sections": [
+        "journal-overview",
+        "journal-subjects",
+        "journal-progress",
+        "journal-badges",
+        "journal-records",
+        "journal-inventory",
+        "journal-fish",
+        "journal-due",
+        "journal-assistance",
+        "journal-settings"
+      ],
+      "settings": {
+        "reducedMotion": "system",
+        "assistance": "off",
+        "textScale": "large",
+        "touch": "auto"
+      },
+      "dataset": {
+        "reducedMotion": "reduce",
+        "reducedMotionPreference": "system",
+        "textScale": "large",
+        "touchLayout": "off",
+        "touchLayoutPreference": "auto",
+        "assistanceMode": "off"
+      }
+    },
+    "reducedMotion": true,
+    "error": ""
+  },
+  "frames": [
+    {
+      "file": "2026-11-24-g8rm-01-journal-overview.png",
+      "label": "Journal overview",
+      "detail": "openIn=55ms; focus=journal-panel-title; subjects=active subject row; sections=journal-overview,journal-subjects,journal-progress,journal-badges,journal-records,journal-inventory,journal-fish,journal-due,journal-assistance,journal-settings; records=true; due=true; assistance=true; settings=true"
+    },
+    {
+      "file": "2026-11-24-g8rm-02-journal-subjects.png",
+      "label": "Journal subjects",
+      "detail": "section=journal-panel-title; room counts=true; enter buttons=4"
+    },
+    {
+      "file": "2026-11-24-g8rm-03-journal-records.png",
+      "label": "Journal records",
+      "detail": "notes=true; active days=true; engine copy=true"
+    },
+    {
+      "file": "2026-11-24-g8rm-04-journal-assistance.png",
+      "label": "Journal assistance",
+      "detail": "suggestions=6; engine reason labels=true; mode copy=true"
+    },
+    {
+      "file": "2026-11-24-g8rm-05-journal-settings.png",
+      "label": "Journal settings",
+      "detail": "focus=journal-panel-title; values={\"reducedMotion\":\"system\",\"assistance\":\"gentle\",\"textScale\":\"normal\",\"touch\":\"auto\"}; local-only copy=true"
+    },
+    {
+      "file": "2026-11-24-g8rm-06-journal-large-text.png",
+      "label": "Large text applied",
+      "detail": "dataset=large; value=large; same panel open=true"
+    },
+    {
+      "file": "2026-11-24-g8rm-07-journal-assistance-off.png",
+      "label": "Assistance mode off",
+      "detail": "mode=off; off copy=true; suggestions=0"
+    },
+    {
+      "file": "2026-11-24-g8rm-08-journal-settings-persisted.png",
+      "label": "Settings after reload",
+      "detail": "dataset text=large; select text=large; assistance=off; reduced motion=system; touch=auto"
+    },
+    {
+      "file": "2026-11-24-g8rm-09-journal-entry.png",
+      "label": "Entered from the journal",
+      "detail": "subject=demo-kitchen; enteredIn=114ms; world=dungeon; study session open=true; focus=game"
+    },
+    {
+      "file": "2026-11-24-g8rm-10-journal-empty.png",
+      "label": "Journal on a fresh save",
+      "detail": "subjects visible=true; active subject=true; due=true; focus=journal-panel-title"
+    },
+    {
+      "file": "2026-11-24-g8rm-11-journal-empty-records.png",
+      "label": "Fresh-save records",
+      "detail": "zero notes=true; zero fish=true; badges empty=true; fish empty=true"
+    }
+  ]
+}
