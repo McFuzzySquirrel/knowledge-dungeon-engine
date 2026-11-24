@@ -24,13 +24,13 @@ the gate outcome and the baseline facts later gates compare against.
 
 | Field | Value |
 |---|---|
-| Plan version | 1.7 |
+| Plan version | 1.8 |
 | Plan written | 2026-11-23 |
-| Engine test baseline | **13 files / 280 tests at `3951737`; unchanged after P0–P3** |
+| Engine test baseline | **13 files / 280 tests at `3951737`; unchanged after P0–P4** |
 | First gate run | 2026-11-23 |
-| Latest gate passed | G3 polish re-run (2026-11-24) |
-| Current phase | P3 complete; P4 next |
-| Open failures | None recorded; one accepted P3 observation, two resolved |
+| Latest gate passed | G4 (2026-11-24) |
+| Current phase | P4 complete — all phases done |
+| Open failures | None recorded; accepted P2-O1 performance exception and the P4 amendments below |
 
 ## Gate index
 
@@ -42,7 +42,7 @@ the gate outcome and the baseline facts later gates compare against.
 | G3 | [P3 — surface village](phase-3-surface-village.md#execution-evidence) | 2026-11-23 | uncommitted (base `fd8c171`) | pass | 13 / 280 | 14 / 79 | [P3 evidence](phase-3-surface-village.md#execution-evidence) |
 | G3 re-run | [P3 — playtest layout fix](phase-3-surface-village.md#execution-evidence) | 2026-11-24 | uncommitted (base `b44f24a`) | pass | 13 / 280 | 14 / 84 | [P3 evidence](phase-3-surface-village.md#execution-evidence) |
 | G3 polish | [P3 — street atmosphere and HUD](phase-3-surface-village.md#execution-evidence) | 2026-11-24 | uncommitted (base `1ef03cf`) | pass | 13 / 280 | 14 / 85 | [P3 evidence](phase-3-surface-village.md#execution-evidence) |
-| G4 | [P4 — fishing](phase-4-fishing.md#execution-evidence) | — | — | Pending | — | — | — |
+| G4 | [P4 — fishing](phase-4-fishing.md#execution-evidence) | 2026-11-24 | uncommitted (base `203011d`) | pass | 13 / 280 | 18 / 106 | [P4 evidence](phase-4-fishing.md#execution-evidence) |
 
 ## Baseline record (P0)
 
@@ -58,6 +58,7 @@ changes size, add a new baseline row and explain why.
 | 2026-11-23 | uncommitted (base `fd8c171`) | 13 | 280 | pass | pass | 0 `examples/` paths | G3 checkpoint; no baseline change; example suite 14 files / 79 tests |
 | 2026-11-24 | uncommitted (base `b44f24a`) | 13 | 280 | pass | pass | 0 `examples/` paths | G3 re-run after street layout/movement fix; example suite 14 files / 84 tests |
 | 2026-11-24 | uncommitted (base `1ef03cf`) | 13 | 280 | pass | pass | 0 `examples/` paths | G3 polish re-run; example suite 14 files / 85 tests |
+| 2026-11-24 | uncommitted (base `203011d`) | 13 | 280 | pass | pass | 0 `examples/` paths | G4 checkpoint; no baseline change; example suite 18 files / 106 tests |
 
 ## Per-task evidence links
 
@@ -120,3 +121,6 @@ Notes:
 | P3-O1 | G3 | Normal portal entry uses `placeDungeonBelow(...).spawn` (the dungeon root), matching P3-T3's portal rule. `shaftBottomSpawn` is implemented and tested for a physical descent, but P3's village world has no active subject, so walking down the shaft is not itself a world transition. | Host example | Accepted — documented in P3 amendments |
 | P3-O2 | G3 | The top-down village data overlapped the first subject portal (`gridX: 3`) with the Training Grounds facade (`gridX: 4`). Depth sorting drew the portal behind the gate. | Host example | Resolved 2026-11-24 — the spacing pass gives every building a 3-tile gap, so the portal occupies its own gap |
 | P3-O3 | P3 playtest | Raw `gridX` clumped facades, and solid building bodies plus a door gap trapped the player inside the Training Grounds footprint. | Host example | Resolved 2026-11-24 — facades are background-only; buildings are spread 1.6× with a 3-tile minimum gap; spawn, entrance, and return zone follow the Training Grounds door |
+| P4-O1 | G4 | The engine clears `activeSubjectId` in `returnToVillage()`, so P3's return flow reaches the street with no active subject. `resolveFishingSubject` uses active → host-remembered → most-cleared, and the pond payload uses that subject (never the nearest portal). | Host example | Accepted — P4 Amendment 1 |
+| P4-O2 | G4 | `pullRecallQuestion` draws with `Math.random`, so recall selection is not seedable. Replay covers phase, candidate, cast number, and effects; recall tests pass a fixed `roomId`, and the UI presents the engine's own `catch.recall`. | Host example | Accepted — documented in P4 Findings |
+| P4-O3 | G4 | Headless Firefox software compositing measures 16.79 ms average with 319/596 frames just over 16.7 ms during the 10 s pond capture (max 33.74 ms, one dropped frame). This is within the headless software-compositing variance recorded in P2-O1 and is not attributable to fishing. | Host example | Accepted — environment exception (P2-O1) |

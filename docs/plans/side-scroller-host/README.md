@@ -2,8 +2,8 @@
 
 | Field | Value |
 |---|---|
-| Plan version | 1.7 |
-| Status | In progress — P0–P3 done (P3 polished 2026-11-24); P4 next |
+| Plan version | 1.8 |
+| Status | Done — P0–P4 complete (G4 passed 2026-11-24) |
 | Created | 2026-11-23 |
 | Owner | Unassigned |
 | Phase documents | [P0](phase-0-scaffold.md) · [P1](phase-1-dungeon-level.md) · [P2](phase-2-note-loop.md) · [P3](phase-3-surface-village.md) · [P4](phase-4-fishing.md) |
@@ -114,7 +114,6 @@ it. Task IDs live in the phase documents.
 | P2 | [Note loop](phase-2-note-loop.md) | P1 | P3, P4 | G2 | Medium |
 | P3 | [Surface village](phase-3-surface-village.md) | P2 | P4 | G3 | Medium |
 | P4 | [Fishing](phase-4-fishing.md) | P2, P3 | — | G4 | Medium |
-
 ```mermaid
 flowchart LR
   P0["P0 Scaffold<br/>storage + boot"] --> P1["P1 Dungeon<br/>level + movement"]
@@ -176,8 +175,10 @@ examples/side-scroller/
     ui/
       notePanel.ts        DOM composer, outcomes, focus management
       prompts.ts          proximity prompt, announcements
+      recallDialog.ts     caught fish + recall dialog (P4)
     fishing/
       bridge.ts           machine events -> fishing commands (P4)
+      session.ts          pond subject resolution, eligibility copy (P4)
       scene.ts            fishing canvas scene (P4)
     projection.ts         EngineState -> view models, pure
   tests/
@@ -186,6 +187,9 @@ examples/side-scroller/
     projection.test.ts
     storage.test.ts
     fishingBridge.test.ts
+    fishingEntry.test.ts
+    fishingIntegration.test.ts
+    fishingReplay.test.ts
 ```
 
 The engine is imported through `src/index.ts`, whose namespaces are the public
@@ -375,9 +379,9 @@ Rules:
 | P1 | Done — G1 passed | G1 passed 2026-11-23 | [phase-1 evidence](phase-1-dungeon-level.md#execution-evidence) |
 | P2 | Done — G2 passed | G2 passed 2026-11-23 | [phase-2 evidence](phase-2-note-loop.md#execution-evidence) |
 | P3 | Done — G3 passed | G3 passed 2026-11-23 | [phase-3 evidence](phase-3-surface-village.md#execution-evidence) |
-| P4 | Not started | G4 pending | — |
+| P4 | Done — G4 passed | G4 passed 2026-11-24 | [phase-4 evidence](phase-4-fishing.md#execution-evidence) |
 
-Visual record: [VISUALS.md](VISUALS.md) — P1/G1, P2/G2, P3/G3 frames captured 2026-11-23; P3 layout follow-up 2026-11-24; P3 polish frames 2026-11-24.
+Visual record: [VISUALS.md](VISUALS.md) — P1/G1, P2/G2, P3/G3 frames captured 2026-11-23; P3 layout follow-up 2026-11-24; P3 polish frames 2026-11-24; P4/G4 pond loop frames 2026-11-24.
 
 ## 15. Assumptions to confirm at the G0 gate
 
@@ -404,3 +408,4 @@ update this section before P1.
 | 2026-11-23 | 1.5 | P3 executed and G3 passed; side-view surface from `VILLAGE_MAP`, dungeon placement below the street, climbable entrance shaft, portal/return routing, surface HUD, `--surface` capture mode; frames under `visuals/p3/` |
 | 2026-11-24 | 1.6 | P3 playtest fix and G3 re-run; facades are background-only, buildings are spaced 1.6× with a 3-tile minimum gap, spawn/entrance/return follow the Training Grounds door; new frames under `visuals/p3/` (`2026-11-24-g3`) |
 | 2026-11-24 | 1.7 | P3 polish pass; skyline/moon, facade lights and shadows, paving, shaft chevron, readable portal signs, deduped surface HUD with pond locations, and a “No door in reach” announcement; frames under `visuals/p3/` (`2026-11-24-g3p`) |
+| 2026-11-24 | 1.8 | P4 executed and G4 passed; pond entry from host-resolved active subject, cast/bite/reel scene, engine-backed recall dialog, keep/release, save-failure and mid-cast reload recovery, `--fishing` capture mode; frames under `visuals/p4/` (`2026-11-24-g4`); all phases complete |

@@ -9,6 +9,7 @@ let current: EngineState | null = null;
 const listeners = new Set<StateListener>();
 let reportError: (message: string) => void = (message) => console.error(message);
 let reportNotice: (message: string) => void = (message) => console.info(message);
+let bootNotice: string | null = null;
 
 /** Route host-owned failures to the visible error region. */
 export function setErrorReporter(reporter: (message: string) => void): void {
@@ -18,6 +19,19 @@ export function setErrorReporter(reporter: (message: string) => void): void {
 /** Route non-error notices (P3-T6 recovery) to the polite live region. */
 export function setNoticeReporter(reporter: (message: string) => void): void {
   reportNotice = reporter;
+}
+
+/**
+ * Take the one boot-recovery notice, if any.
+ *
+ * `onState` runs during boot and announces the routed screen, which would
+ * overwrite a recovery notice reported before the subscription. The boot path
+ * re-announces this value after routing so P4-T6 stays visible.
+ */
+export function takeBootNotice(): string | null {
+  const notice = bootNotice;
+  bootNotice = null;
+  return notice;
 }
 
 function describe(error: unknown): string {
@@ -56,11 +70,12 @@ export async function openExampleEngine(storage: BrowserStorage): Promise<Knowle
 
   const loaded = engine.snapshot();
   if (loaded.session.world === 'fishing') {
-    // P4 owns fishing recovery. Until then, a saved fishing session is closed
-    // through the normal command path and the player is returned to the street.
+    // P4: cast and bite progress are not durable. Close the session through the
+    // normal command path and return the player to the street (K-12).
     try {
       await engine.returnToVillage();
-      reportNotice(sessionNotResumedMessage());
+      bootNotice = sessionNotResumedMessage();
+      reportNotice(bootNotice);
     } catch (error) {
       reportError(`Could not recover the interrupted fishing session: ${describe(error)}`);
     }

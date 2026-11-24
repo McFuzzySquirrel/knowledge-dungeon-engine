@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Knowledge Dungeon — Side-Scroller (P3)</title>
+    <title>Knowledge Dungeon — Side-Scroller (P4)</title>
     <style>
       :root {
         color-scheme: dark;
@@ -80,7 +80,25 @@
         font: inherit;
         font-size: 0.85rem;
       }
-      #note-panel {
+      #recovery {
+        position: absolute;
+        left: 0.75rem;
+        right: 0.75rem;
+        bottom: 0.75rem;
+        z-index: 2;
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #7a6a35;
+        border-radius: 0.35rem;
+        background: rgb(42 37 21 / 95%);
+        color: var(--ink);
+        font-size: 0.95rem;
+      }
+      #recovery[hidden] { display: none; }
+      #recovery p { margin: 0; flex: 1; color: var(--ink); }
+      #note-panel, #fishing-panel {
         position: absolute;
         inset: 0;
         z-index: 3;
@@ -89,7 +107,7 @@
         border-radius: 0.5rem;
         background: rgb(11 13 19 / 92%);
       }
-      #note-panel[hidden] { display: none; }
+      #note-panel[hidden], #fishing-panel[hidden] { display: none; }
       .note-form {
         max-width: 44rem;
         margin: 0 auto;
@@ -137,14 +155,22 @@
         color: var(--ink);
         font: 0.85rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
       }
-      #note-error {
+      #note-error, #fishing-error {
         padding: 0.5rem 0.75rem;
         border: 1px solid #7a3535;
         border-radius: 0.35rem;
         background: #2a1518;
         color: var(--danger);
       }
-      #note-error[hidden] { display: none; }
+      #note-error[hidden], #fishing-error[hidden] { display: none; }
+      .fishing-prompt {
+        margin: 0.25rem 0 0.5rem;
+        padding: 0.6rem 0.8rem;
+        border-left: 3px solid var(--accent);
+        background: #101725;
+        color: var(--ink);
+        font-size: 1rem;
+      }
       aside {
         background: var(--panel);
         border: 1px solid #2b3550;
@@ -219,7 +245,7 @@
   <body>
     <main>
       <h1>Knowledge Dungeon — Side-Scroller</h1>
-      <p>Phase P3: walk the village street, enter a portal, write notes, and return through the entrance shaft.</p>
+      <p>Phase P4: walk the village street, enter a portal, write notes, return to a pond, and fish with a recall check.</p>
 
       <div class="stage">
         <canvas
@@ -231,6 +257,10 @@
           aria-describedby="game-help"
         ></canvas>
         <div id="prompt" hidden></div>
+        <div id="recovery" role="status" aria-live="polite" hidden>
+          <p id="recovery-text"></p>
+          <button id="recovery-dismiss" type="button">Dismiss</button>
+        </div>
         <div id="overlay">
           <p id="overlay-text">Loading the engine…</p>
           <button id="start-tutorial" type="button">Start tutorial</button>
@@ -242,11 +272,20 @@
           aria-labelledby="note-panel-title"
           hidden
         ></section>
+        <section
+          id="fishing-panel"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="fishing-panel-title"
+          hidden
+        ></section>
       </div>
       <p id="game-help" class="controls">
         <kbd>A</kbd>/<kbd>←</kbd> left · <kbd>D</kbd>/<kbd>→</kbd> right · <kbd>Space</kbd> jump ·
         <kbd>W</kbd>/<kbd>↑</kbd> climb up · <kbd>S</kbd>/<kbd>↓</kbd> climb down ·
         <kbd>E</kbd> enter a door or write a note · <kbd>Esc</kbd> close the composer.
+        At a pond, hold and release <kbd>Space</kbd> to cast, press <kbd>Space</kbd> at a bite,
+        and <kbd>Esc</kbd> to leave.
         The street and the dungeon share one world; climb the entrance shaft to return.
       </p>
     </main>
@@ -255,11 +294,12 @@
       <h2 id="panel-title" tabindex="-1">Progress</h2>
       <dl id="summary"></dl>
 
-      <h2>Rooms</h2>
+      <h2 id="rooms-title">Rooms</h2>
       <ul id="rooms"></ul>
 
       <div class="actions">
         <button id="clear-save" type="button">Clear saved state</button>
+        <button id="leave-fishing" type="button" hidden>Leave pond</button>
       </div>
 
       <div id="error" role="alert" hidden></div>

@@ -172,6 +172,52 @@ export interface SurfaceView {
   rank: string;
 }
 
+/** P4: one kept fish, renderer-neutral. */
+export interface FishView {
+  name: string;
+  rarity: string;
+}
+
+/** P4: the fishing pond HUD, renderer-neutral. */
+export interface FishingView {
+  subjectId: string;
+  subjectName: string;
+  pondId: string;
+  xp: number;
+  rank: string;
+  clearedCount: number;
+  totalRooms: number;
+  collection: FishView[];
+}
+
+/**
+ * Project the pond HUD from the open `fishingSession`.
+ *
+ * The session context is authoritative: it names the subject the pond was opened
+ * for, which can differ from `activeSubjectId` (the engine clears that on
+ * `returnToVillage`). Returns `null` when no session is open.
+ */
+export function projectFishing(state: EngineState): FishingView | null {
+  const context = state.fishingSession;
+  if (!context) return null;
+  const subject = state.subjects[context.subjectId];
+  const progression = state.progression[context.subjectId];
+  const rooms = subject ? Object.values(subject.rooms) : [];
+  return {
+    subjectId: context.subjectId,
+    subjectName: context.subjectName,
+    pondId: context.pondId,
+    xp: progression?.xpTotal ?? 0,
+    rank: progression?.rank ?? DEFAULT_RANK,
+    clearedCount: rooms.filter((room) => room.validationState.finalPass).length,
+    totalRooms: subject?.dungeon.rooms.length ?? 0,
+    collection: (progression?.fishCollection ?? []).map((fish) => ({
+      name: fish.name,
+      rarity: fish.rarity,
+    })),
+  };
+}
+
 const TYPE_LABELS: Record<string, string> = {
   'portal-icon': 'Dungeon portal',
   'training-gate': 'Tutorial dungeon',

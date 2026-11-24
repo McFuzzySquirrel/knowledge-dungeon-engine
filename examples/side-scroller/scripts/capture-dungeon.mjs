@@ -17,6 +17,8 @@
  * reload, and a simulated storage failure after the dungeon frames.
  * P3 adds `--surface`, which captures the village street, portal entry,
  * clearing a room, the shaft return, and reloads on both screens.
+ * P4 adds `--fishing`, which captures the pond entry, cast, bite, recall,
+ * keep, a rejected save, release, and mid-cast reload recovery.
  *
  * The script drives the real app over WebDriver, writes PNGs to `--out`, and
  * writes `<prefix>-manifest.json` plus Markdown table rows for VISUALS.md.
@@ -35,6 +37,7 @@ function parseArgs(argv) {
     reducedMotion: false,
     noteLoop: false,
     surface: false,
+    fishing: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -46,6 +49,7 @@ function parseArgs(argv) {
     else if (arg === '--reduced-motion') options.reducedMotion = true;
     else if (arg === '--note-loop') options.noteLoop = true;
     else if (arg === '--surface') options.surface = true;
+    else if (arg === '--fishing') options.fishing = true;
     else throw new Error(`Unknown argument: ${arg}`);
   }
   return options;
@@ -135,6 +139,12 @@ async function panel(session) {
       status: document.querySelector('#status')?.innerText ?? '',
       error: document.querySelector('#error')?.hidden ? '' : (document.querySelector('#error')?.innerText ?? ''),
       overlayHidden: document.querySelector('#overlay')?.hidden ?? null,
+      recovery: document.querySelector('#recovery')?.hidden
+        ? ''
+        : (document.querySelector('#recovery-text')?.innerText ?? ''),
+      fishing: document.querySelector('#fishing-panel')?.hidden === false
+        ? (document.querySelector('#fishing-panel')?.innerText ?? '')
+        : null,
       focus: document.activeElement?.id ?? document.activeElement?.tagName ?? '',
     };
   `);
@@ -160,6 +170,10 @@ async function stored(session) {
           visited: state.studySessions.find((x) => x.sessionId === state.activeStudySessionId)?.roomsVisited ?? [],
           sessions: state.studySessions.length,
           xp: state.progression[state.activeSubjectId]?.xpTotal ?? null,
+          xpTotal: Object.values(state.progression ?? {})
+            .reduce((sum, record) => sum + (record?.xpTotal ?? 0), 0),
+          fish: Object.values(state.progression ?? {})
+            .reduce((sum, record) => sum + (record?.fishCollection?.length ?? 0), 0),
           cleared: Object.values(state.subjects[state.activeSubjectId]?.rooms ?? {})
             .filter((room) => room.validationState.finalPass).length,
           artifacts: state.progression[state.activeSubjectId]?.collectedNotes?.length ?? 0,
@@ -615,9 +629,322 @@ async function captureSurface(prefix, frames) {
   }
 }
 
+async function captureFishing(prefix, frames) {
+  const session = await openSession(options.reducedMotion ? { 'ui.prefersReducedMotion': 1 } : {});
+  try {
+    await wd('POST', session.session('/url'), { url: APP });
+    await sleep(1800);
+
+    // Reset the example's own save, then reload clean.
+    await session.execute(`window.confirm = () => true; document.querySelector('#clear-save')?.click(); return true;`);
+    await sleep(1400);
+    await wd('POST', session.session('/refresh'), {});
+    await sleep(2200);
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Village street') === true`);
+
+    // The spawn is in front of the Training Grounds door; E opens the tutorial.
+    await session.synthDown('KeyE', 'e');
+    await session.synthUp('KeyE', 'e');
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Subject') === true`);
+    const entered = await stored(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-01-dungeon-entry.png`),
+      label: 'Dungeon entry',
+      detail: `world=${entered.world}; active session=${entered.activeStudy}; rooms=${entered.rooms.length}`,
+    });
+
+    // Clear one room so the pond is eligible.
+    await session.synthDown('KeyE', 'e');
+    await session.synthUp('KeyE', 'e');
+    await waitForExpr(session, `document.querySelector('#note-panel')?.hidden === false`);
+    await session.execute(`
+      const text = document.querySelector('#note-text');
+      text.value = ${JSON.stringify(VALID_NOTE)};
+      document.querySelector('#note-confirmed').checked = true;
+      document.querySelector('#note-submit').click();
+      return true;
+    `);
+    await waitForExpr(session, `document.querySelector('#note-outcome')?.hidden === false`);
+    const cleared = await stored(session);
+    await session.synthDown('Escape', 'Escape');
+    await session.synthUp('Escape', 'Escape');
+    await sleep(400);
+
+    // Climb the entrance shaft to the street.
+    await session.synthDown('KeyD', 'd');
+    await sleep(320);
+    await session.synthUp('KeyD', 'd');
+    await session.synthDown('KeyW', 'w');
+    const returnMs = await waitForExpr(
+      session,
+      `document.querySelector('#summary')?.innerText.includes('Village street') === true`,
+      25000,
+    );
+    await session.synthUp('KeyW', 'w');
+    await sleep(600);
+
+    // Walk left to the nearest pond; the HUD's Nearby row is the proximity proof.
+    await session.synthDown('KeyA', 'a');
+    let pondReached = null;
+    for (let index = 0; index < 80; index += 1) {
+      await sleep(100);
+      const summary = (await panel(session)).summary;
+      const lines = summary.split('\n');
+      const at = lines.indexOf('Nearby');
+      const nearby = at >= 0 ? lines[at + 1] : '';
+      if (nearby.includes('Fishing Pond')) {
+        pondReached = { steps: index, nearby };
+        break;
+      }
+    }
+    await session.synthUp('KeyA', 'a');
+    await sleep(300);
+    const surfaceBefore = await panel(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-02-pond-on-street.png`),
+      label: 'Pond on the street',
+      detail: `cleared=${cleared.cleared}; nearby=${pondReached?.nearby ?? 'not reached'}; prompt=${surfaceBefore.status}`,
+    });
+    if (!pondReached) throw new Error('The player did not reach a fishing pond');
+
+    // Enter the pond.
+    await session.synthDown('KeyE', 'e');
+    await session.synthUp('KeyE', 'e');
+    const enterMs = await waitForExpr(
+      session,
+      `document.querySelector('#summary')?.innerText.includes('Fishing pond') === true`,
+    );
+    const pond = await stored(session);
+    const reduced = await session.execute(`return matchMedia('(prefers-reduced-motion: reduce)').matches;`);
+    const frameStats = await session.executeAsync(`
+      const done = arguments[arguments.length - 1];
+      const deltas = [];
+      const started = performance.now();
+      let last = started;
+      function tick(now) {
+        deltas.push(now - last);
+        last = now;
+        if (now - started < 10000) requestAnimationFrame(tick);
+        else {
+          const sorted = [...deltas].sort((a, b) => a - b);
+          done({
+            frames: deltas.length,
+            avgMs: Math.round((deltas.reduce((a, b) => a + b, 0) / deltas.length) * 100) / 100,
+            p95Ms: Math.round(sorted[Math.floor(sorted.length * 0.95)] * 100) / 100,
+            maxMs: Math.round(Math.max(...deltas) * 100) / 100,
+            over16_7: deltas.filter((value) => value > 16.7).length,
+          });
+        }
+      }
+      requestAnimationFrame(tick);
+    `);
+    frames.push({
+      file: await session.screenshot(`${prefix}-03-pond-idle.png`),
+      label: 'Pond entry',
+      detail: `shownIn=${enterMs ?? 'timeout'}ms; world=${pond.world}; subject=${pond.activeSubjectId ?? 'host-resolved'}; xp=${pond.xpTotal}; fish=${pond.fish}; reduced-motion=${reduced}; frame avg=${frameStats.avgMs}ms p95=${frameStats.p95Ms}ms max=${frameStats.maxMs}ms over16.7=${frameStats.over16_7}/${frameStats.frames}`,
+    });
+
+    // Hold to power, then capture the meter before releasing.
+    await session.synthDown('Space', ' ');
+    await sleep(650);
+    frames.push({
+      file: await session.screenshot(`${prefix}-03b-powering.png`),
+      label: 'Charging the cast',
+      detail: `phase=powering; prompt=${(await panel(session)).status}`,
+    });
+    await sleep(50);
+    await session.synthUp('Space', ' ');
+    await waitForExpr(session, `document.querySelector('#status')?.innerText.includes('Waiting for a bite') === true`);
+    frames.push({
+      file: await session.screenshot(`${prefix}-04-waiting.png`),
+      label: 'Cast waiting',
+      detail: `phase=waiting; prompt=${(await panel(session)).status}`,
+    });
+
+    // Watch for the bite, then hook with Space.
+    const biteMs = await waitForExpr(
+      session,
+      `document.querySelector('#status')?.innerText.includes('Bite!') === true`,
+      25000,
+    );
+    frames.push({
+      file: await session.screenshot(`${prefix}-05-bite.png`),
+      label: 'Bite',
+      detail: `shownIn=${biteMs ?? 'timeout'}ms; screen-reader message present=${(await panel(session)).status.includes('Bite!')}`,
+    });
+    await session.synthDown('Space', ' ');
+    await session.synthUp('Space', ' ');
+
+    const dialogMs = await waitForExpr(session, `document.querySelector('#fishing-panel')?.hidden === false`, 8000);
+    const caught = await panel(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-06-recall.png`),
+      label: 'Recall dialog',
+      detail: `shownIn=${dialogMs ?? 'timeout'}ms; focus=${caught.focus}; question shown=${(caught.fishing ?? '').includes('Recall check')}; collection row=0 fish`,
+    });
+
+    // Tab order stays inside the modal and wraps back to the first action.
+    const focusOrder = [];
+    for (let index = 0; index < 4; index += 1) {
+      await session.hold('\uE004', 40);
+      focusOrder.push(await session.execute(`return document.activeElement?.id ?? '';`));
+    }
+
+    // P4-T6: a rejected save must say "Not saved" and leave the collection alone.
+    const beforeFailure = await stored(session);
+    await session.execute(`
+      window.__originalPut = IDBObjectStore.prototype.put;
+      IDBObjectStore.prototype.put = function () {
+        throw new DOMException('simulated quota failure', 'QuotaExceededError');
+      };
+      document.querySelector('#fishing-answered-correct').click();
+      return true;
+    `);
+    const notSavedMs = await waitForExpr(session, `document.querySelector('#fishing-error')?.hidden === false`);
+    await sleep(300);
+    const failed = await panel(session);
+    const afterFailure = await stored(session);
+    await session.execute(`IDBObjectStore.prototype.put = window.__originalPut; delete window.__originalPut; return true;`);
+    frames.push({
+      file: await session.screenshot(`${prefix}-07-not-saved.png`),
+      label: 'Catch save failure',
+      detail: `shownIn=${notSavedMs ?? 'timeout'}ms; error=${/not saved/i.test(failed.error)}; dialog still open=${failed.fishing !== null}; fish ${beforeFailure.fish}→${afterFailure.fish}`,
+    });
+
+    // Retry with Enter on the focused button: the keep path is keyboard-only.
+    await session.execute(`document.querySelector('#fishing-answered-correct').focus(); return true;`);
+    await session.hold('\uE007', 80);
+    const keptMs = await waitForExpr(session, `document.querySelector('#fishing-panel')?.hidden === true`, 10000);
+    await sleep(500);
+    const kept = await stored(session);
+    const keptPanel = await panel(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-08-kept.png`),
+      label: 'Kept with recall',
+      detail: `shownIn=${keptMs ?? 'timeout'}ms; fish=${kept.fish}; xp=${kept.xpTotal}; focus=${keptPanel.focus}; message="${keptPanel.status}"`,
+    });
+
+    // Second cast, release instead of keep.
+    await session.synthDown('Space', ' ');
+    await sleep(600);
+    await session.synthUp('Space', ' ');
+    await waitForExpr(session, `document.querySelector('#status')?.innerText.includes('Waiting for a bite') === true`, 15000);
+    await waitForExpr(session, `document.querySelector('#status')?.innerText.includes('Bite!') === true`, 25000);
+    await session.synthDown('Space', ' ');
+    await session.synthUp('Space', ' ');
+    await waitForExpr(session, `document.querySelector('#fishing-panel')?.hidden === false`, 8000);
+    await session.execute(`document.querySelector('#fishing-release').focus(); return true;`);
+    await session.hold('\uE007', 80);
+    await waitForExpr(session, `document.querySelector('#fishing-panel')?.hidden === true`, 10000);
+    await sleep(400);
+    const released = await stored(session);
+    const releasedPanel = await panel(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-09-released.png`),
+      label: 'Released',
+      detail: `fish=${released.fish} (unchanged from ${kept.fish}); focus=${releasedPanel.focus}; message="${releasedPanel.status}"`,
+    });
+
+    // Leave with Escape and confirm the street.
+    await session.synthDown('Escape', 'Escape');
+    await session.synthUp('Escape', 'Escape');
+    const leftMs = await waitForExpr(
+      session,
+      `document.querySelector('#summary')?.innerText.includes('Village street') === true`,
+      8000,
+    );
+    frames.push({
+      file: await session.screenshot(`${prefix}-10-street.png`),
+      label: 'Left the pond',
+      detail: `shownIn=${leftMs ?? 'timeout'}ms; world=village; fish=${released.fish}`,
+    });
+
+    // Reload: the collection and XP survive.
+    await wd('POST', session.session('/refresh'), {});
+    await sleep(2600);
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Village street') === true`);
+    const reloaded = await stored(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-11-reload.png`),
+      label: 'Reload after a catch',
+      detail: `fish=${reloaded.fish}; xp=${reloaded.xpTotal}; world=${reloaded.world}`,
+    });
+
+    // K-12: reloading mid-cast returns to the street with a visible notice.
+    await session.synthDown('KeyA', 'a');
+    for (let index = 0; index < 80; index += 1) {
+      await sleep(100);
+      const summary = (await panel(session)).summary;
+      if (summary.includes('Nearby\nFishing Pond')) break;
+    }
+    await session.synthUp('KeyA', 'a');
+    await sleep(200);
+    await session.synthDown('KeyE', 'e');
+    await session.synthUp('KeyE', 'e');
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Fishing pond') === true`);
+    await session.synthDown('Space', ' ');
+    await sleep(500);
+    await session.synthUp('Space', ' ');
+    await sleep(400);
+    await wd('POST', session.session('/refresh'), {});
+    await sleep(2800);
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Village street') === true`);
+    const recovered = await panel(session);
+    const recoveredState = await stored(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-12-mid-cast-reload.png`),
+      label: 'Mid-cast reload recovery',
+      detail: `world=${recoveredState.world}; notice=${recovered.recovery.includes('could not be resumed')}; fish=${recoveredState.fish}`,
+    });
+
+    return {
+      entered,
+      cleared,
+      pond,
+      reduced,
+      frameStats,
+      focusOrder,
+      caughtFocus: caught.focus,
+      questionShown: (caught.fishing ?? '').includes('Recall check'),
+      beforeFailure,
+      afterFailure,
+      kept,
+      released,
+      reloaded,
+      recovered,
+      recoveredState,
+      error: recovered.error,
+    };
+  } finally {
+    await session.close();
+  }
+}
+
 async function main() {
   await mkdir(OUT, { recursive: true });
   const frames = [];
+
+  if (options.fishing) {
+    const run = await captureFishing(options.prefix, frames);
+    const manifest = {
+      capturedAt: new Date().toISOString(),
+      app: APP,
+      viewport: 'default headless Firefox (captured window)',
+      prefix: options.prefix,
+      fishing: true,
+      result: run,
+      frames,
+    };
+    await writeFile(resolve(OUT, `${options.prefix}-manifest.json`), JSON.stringify(manifest, null, 2));
+    console.log(JSON.stringify(manifest, null, 2));
+    const date = new Date().toISOString().slice(0, 10);
+    console.log('\nMarkdown rows:\n');
+    for (const frame of frames) {
+      console.log(`| ${date} | ${frame.label} | \`${frame.file}\` | ${frame.detail} |`);
+    }
+    return;
+  }
+
   const surface = options.surface ? await captureSurface(options.prefix, frames) : null;
   if (!options.surface) {
     if (options.reducedMotion) await captureReducedMotion(options.prefix, frames);

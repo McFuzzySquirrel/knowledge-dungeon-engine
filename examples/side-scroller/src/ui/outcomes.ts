@@ -37,9 +37,9 @@ export function returnFailedMessage(error: unknown): string {
   return `Could not return to the village: ${detail(error)}. Nothing was committed; the study session is still open.`;
 }
 
-/** P3-T6: a fishing save cannot be resumed until P4 ships. */
+/** P4-T6: a saved fishing session cannot resume a cast in progress. */
 export function sessionNotResumedMessage(): string {
-  return 'Session could not be resumed: fishing is not available in this build. Returned to the village street.';
+  return 'Session could not be resumed: a cast in progress is not saved. Returned to the village street.';
 }
 
 /** A typed refusal from the encounter command (`{ ok: false }`), shown verbatim. */

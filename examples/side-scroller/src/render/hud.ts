@@ -1,4 +1,4 @@
-import type { DungeonView, SurfaceView } from '../projection';
+import type { DungeonView, FishingView, SurfaceView } from '../projection';
 
 /**
  * DOM HUD. Canvas is not accessible, so progress, room status, surface
@@ -9,6 +9,7 @@ import type { DungeonView, SurfaceView } from '../projection';
 export interface HudElements {
   summary: HTMLElement;
   rooms: HTMLElement;
+  roomsTitle: HTMLElement;
   status: HTMLElement;
   error: HTMLElement;
 }
@@ -16,6 +17,7 @@ export interface HudElements {
 export interface Hud {
   updateDungeon(view: DungeonView | null, activeRoomId: string | null): void;
   updateSurface(view: SurfaceView | null, activeInteractableId: string | null): void;
+  updateFishing(view: FishingView | null, phase: string, hint: string): void;
   announce(message: string): void;
   showError(message: string): void;
   clearError(): void;
@@ -70,6 +72,7 @@ function surfaceItem(entry: SurfaceView['entries'][number], current: boolean): H
 export function createHud(elements: HudElements): Hud {
   return {
     updateDungeon(view, activeRoomId) {
+      elements.roomsTitle.textContent = 'Rooms';
       if (!view) {
         elements.summary.replaceChildren(...row('Location', 'Unknown — no active dungeon'));
         elements.rooms.replaceChildren();
@@ -97,6 +100,7 @@ export function createHud(elements: HudElements): Hud {
     },
 
     updateSurface(view, activeInteractableId) {
+      elements.roomsTitle.textContent = 'Places';
       if (!view) {
         elements.summary.replaceChildren(...row('Location', 'Unknown — surface unavailable'));
         elements.rooms.replaceChildren();
@@ -117,6 +121,56 @@ export function createHud(elements: HudElements): Hud {
       elements.rooms.replaceChildren(
         ...view.entries.map((entry) => surfaceItem(entry, entry.id === activeInteractableId)),
       );
+    },
+
+    updateFishing(view, phase, hint) {
+      elements.roomsTitle.textContent = 'Pond';
+      if (!view) {
+        elements.summary.replaceChildren(...row('Location', 'Unknown — no pond session'));
+        elements.rooms.replaceChildren();
+        return;
+      }
+
+      const rows = [
+        ['Location', 'Fishing pond'],
+        ['Subject', view.subjectName],
+        ['World', `fishing · ${phase}`],
+        ['XP', String(view.xp)],
+        ['Rank', view.rank],
+        ['Rooms cleared', `${view.clearedCount} / ${view.totalRooms}`],
+        [
+          'Fish collection',
+          view.collection.length === 1 ? '1 fish' : `${view.collection.length} fish`,
+        ],
+        ['Pond session', 'active'],
+      ];
+      elements.summary.replaceChildren(...rows.flatMap(([term, value]) => row(term, value)));
+
+      const items: HTMLLIElement[] = [];
+      const hintItem = document.createElement('li');
+      hintItem.className = 'room';
+      const hintMarker = document.createElement('span');
+      hintMarker.className = 'marker';
+      hintMarker.setAttribute('aria-hidden', 'true');
+      hintMarker.textContent = '▸';
+      const hintText = document.createElement('span');
+      hintText.textContent = hint;
+      hintItem.append(hintMarker, hintText);
+      items.push(hintItem);
+
+      for (const fish of view.collection.slice(0, 8)) {
+        const item = document.createElement('li');
+        item.className = 'room';
+        const marker = document.createElement('span');
+        marker.className = 'marker';
+        marker.setAttribute('aria-hidden', 'true');
+        marker.textContent = '◆';
+        const text = document.createElement('span');
+        text.textContent = `${fish.name} — ${fish.rarity}`;
+        item.append(marker, text);
+        items.push(item);
+      }
+      elements.rooms.replaceChildren(...items);
     },
 
     announce(message) {

@@ -45,13 +45,29 @@ export function projectRoute(state: EngineState): RouteView {
     };
   }
 
-  // P4 replaces this placeholder. Until then, fishing cannot be resumed.
+  // P4: the pond session names the subject the pond runs under. Without it the
+  // world is unrecoverable mid-cast, so route to the surface with a notice.
+  const context = state.fishingSession;
+  if (!context) {
+    return {
+      screen: 'surface',
+      subjectId: null,
+      subjectName: null,
+      notice: 'The fishing world had no pond session; returned to the village street.',
+    };
+  }
+  if (!state.subjects[context.subjectId]) {
+    return {
+      screen: 'surface',
+      subjectId: null,
+      subjectName: null,
+      notice: 'The fishing subject no longer exists; returned to the village street.',
+    };
+  }
   return {
     screen: 'fishing',
-    subjectId: state.activeSubjectId,
-    subjectName: state.activeSubjectId
-      ? state.subjects[state.activeSubjectId]?.dungeon.subjectName ?? null
-      : null,
-    notice: 'Fishing is not available in this build. Return to the village to continue.',
+    subjectId: context.subjectId,
+    subjectName: context.subjectName,
+    notice: null,
   };
 }

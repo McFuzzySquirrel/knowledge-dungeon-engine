@@ -59,13 +59,34 @@ describe('projectRoute', () => {
     expect(view.notice).toContain('no active subject');
   });
 
-  it('routes a fishing world to the P4 placeholder with a visible notice', () => {
+  it('routes a fishing world through its pond session, not activeSubjectId', () => {
     const state = stateWithTutorial();
     state.session = { ...state.session, world: 'fishing' };
+    state.activeSubjectId = null;
+    state.fishingSession = {
+      contextId: 'synthetic-context',
+      pondId: 'pond-fish-nw',
+      enteredAt: FIXED_NOW,
+      subjectId: TUTORIAL_ID,
+      subjectName: 'First Dungeon (Tutorial)',
+      roomId: null,
+      catalogId: null,
+      rarity: null,
+    };
 
     const view = projectRoute(state);
     expect(view.screen).toBe('fishing');
     expect(view.subjectId).toBe(TUTORIAL_ID);
-    expect(view.notice).toContain('not available');
+    expect(view.notice).toBeNull();
+  });
+
+  it('falls back to the surface when a fishing world has no pond session', () => {
+    const state = stateWithTutorial();
+    state.session = { ...state.session, world: 'fishing' };
+    state.fishingSession = null;
+
+    const view = projectRoute(state);
+    expect(view.screen).toBe('surface');
+    expect(view.notice).toContain('no pond session');
   });
 });

@@ -59,12 +59,26 @@ passed.
 | 2026-11-24 | G3 polish | uncommitted | Returned through the shaft | [`04-returned.png`](visuals/p3/2026-11-24-g3p-04-returned.png) | Climb ≈4.2 s; full portal sign; world village; session closed |
 | 2026-11-24 | G3 polish | uncommitted | Reload on the street | [`05-reload-surface.png`](visuals/p3/2026-11-24-g3p-05-reload-surface.png) | World village; one subject portal; cleared count survives |
 | 2026-11-24 | G3 polish | uncommitted | Reload in the dungeon | [`06-reload-dungeon.png`](visuals/p3/2026-11-24-g3p-06-reload-dungeon.png) | P0-T5 recovery; world dungeon; 3 rooms; active session |
+| 2026-11-24 | G4 | uncommitted (base `203011d`) | Dungeon entry | [`01-dungeon-entry.png`](visuals/p4/2026-11-24-g4-01-dungeon-entry.png) | P4 build; Training Grounds entry; 3 rooms; active session |
+| 2026-11-24 | G4 | uncommitted | Pond on the street | [`02-pond-on-street.png`](visuals/p4/2026-11-24-g4-02-pond-on-street.png) | After one clear; `Nearby Fishing Pond (north-west)`; `E` prompt |
+| 2026-11-24 | G4 | uncommitted | Pond entry | [`03-pond-idle.png`](visuals/p4/2026-11-24-g4-03-pond-idle.png) | World fishing; host-resolved Tutorial subject; 0 fish; reduced motion; avg 16.79 ms, p95 17.16 ms, max 33.74 ms |
+| 2026-11-24 | G4 | uncommitted | Charging the cast | [`03b-powering.png`](visuals/p4/2026-11-24-g4-03b-powering.png) | Space held; power meter; phase `powering` |
+| 2026-11-24 | G4 | uncommitted | Cast waiting | [`04-waiting.png`](visuals/p4/2026-11-24-g4-04-waiting.png) | Bobber on the water; live-region "Waiting for a bite." |
+| 2026-11-24 | G4 | uncommitted | Bite | [`05-bite.png`](visuals/p4/2026-11-24-g4-05-bite.png) | Bite in ≈5.4 s; "Bite! Press Space to reel in." |
+| 2026-11-24 | G4 | uncommitted | Recall dialog | [`06-recall.png`](visuals/p4/2026-11-24-g4-06-recall.png) | Focus on the first action; engine recall question; 0 fish |
+| 2026-11-24 | G4 | uncommitted | Catch save failure | [`07-not-saved.png`](visuals/p4/2026-11-24-g4-07-not-saved.png) | Simulated quota failure; "Not saved" in dialog and HUD; fish 0→0 |
+| 2026-11-24 | G4 | uncommitted | Kept with recall | [`08-kept.png`](visuals/p4/2026-11-24-g4-08-kept.png) | Enter on the focused button; fish 1; XP 28→33; focus back on `#game` |
+| 2026-11-24 | G4 | uncommitted | Released | [`09-released.png`](visuals/p4/2026-11-24-g4-09-released.png) | Second cast released; fish stays 1; "Released. Nothing was added…" |
+| 2026-11-24 | G4 | uncommitted | Left the pond | [`10-street.png`](visuals/p4/2026-11-24-g4-10-street.png) | Escape returns to the street beside the pond; fish 1 |
+| 2026-11-24 | G4 | uncommitted | Reload after a catch | [`11-reload.png`](visuals/p4/2026-11-24-g4-11-reload.png) | Fish 1 and XP 33 survive IndexedDB |
+| 2026-11-24 | G4 | uncommitted | Mid-cast reload recovery | [`12-mid-cast-reload.png`](visuals/p4/2026-11-24-g4-12-mid-cast-reload.png) | Persistent banner: "Session could not be resumed…"; world village |
 
 Manifests: [`2026-11-23-g1-manifest.json`](visuals/p1/2026-11-23-g1-manifest.json),
 [`2026-11-23-g2-manifest.json`](visuals/p2/2026-11-23-g2-manifest.json),
 [`2026-11-23-g3-manifest.json`](visuals/p3/2026-11-23-g3-manifest.json),
 [`2026-11-24-g3-manifest.json`](visuals/p3/2026-11-24-g3-manifest.json),
-[`2026-11-24-g3p-manifest.json`](visuals/p3/2026-11-24-g3p-manifest.json).
+[`2026-11-24-g3p-manifest.json`](visuals/p3/2026-11-24-g3p-manifest.json),
+[`2026-11-24-g4-manifest.json`](visuals/p4/2026-11-24-g4-manifest.json).
 
 P0 predates this record: it proved boot and storage with a debug panel and captured no
 frames. The record starts at P1.
@@ -236,6 +250,70 @@ three ponds by direction.
 
 Manifest: [`2026-11-24-g3p-manifest.json`](visuals/p3/2026-11-24-g3p-manifest.json).
 
+## P4 — Fishing
+
+P4 adds the Fisher's Rest loop at the north-west surface pond. The capture clears one
+tutorial room, walks to the pond, holds Space to cast, presses Space at the bite, keeps
+with a correct recall (activated with Enter on the focused dialog button), releases a
+second fish, reloads, and finally reloads mid-cast to prove the recovery notice.
+
+This run enabled the OS reduced-motion preference (`ui.prefersReducedMotion=1`;
+`matchMedia` true) and took a 10-second frame measurement at the pond: 596 frames,
+average 16.79 ms, p95 17.16 ms, max 33.74 ms (one dropped frame), 319 frames just over 16.7 ms. That is the
+headless software-compositing floor recorded as P2-O1, not a fishing-specific cost.
+Tab order inside the recall dialog is `answered-incorrect → release → later →
+answered-correct` (wrapping inside the modal).
+
+### Pond on the street
+
+![Pond on the street](visuals/p4/2026-11-24-g4-02-pond-on-street.png)
+
+### Pond entry
+
+![Pond entry](visuals/p4/2026-11-24-g4-03-pond-idle.png)
+
+### Charging the cast
+
+![Charging the cast](visuals/p4/2026-11-24-g4-03b-powering.png)
+
+### Waiting for a bite
+
+![Waiting for a bite](visuals/p4/2026-11-24-g4-04-waiting.png)
+
+### Bite
+
+![Bite](visuals/p4/2026-11-24-g4-05-bite.png)
+
+### Recall dialog
+
+![Recall dialog](visuals/p4/2026-11-24-g4-06-recall.png)
+
+### Catch save failure
+
+![Catch save failure](visuals/p4/2026-11-24-g4-07-not-saved.png)
+
+### Kept with recall
+
+![Kept with recall](visuals/p4/2026-11-24-g4-08-kept.png)
+
+### Released
+
+![Released](visuals/p4/2026-11-24-g4-09-released.png)
+
+### Left the pond
+
+![Left the pond](visuals/p4/2026-11-24-g4-10-street.png)
+
+### Reload after a catch
+
+![Reload after a catch](visuals/p4/2026-11-24-g4-11-reload.png)
+
+### Mid-cast reload recovery
+
+![Mid-cast reload recovery](visuals/p4/2026-11-24-g4-12-mid-cast-reload.png)
+
+Manifest: [`2026-11-24-g4-manifest.json`](visuals/p4/2026-11-24-g4-manifest.json).
+
 ## Capturing the next phase
 
 Prerequisites: example dependencies installed, Firefox on `PATH`, and `geckodriver`
@@ -283,6 +361,18 @@ node examples/side-scroller/scripts/capture-dungeon.mjs \
   --out docs/plans/side-scroller-host/visuals/p3 \
   --prefix 2026-11-23-g3 \
   --surface
+```
+
+With `--fishing`, a separate mode captures the pond loop: dungeon entry, a cleared room,
+the walk to a pond, powering, waiting, the bite, the recall dialog, a simulated
+IndexedDB failure on keep, the retry with Enter, a release, leaving the pond, reload, and
+a mid-cast reload recovery. Add `--reduced-motion` to run it with the OS preference set.
+
+```sh
+node examples/side-scroller/scripts/capture-dungeon.mjs \
+  --out docs/plans/side-scroller-host/visuals/p4 \
+  --prefix 2026-11-24-g4 \
+  --fishing --reduced-motion
 ```
 
 It does not add test hooks to the page or change engine state beyond normal commands.
