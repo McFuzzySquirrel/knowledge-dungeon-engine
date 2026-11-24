@@ -24,12 +24,12 @@ the gate outcome and the baseline facts later gates compare against.
 
 | Field | Value |
 |---|---|
-| Plan version | 1.9 |
+| Plan version | 2.0 |
 | Plan written | 2026-11-23 |
 | Engine test baseline | **13 files / 280 tests at `3951737`; unchanged after P0–P4** |
 | First gate run | 2026-11-23 |
 | Latest gate passed | G4 (2026-11-24) |
-| Current phase | P4 complete — all phases done; interaction-feedback follow-up |
+| Current phase | P0–P4 complete; P5–P10 planned, P5 next |
 | Open failures | None recorded; accepted P2-O1 performance exception and the P4 amendments below |
 
 ## Gate index
@@ -43,6 +43,12 @@ the gate outcome and the baseline facts later gates compare against.
 | G3 re-run | [P3 — playtest layout fix](phase-3-surface-village.md#execution-evidence) | 2026-11-24 | uncommitted (base `b44f24a`) | pass | 13 / 280 | 14 / 84 | [P3 evidence](phase-3-surface-village.md#execution-evidence) |
 | G3 polish | [P3 — street atmosphere and HUD](phase-3-surface-village.md#execution-evidence) | 2026-11-24 | uncommitted (base `1ef03cf`) | pass | 13 / 280 | 14 / 85 | [P3 evidence](phase-3-surface-village.md#execution-evidence) |
 | G4 | [P4 — fishing](phase-4-fishing.md#execution-evidence) | 2026-11-24 | uncommitted (base `203011d`) | pass | 13 / 280 | 18 / 106 | [P4 evidence](phase-4-fishing.md#execution-evidence) |
+| G5 | [P5 — review](phase-5-review.md#execution-evidence) | — | — | Planned | — | — | — |
+| G6 | [P6 — creator](phase-6-creator.md#execution-evidence) | — | — | Planned | — | — | — |
+| G7 | [P7 — village services](phase-7-village.md#execution-evidence) | — | — | Planned | — | — | — |
+| G8 | [P8 — journal](phase-8-journal.md#execution-evidence) | — | — | Planned | — | — | — |
+| G9 | [P9 — shell and touch](phase-9-shell-mobile.md#execution-evidence) | — | — | Planned | — | — | — |
+| G10 | [P10 — local polish](phase-10-polish.md#execution-evidence) | — | — | Planned | — | — | — |
 
 ## Baseline record (P0)
 
@@ -70,6 +76,12 @@ changes size, add a new baseline row and explain why.
 | P2 | [phase-2-note-loop.md §Execution evidence](phase-2-note-loop.md#execution-evidence) | Draft/refusal/clear, save failure, keyboard pass |
 | P3 | [phase-3-surface-village.md §Execution evidence](phase-3-surface-village.md#execution-evidence) | Surface layout, portal entry/return, reload routing |
 | P4 | [phase-4-fishing.md §Execution evidence](phase-4-fishing.md#execution-evidence) | Replay, keep/release, reload recovery, performance |
+| P5 | [phase-5-review.md §Execution evidence](phase-5-review.md#execution-evidence) | Review schedule, idempotency, resume/discard, keyboard |
+| P6 | [phase-6-creator.md §Execution evidence](phase-6-creator.md#execution-evidence) | Graph mutations, seed idempotency, portals |
+| P7 | [phase-7-village.md §Execution evidence](phase-7-village.md#execution-evidence) | Service projections, equipment, NPC lines |
+| P8 | [phase-8-journal.md §Execution evidence](phase-8-journal.md#execution-evidence) | Journal, statistics, assistance, settings |
+| P9 | [phase-9-shell-mobile.md §Execution evidence](phase-9-shell-mobile.md#execution-evidence) | Title, save bundle, touch |
+| P10 | [phase-10-polish.md §Execution evidence](phase-10-polish.md#execution-evidence) | Local gate, performance, accessibility, docs |
 
 Visual record: [VISUALS.md](VISUALS.md) — dated frames, conditions, and manifests per gate.
 
@@ -110,7 +122,13 @@ Notes:
 | Visit de-duplication | Test or instrumented log showing one command per entry and a second on re-entry |
 | Keyboard operation | Dated manual checklist result for the path under test |
 | Fishing determinism | Replay test with a fixed seed and event trace; recall selection is excluded and stated |
-| Performance | Dated DevTools capture summary with frame-time outliers or an accepted exception |
+| Review scheduling | Test for one SM-2 update and at most one reward per (room, pass), plus save/resume/discard across a reload |
+| Creator and seeds | Graph mutation tests with typed refusals, idempotent seed test, and portal count from `villageStructures()` |
+| Village services | Projection fixtures for populated and empty states, an equipment round-trip, and a frame showing every read-only label |
+| Save portability | `Uint8Array` round trip, malformed-import rejection leaving the prior save intact, and one manual export/import |
+| Touch operation | Dated touch-only checklist on a phone-sized viewport plus an intent-mapping test against the keyboard path |
+| Boundary compliance | [ENGINE-BOUNDARY.md](ENGINE-BOUNDARY.md) is current, and both `src` diff checks are empty at the gate |
+| Performance | Dated frame-trace summary with outliers, the environment baseline, or an accepted exception |
 
 ## Open issues and exceptions
 

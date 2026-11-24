@@ -2,13 +2,14 @@
 
 | Field | Value |
 |---|---|
-| Plan version | 1.9 |
-| Status | Done — P0–P4 complete (G4 passed 2026-11-24; interaction-feedback follow-up 2026-11-24) |
+| Plan version | 2.0 |
+| Status | In progress — P0–P4 done; P5 next (P5–P10 planned 2026-11-24) |
 | Created | 2026-11-23 |
 | Owner | Unassigned |
-| Phase documents | [P0](phase-0-scaffold.md) · [P1](phase-1-dungeon-level.md) · [P2](phase-2-note-loop.md) · [P3](phase-3-surface-village.md) · [P4](phase-4-fishing.md) |
+| Phase documents | [P0](phase-0-scaffold.md) · [P1](phase-1-dungeon-level.md) · [P2](phase-2-note-loop.md) · [P3](phase-3-surface-village.md) · [P4](phase-4-fishing.md) · [P5](phase-5-review.md) · [P6](phase-6-creator.md) · [P7](phase-7-village.md) · [P8](phase-8-journal.md) · [P9](phase-9-shell-mobile.md) · [P10](phase-10-polish.md) |
 | Evidence index | [EVIDENCE.md](EVIDENCE.md) |
 | Visual record | [VISUALS.md](VISUALS.md) |
+| Boundary rules | [ENGINE-BOUNDARY.md](ENGINE-BOUNDARY.md) |
 | Base commit | `3951737` (`Add project documentation and host UI guide`) |
 
 This plan turns Knowledge Dungeon Engine into a small, playable side-scroller host
@@ -46,6 +47,12 @@ Both README and the host guide state that a side-scrolling host must supply its 
 movement and collision while reusing learning and progression rules
 ([README](../../../README.md#about), [host guide](../../host-ui-guide.md#screen-and-flow-design)).
 
+P0–P4 delivered a playable Scribe + fishing slice. P5–P10 complete the example as a game:
+the missing Creator and Archaeologist phases, a village where every labelled building
+serves a purpose, a journal/settings shell, save portability, touch controls, and a local
+ship pass. They remain strictly additive to the engine; every boundary decision is in
+[ENGINE-BOUNDARY.md](ENGINE-BOUNDARY.md).
+
 ## 2. Confirmed decisions
 
 These were answered by the maintainer and are not open for reinterpretation
@@ -62,6 +69,15 @@ without updating this table.
 | D-07 | Example location | `examples/` in this repository |
 | D-08 | Surface perspective | Side-view street |
 | D-09 | Visual record | Dated screenshots under `docs/plans/side-scroller-host/visuals/pN/`, indexed by [VISUALS.md](VISUALS.md) and captured with `examples/side-scroller/scripts/capture-dungeon.mjs` |
+| D-10 | Post-P4 scope | Full six phases, P5–P10, covering the complete local game UI and functionality |
+| D-11 | Presentation | Keep placeholder rectangles; no sprites, tilesets, audio, music, or voice in this plan |
+| D-12 | Mobile | Touch controls and responsive layouts are in scope (P9); S-01 expands to current mobile Safari/Chrome |
+| D-13 | Release | Local only; no CI workflow, deployment, PWA, or hosting in this plan |
+| D-14 | Engine boundary | Strictly example-only. No `src/`, export-map, or storage-schema changes. [ENGINE-BOUNDARY.md](ENGINE-BOUNDARY.md) records the rule and the escalation path for future host UIs |
+| D-15 | Demo content | Seed three synthetic demo subjects in P6 (`demo-rivers`, `demo-sky`, `demo-kitchen`) |
+| D-16 | Review entry | `R` from a cleared room plus a Library desk in P7; the review panel itself ships in P5 |
+| D-17 | Creator scope | A room-tree editor with forms, not a canvas node graph or tile editor |
+| D-18 | Deferred engine capabilities | Fish trading, NPC dialogue state, multi-save slots, and cloud sync stay out of scope; see [ENGINE-BOUNDARY.md §6](ENGINE-BOUNDARY.md#6-deferred-capabilities) |
 
 ## 3. Goals and non-goals
 
@@ -70,17 +86,25 @@ without updating this table.
 - Prove the engine can back a real side-view game loop without engine changes.
 - Exercise the commands most likely to shape a host UI: `recordRoomVisit`,
   `submitNote`, `collectArtifact`, `interactVillageStructure`, `returnToVillage`,
-  and the fishing commands.
+  the fishing commands, and (P5–P9) review, graph, equipment, statistics, assistance,
+  and save-portability commands.
+- Close the engine's full learning loop in the host: **Creator → Scribe → Archaeologist**,
+  with fishing and a village that gives every labelled building a purpose.
 - Keep every phase small enough to gate and evidence independently.
-- Leave a reusable reference host that is not coupled to a framework.
+- Leave a reusable reference host that is not coupled to a framework, is keyboard- and
+  touch-operable, and can be deleted without touching the engine.
 
 ### Non-goals
 
-- Platformer polish, art production, audio, or a level editor.
+- Art production, audio, music, or voice. Placeholder rectangles and silence are
+  deliberate (D-11).
+- A canvas node-graph editor or a tile-level level editor. P6 is a room-tree editor;
+  dungeon geometry stays generated.
 - Replacing the engine's grid navigation or floor-visibility rules.
-- Multi-device sync, accounts, anti-cheat, or online storage.
-- A full Creator graph-editing UI. P3 enters subjects; it does not build them.
-- Mobile-specific layouts beyond keyboard-equivalent touch targets.
+- Multi-device sync, accounts, cloud storage, anti-cheat, or online services.
+- Fish trading, NPC state mutation, or multiple save slots; see
+  [ENGINE-BOUNDARY.md §6](ENGINE-BOUNDARY.md#6-deferred-capabilities).
+- CI workflows, hosted deployment, PWA install, or app-store packaging (D-13).
 
 ## 4. Requirements and traceability
 
@@ -101,9 +125,16 @@ it. Task IDs live in the phase documents.
 | R-10 | Portal entry and return-to-village flows | [creatorEngine.ts](../../../src/creatorEngine.ts) | P3 | G3, A-08 |
 | R-11 | Fishing cast/bite/reel plus keep/release with recall | [ADR-0008](../../adr/0008-fishing-state-machine-and-command-layer.md) | P4 | G4, E-09 |
 | R-12 | Example tests isolated from the engine suite | D-04 | P0–P4 | G0, E-02 |
-| R-13 | Engine source and runtime dependencies unchanged | [README contribute](../../../README.md#how-to-contribute) | All | G0–G4, E-10 |
-| R-14 | Execution evidence recorded per phase | D-02 | All | G0–G4, E-11 |
-| R-15 | Rollout and rollback documented and reversible | This plan | P0, P4 | G4, E-12 |
+| R-13 | Engine source and runtime dependencies unchanged | [README contribute](../../../README.md#how-to-contribute) | All | G0–G10, E-10 |
+| R-14 | Execution evidence recorded per phase | D-02 | All | G0–G10, E-11 |
+| R-15 | Rollout and rollback documented and reversible | This plan | P0, P4, P10 | G4, G10, E-12 |
+| R-16 | Cleared rooms can be reviewed with a 0–5 rating, due dates, and resumable interrupted reviews | [ADR-0007](../../adr/0007-sm2-review-scheduling-and-interrupted-sessions.md) | P5 | G5, E-13 |
+| R-17 | Creator can create subjects and room graphs; three demo subjects seed idempotently; every subject is a village portal | `createSubject`, `dispatchGraph` | P6 | G6, E-14 |
+| R-18 | Every labelled building opens a real service; read-only surfaces are labelled as such | `villageStructures`, progression, statistics, NPC contract | P7 | G7, E-15 |
+| R-19 | Journal, character, statistics, assistance, and host settings are available and accessible | `statistics`, `assistance`, progression | P8 | G8, E-16 |
+| R-20 | Title/new/continue, archetype choice, save export/import, and touch controls work | storage + host shell | P9 | G9, E-17 |
+| R-21 | Local polish, performance, accessibility, docs, and a repeatable local gate are complete | This plan | P10 | G10, E-18 |
+| R-22 | P5–P10 remain strictly example-only; the boundary and future-UI escalation path are documented | [ENGINE-BOUNDARY.md](ENGINE-BOUNDARY.md) | All | G5–G10, E-10 |
 
 ## 5. Phase map
 
@@ -113,7 +144,13 @@ it. Task IDs live in the phase documents.
 | P1 | [Dungeon level and movement](phase-1-dungeon-level.md) | P0 | P2 | G1 | Large |
 | P2 | [Note loop](phase-2-note-loop.md) | P1 | P3, P4 | G2 | Medium |
 | P3 | [Surface village](phase-3-surface-village.md) | P2 | P4 | G3 | Medium |
-| P4 | [Fishing](phase-4-fishing.md) | P2, P3 | — | G4 | Medium |
+| P4 | [Fishing](phase-4-fishing.md) | P2, P3 | P10 | G4 | Medium |
+| P5 | [Archaeologist review](phase-5-review.md) | P1, P2 | P7, P8 | G5 | Large |
+| P6 | [Creator and demo campaign](phase-6-creator.md) | P1, P3 | P7, P8 | G6 | Large |
+| P7 | [Village services](phase-7-village.md) | P5, P6 | P8 | G7 | Large |
+| P8 | [Journal and settings](phase-8-journal.md) | P5–P7 | P9 | G8 | Medium |
+| P9 | [Shell and touch](phase-9-shell-mobile.md) | P8 | P10 | G9 | Medium |
+| P10 | [Local polish and docs](phase-10-polish.md) | P5–P9 | — | G10 | Medium |
 ```mermaid
 flowchart LR
   P0["P0 Scaffold<br/>storage + boot"] --> P1["P1 Dungeon<br/>level + movement"]
@@ -121,7 +158,17 @@ flowchart LR
   P2 --> P3["P3 Surface village"]
   P2 --> P4["P4 Fishing"]
   P3 --> P4
-  P4 --> DONE["Reference host"]
+  P1 --> P5["P5 Archaeologist<br/>review"]
+  P2 --> P5
+  P1 --> P6["P6 Creator +<br/>demo subjects"]
+  P3 --> P6
+  P5 --> P7["P7 Village<br/>services"]
+  P6 --> P7
+  P5 --> P8["P8 Journal +<br/>settings"]
+  P7 --> P8
+  P8 --> P9["P9 Title, saves,<br/>touch"]
+  P9 --> P10["P10 Local polish<br/>+ docs"]
+  P4 --> P10
 ```
 
 P4 depends on P2 because fishing refuses until a room is cleared
@@ -148,6 +195,9 @@ point lives on the surface.
    a new dated entry and explain why.
 8. **One phase per merge.** A phase merges only with its gate green and its evidence
    entry written ([EVIDENCE.md](EVIDENCE.md)).
+9. **The boundary document governs.** [ENGINE-BOUNDARY.md](ENGINE-BOUNDARY.md) is the
+   escalation path for any missing engine capability. A host workaround that writes
+   state or reimplements a rule is a failed phase, even if the screen looks right.
 
 ## 7. Example architecture
 
@@ -157,13 +207,17 @@ examples/side-scroller/
   vite.config.ts          '@' alias to ../../src
   tsconfig.json           own baseUrl/paths; includes src + tests
   vitest.config.ts        node environment; own alias
-  index.html              canvas + DOM overlay root
+  index.html              canvas + DOM overlay roots
   scripts/
     capture-dungeon.mjs   WebDriver visual-record capture (host tooling)
+    gate.mjs              local gate: root + example suites, probe, src diff (P10)
   src/
     main.ts               boot, screen routing, frame loop
     storage.ts            IndexedDB EngineStorage adapter
     engine.ts             engine singleton + one subscription + command wrapper
+    settings.ts           host-local settings (P8)
+    saveBundle.ts         export/import codec, base64 attachments (P9)
+    touchControls.ts      pointer intents feeding the keyboard intent state (P9)
     level/
       model.ts            LevelModel types and derivation contract
       dungeonLevel.ts     DungeonMap -> LevelModel
@@ -171,25 +225,28 @@ examples/side-scroller/
     physics.ts            fixed-step AABB movement, gravity, ladders
     render/
       canvas.ts           draw world, rooms, player, camera
-      hud.ts              XP, subject, room status
+      hud.ts              XP, subject, room status, journal summary
     ui/
       notePanel.ts        DOM composer, outcomes, focus management
       prompts.ts          proximity prompt, announcements
       recallDialog.ts     caught fish + recall dialog (P4)
-    fishing/
-      bridge.ts           machine events -> fishing commands (P4)
-      session.ts          pond subject resolution, eligibility copy (P4)
-      scene.ts            fishing canvas scene (P4)
+      reviewPanel.ts      review rating and interrupted sessions (P5)
+      creatorPanel.ts     subject list + room-tree editor (P6)
+      servicePanel.ts     interior shell and routing (P7)
+      libraryPanel.ts     review desk + archive (P7)
+      trophyPanel.ts      badges, fish, records (P7)
+      workshopPanel.ts    inventory and equipment (P7)
+      fishStandPanel.ts   read-only collection (P7)
+      journalPanel.ts     overview, subjects, records, assistance (P8)
+      titlePanel.ts       continue/new/import/archetype (P9)
+      touchOverlay.ts     visible touch controls (P9)
+    fishing/              P4 modules (bridge, session, scene)
+    review/               review projection (P5)
+    creator/              creator projection + demo seeds (P6)
+    village/               service projections, NPC dialogue (P7)
+    journal/              journal + assistance projections (P8)
     projection.ts         EngineState -> view models, pure
-  tests/
-    level.test.ts
-    physics.test.ts
-    projection.test.ts
-    storage.test.ts
-    fishingBridge.test.ts
-    fishingEntry.test.ts
-    fishingIntegration.test.ts
-    fishingReplay.test.ts
+  tests/                  one suite per phase plus shared fixtures
 ```
 
 The engine is imported through `src/index.ts`, whose namespaces are the public
@@ -215,6 +272,18 @@ source; the example typechecks against the same files the engine builds.
 - **A-09** After a clear, fishing can be entered; keep with a correct recall adds the
   fish, release does not.
 - **A-10** The whole critical path is playable keyboard-only.
+- **A-11** A cleared room can be reviewed; the rating updates SM-2 and pays at most one
+  reward per (room, pass); an interrupted review can be saved and resumed.
+- **A-12** A player can create a subject and room graph; three seeded demo subjects appear
+  as portals; a created subject can be entered, cleared, and reloaded.
+- **A-13** Every labelled building opens a real service; Fish Stand and NPCs are visibly
+  read-only.
+- **A-14** The journal shows progress, records, inventory, fish, due rooms, and assistance
+  from engine data; settings persist and apply immediately.
+- **A-15** New/continue and archetype selection work; a save bundle exports and imports
+  rooms, XP, fish, schedule, and attachment bytes; a bad import cannot corrupt the save.
+- **A-16** The critical path is playable touch-only on a phone-sized viewport.
+- **A-17** The full first-ten-minutes path completes with no console errors.
 
 ### Engineering
 
@@ -237,6 +306,18 @@ source; the example typechecks against the same files the engine builds.
   commands, and outcome.
 - **E-12** Rollback requires only deleting `examples/side-scroller` and reverting the
   documented root config entries.
+- **E-13** Review tests cover appointment labels, one SM-2 update per pass, idempotent
+  rewards, save/resume/discard across a reload, and a rejected write.
+- **E-14** Creator tests cover graph mutations and typed refusals, idempotent demo seeding,
+  no resurrection after deletion, and portal projection from engine data.
+- **E-15** Service projections cover populated and empty states; equipment round-trips
+  through `MemoryEngineStorage`; NPC line selection is deterministic.
+- **E-16** Journal/statistics/assistance projections are tested from fixtures; settings
+  load/save/reset and malformed-value fallbacks are tested.
+- **E-17** Save-bundle round trip preserves `Uint8Array` attachments; invalid bundles are
+  rejected without touching the current save; touch intents match keyboard intents.
+- **E-18** The local gate script reproduces the full check set, the boundary document is
+  current, and the example README matches the running build.
 
 ## 9. Validation plan
 
@@ -251,25 +332,41 @@ source; the example typechecks against the same files the engine builds.
 | Example tests | `npm --prefix examples/side-scroller test` | Green; includes phase-specific tests |
 | Example build | `npm --prefix examples/side-scroller run build` | Clean |
 | Isolation probe | `npx vitest list --config vitest.config.ts` | No `examples/` paths |
+| Local gate (P10) | `node examples/side-scroller/scripts/gate.mjs` | All of the above, plus an empty `src` diff |
 
 Exact commands and output summaries go in the phase evidence tables. Do not record
 learner prose or secrets.
 
-### Manual smoke script (run at G2, G3, G4)
+There is no CI workflow in this plan (D-13). The local gate is the repeatable substitute.
+
+### Manual smoke script (P2–P10)
 
 1. Clear site data for the example origin; load the page.
-2. Confirm the tutorial dungeon appears and the HUD shows 0 XP.
-3. Walk into each of the three tutorial rooms; confirm exactly one visit each in the
+2. Confirm the title/continue flow and, on a new game, the archetype choice.
+3. Confirm the tutorial dungeon appears and the HUD shows 0 XP.
+4. Walk into each of the three tutorial rooms; confirm exactly one visit each in the
    study-session view.
-4. Submit an incomplete note; confirm the specific missing section is shown.
-5. Submit a complete note with confirmation; confirm clear, XP, and artifact.
-6. Reload; confirm the cleared room and XP survive.
-7. Walk to the surface; confirm structures and portals are drawn from engine data.
-8. Enter the tutorial portal, clear a room if needed, return to the village.
-9. Enter fishing; cast, hook, answer recall, keep; confirm the fish appears after
-   reload. Repeat with release; confirm no collection change.
-10. Tab through the entire path without a mouse; confirm focus is visible and outcomes
-    are announced.
+5. Submit an incomplete note; confirm the specific missing section is shown.
+6. Submit a complete note with confirmation; confirm clear, XP, and artifact.
+7. Reload; confirm the cleared room and XP survive.
+8. Walk to the surface; confirm structures and portals are drawn from engine data,
+   including the three demo subjects.
+9. Enter the tutorial portal, clear a room if needed, return to the village.
+10. Press `R`, review a due room, rate it, and confirm the schedule moved.
+11. Enter Creator, create a subject with three rooms, tag one, cross-link two, enter it,
+    clear a room, and reload.
+12. Open the Library, Guild Hall, Trophy Hall, Workshop, Fish Stand, and an NPC; confirm
+    each does something real and read-only surfaces say so.
+13. Enter fishing; cast, hook, answer recall, keep; confirm the fish appears after
+    reload. Repeat with release; confirm no collection change.
+14. Open the journal; inspect progress, records, inventory, fish, due rooms, assistance;
+    change text size and assistance mode.
+15. Export the save, clear site data, import it, and confirm rooms, XP, fish, schedule,
+    and an attachment survive. Try a malformed file and confirm the old save is intact.
+16. On a phone-sized viewport, play the path touch-only: title, move, jump, enter, note,
+    review, fish, journal.
+17. Tab through the entire desktop path without a mouse; confirm focus is visible and
+    outcomes are announced.
 
 For a visual record of the run, use the capture script (Firefox and `geckodriver`
 required):
@@ -280,16 +377,22 @@ node examples/side-scroller/scripts/capture-dungeon.mjs \
   --prefix 2026-11-23-g2 --low-fps --reduced-motion
 ```
 
-Append the printed rows and images to [VISUALS.md](VISUALS.md).
+Append the printed rows and images to [VISUALS.md](VISUALS.md). P5–P9 add their own
+capture modes (`--review`, `--creator`, `--services`, `--journal`, `--mobile`) so each
+gate has a dated record.
 
 ### Performance and accessibility checks
 
 - Frame loop: no `snapshot()` call inside the frame callback; asserted by code review
   and a grep evidence entry.
-- Frame time: record a 10-second DevTools performance capture at G2 and G4; no frame
-  over 16.7 ms on the development machine, or document the exception.
-- Reduced motion: enable the OS preference; camera shake and transitions are disabled.
-- Contrast: room status, rarity, and validity are not colour-only.
+- Frame time: record a 10-second performance capture at every new gate; no frame over
+  16.7 ms on the development machine, or document the exception (P2-O1).
+- Reduced motion: enable the OS preference; camera, transitions, and any host animation
+  are disabled. Motion is never forced.
+- Contrast: room status, rarity, due state, and validity are not colour-only.
+- Mobile: 390×844 (portrait) and 844×390 (landscape) viewports; no overlap, no page
+  scroll while playing, touch targets ≥ 44 px.
+- Large text: HUD, dialogs, and canvas labels do not clip at the `large` setting.
 
 ## 10. Risks
 
@@ -309,6 +412,16 @@ Append the printed rows and images to [VISUALS.md](VISUALS.md).
 | K-12 | Fishing mid-cast state cannot be resumed after reload | High | Low | Treat reload during fishing as session restart: return to village or re-enter pond; document in P4 | G4 reload check |
 | K-13 | Example drifts from engine API during future refactors | Medium | Medium | Example typecheck runs against engine source at every gate; add to future CI if one exists | Typecheck failure |
 | K-14 | Example needs result types that `src/index.ts` does not re-export | Medium | Low | Type-only imports from the aliased source; record each as a candidate engine export; never edit `src/index.ts` in this plan | Typecheck cannot name an outcome without an internal import |
+| K-15 | Review needs an active subject, and activating one starts a study session | Medium | Medium | Enter from a cleared room when possible; from the street, activate then always `returnToVillage()`; test no session is left open | Any open session after closing the Library |
+| K-16 | Creator mutations run only on the active subject; wrong-subject edits | Medium | High | Activate explicitly before editing; show the active subject in the editor; re-read state after every mutation | Tree shows another subject's rooms |
+| K-17 | Demo seeds resurrect after deletion or duplicate on re-run | Medium | Medium | First-run host flag plus id checks; never seed when the flag is set; idempotency test | A deleted demo subject returns |
+| K-18 | Service scope creep turns into a shop/economy | Medium | Medium | Fixed service matrix; Fish Stand is display-only; new writes need an engine plan | A "sell" or "buy" control appears |
+| K-19 | Read-only surfaces look broken | Medium | Medium | Label them explicitly and omit transactional controls; empty states name the source | Player expects a purchase/trade |
+| K-20 | Save export/import corrupts attachments or trusts hostile JSON | Medium | High | Base64 round-trip test with a byte fixture; validate version/app/shape; write only after full decode | Imported save loses an attachment |
+| K-21 | Touch and keyboard drift into two movement implementations | Medium | High | Both write one intent state; mapping test compares them; pointer cancel clears held intents | Touch can move while keyboard cannot |
+| K-22 | Mobile IndexedDB/quota fails differently from desktop | Medium | High | Keep the loud storage failure; test mobile private/limited modes; no in-memory fallback | Boot/import fails on a phone |
+| K-23 | "Polish" becomes art/audio production | Medium | Medium | Placeholder rectangles and silence are decisions; P10 fixes only playtest issues | A sprite or sound file appears |
+| K-24 | Boundary drift: a host phase quietly edits `src/` | Low | High | `git status --short src` and `git diff --stat src` at every gate; boundary doc escalation path; gate script | Any `src/` diff |
 
 ## 11. Rollout, migration, and rollback
 
@@ -320,7 +433,11 @@ Append the printed rows and images to [VISUALS.md](VISUALS.md).
 - No engine state schema, command, or persistence change is introduced.
 - Both root and example dependencies are installed separately; there is no workspace,
   so root `package-lock.json` is not rewritten.
-- Landing order is P0 → P1 → P2 → P3 → P4, one phase per merge.
+- Landing order is P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 → P9 → P10, one phase per
+  merge.
+- P5–P10 stay local. No CI workflow, deployment, hosting, or PWA is added (D-13); the
+  P10 gate script is the repeatable check.
+- Mobile support is a tested local target from P9 onward; S-01 names the browsers.
 
 ### Migration
 
@@ -331,11 +448,13 @@ Append the printed rows and images to [VISUALS.md](VISUALS.md).
 
 ### Rollback
 
-- Delete `examples/side-scroller/` (including `scripts/capture-dungeon.mjs`).
+- Delete `examples/side-scroller/` (including `scripts/capture-dungeon.mjs` and
+  `scripts/gate.mjs`) and the phase documents under `docs/plans/side-scroller-host/`.
 - Revert the documented root entries: the `examples/**` exclusion in
   `vitest.config.ts` and any `.gitignore` additions.
-- The visual record (`VISUALS.md` and `visuals/`) is documentation only; remove it with
-  the plan if the whole example is abandoned.
+- The visual record (`VISUALS.md`, `visuals/`) and [ENGINE-BOUNDARY.md](ENGINE-BOUNDARY.md)
+  are documentation only; remove them with the plan if the whole example is abandoned.
+- Exported save bundles are ordinary JSON; they remain readable by the engine alone.
 - No data migration, feature flag, or engine version bump is needed.
 
 ## 12. Evidence policy
@@ -380,21 +499,29 @@ Rules:
 | P2 | Done — G2 passed | G2 passed 2026-11-23 | [phase-2 evidence](phase-2-note-loop.md#execution-evidence) |
 | P3 | Done — G3 passed | G3 passed 2026-11-23 | [phase-3 evidence](phase-3-surface-village.md#execution-evidence) |
 | P4 | Done — G4 passed | G4 passed 2026-11-24 | [phase-4 evidence](phase-4-fishing.md#execution-evidence) |
+| P5 | Not started | G5 pending | — |
+| P6 | Not started | G6 pending | — |
+| P7 | Not started | G7 pending | — |
+| P8 | Not started | G8 pending | — |
+| P9 | Not started | G9 pending | — |
+| P10 | Not started | G10 pending | — |
 
-Visual record: [VISUALS.md](VISUALS.md) — P1/G1, P2/G2, P3/G3 frames captured 2026-11-23; P3 layout follow-up 2026-11-24; P3 polish frames 2026-11-24; P4/G4 pond loop frames 2026-11-24 and the interaction-feedback follow-up (`g4b`).
+Visual record: [VISUALS.md](VISUALS.md) — P1/G1, P2/G2, P3/G3 frames captured 2026-11-23; P3 layout follow-up 2026-11-24; P3 polish frames 2026-11-24; P4/G4 pond loop frames 2026-11-24 and the interaction-feedback follow-up (`g4b`). P5–P10 append their own `visuals/pN/` folders as they ship.
 
-## 15. Assumptions to confirm at the G0 gate
+## 15. Assumptions
 
-These are presentation choices, not engine facts. If a different answer is wanted,
-update this section before P1.
+These are presentation and scope choices, not engine facts. Update this section before a
+phase relies on a changed answer.
 
 | ID | Assumption | Default |
 |---|---|---|
-| S-01 | Supported browsers | Current evergreen Chrome and Firefox on desktop; IndexedDB and Canvas 2D required |
+| S-01 | Supported browsers | Desktop evergreen Chrome and Firefox; from P9 also current mobile Safari and Chrome. IndexedDB and Canvas 2D required; no in-memory fallback |
 | S-02 | Visual style | Placeholder rectangles and text; no image assets in the repository |
 | S-03 | Render scale | 3× engine tiles (72 px); player hitbox narrower than one corridor |
-| S-04 | Audio | None in the example; fishing audio effects are ignored |
-| S-05 | Root package changes | Only the Vitest `examples/**` exclusion is allowed |
+| S-04 | Audio | None in the example; fishing audio hooks are ignored |
+| S-05 | Root package changes | Only the Vitest `examples/**` exclusion is allowed; no root scripts for P10 |
+| S-06 | Engine boundary | Strictly example-only; [ENGINE-BOUNDARY.md](ENGINE-BOUNDARY.md) governs every phase |
+| S-07 | Demo content | Three seeded synthetic subjects in P6; no learner data in seeds or evidence |
 
 ## 16. Change log
 
@@ -410,3 +537,4 @@ update this section before P1.
 | 2026-11-24 | 1.7 | P3 polish pass; skyline/moon, facade lights and shadows, paving, shaft chevron, readable portal signs, deduped surface HUD with pond locations, and a “No door in reach” announcement; frames under `visuals/p3/` (`2026-11-24-g3p`) |
 | 2026-11-24 | 1.8 | P4 executed and G4 passed; pond entry from host-resolved active subject, cast/bite/reel scene, engine-backed recall dialog, keep/release, save-failure and mid-cast reload recovery, `--fishing` capture mode; frames under `visuals/p4/` (`2026-11-24-g4`); all phases complete |
 | 2026-11-24 | 1.9 | Interaction-feedback follow-up after playtest: pond refusals and non-portal facade messages appear as a canvas toast, plus copy tests and a `g4b` re-capture |
+| 2026-11-24 | 2.0 | Post-P4 roadmap planned: P5 review, P6 Creator + three demo subjects, P7 village services, P8 journal/settings/assistance, P9 title/save/touch, P10 local polish/docs. Placeholder art and silence remain; local-only release; strict example-only boundary plus [ENGINE-BOUNDARY.md](ENGINE-BOUNDARY.md) |

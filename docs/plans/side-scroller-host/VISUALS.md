@@ -21,6 +21,9 @@ passed.
 
 ## Index
 
+P5–P10 are planned but not executed; their `visuals/p5/`–`visuals/p10/` folders will be
+added as each gate is captured.
+
 | Date | Gate | Commit | Frame | File | What it shows |
 |---|---|---|---|---|---|
 | 2026-11-23 | G1 | uncommitted (base `989acf1`) | Root room | [`01-root-room.png`](visuals/p1/2026-11-23-g1-01-root-room.png) | Start; spawn in `tut-note`; XP 0; 0/3 cleared; visits 1 |
