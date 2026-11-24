@@ -1,5 +1,6 @@
 import { KnowledgeDungeonEngine, type EngineState } from '@/index';
 import type { BrowserStorage } from './storage';
+import { sessionNotResumedMessage } from './ui/outcomes';
 
 type StateListener = (state: EngineState) => void;
 
@@ -7,10 +8,16 @@ let engine: KnowledgeDungeonEngine | null = null;
 let current: EngineState | null = null;
 const listeners = new Set<StateListener>();
 let reportError: (message: string) => void = (message) => console.error(message);
+let reportNotice: (message: string) => void = (message) => console.info(message);
 
 /** Route host-owned failures to the visible error region. */
 export function setErrorReporter(reporter: (message: string) => void): void {
   reportError = reporter;
+}
+
+/** Route non-error notices (P3-T6 recovery) to the polite live region. */
+export function setNoticeReporter(reporter: (message: string) => void): void {
+  reportNotice = reporter;
 }
 
 function describe(error: unknown): string {
@@ -48,7 +55,16 @@ export async function openExampleEngine(storage: BrowserStorage): Promise<Knowle
   });
 
   const loaded = engine.snapshot();
-  if (loaded.session.world === 'dungeon' && loaded.activeStudySessionId !== null) {
+  if (loaded.session.world === 'fishing') {
+    // P4 owns fishing recovery. Until then, a saved fishing session is closed
+    // through the normal command path and the player is returned to the street.
+    try {
+      await engine.returnToVillage();
+      reportNotice(sessionNotResumedMessage());
+    } catch (error) {
+      reportError(`Could not recover the interrupted fishing session: ${describe(error)}`);
+    }
+  } else if (loaded.session.world === 'dungeon' && loaded.activeStudySessionId !== null) {
     try {
       await engine.endStudySession(true);
       await engine.startTutorial();

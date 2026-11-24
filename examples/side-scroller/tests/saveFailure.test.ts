@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
 import { KnowledgeDungeonEngine } from '@/index';
 import { createIndexedDbStorage } from '../src/storage';
-import { notSavedMessage } from '../src/ui/outcomes';
+import { notSavedMessage, returnFailedMessage } from '../src/ui/outcomes';
 import { createFailingStorage } from './support/failingStorage';
 
 const FIXED_NOW = '2026-11-23T12:00:00.000Z';
@@ -63,5 +63,13 @@ describe('P2 save-failure harness (E-06)', () => {
     expect(message).toContain('QuotaExceededError');
     expect(message).toContain('Not saved');
     expect(message).toContain('Nothing was committed');
+  });
+
+  it('renders the return-failure copy without claiming the street was reached', () => {
+    const message = returnFailedMessage(new Error('QuotaExceededError'));
+
+    expect(message).toContain('Could not return to the village');
+    expect(message).toContain('study session is still open');
+    expect(message).not.toContain('stayed on the street');
   });
 });

@@ -1,4 +1,5 @@
 import type { LevelModel, LevelRoom, Rect } from '../level/model';
+import type { SurfaceFacade, SurfaceModel } from '../level/surfaceLevel';
 import type { Body } from '../physics';
 
 /**
@@ -31,6 +32,10 @@ export interface RenderInput {
   body: Body;
   camera: Camera;
   activeRoomId: string | null;
+  /** P3: the surface street drawn above the dungeon, when present. */
+  surface?: SurfaceModel | null;
+  /** P3: the facade the player can interact with right now. */
+  activeInteractableId?: string | null;
   badges: Readonly<Record<string, RoomBadge>>;
   reducedMotion: boolean;
 }
@@ -56,6 +61,16 @@ const PALETTE = {
   shadow: 'rgba(5, 8, 14, 0.45)',
   labelBackdrop: 'rgba(7, 10, 18, 0.68)',
   vignette: 'rgba(4, 6, 10, 0.55)',
+  surfaceSkyTop: '#1b2740',
+  surfaceSkyBottom: '#3a5275',
+  street: '#243047',
+  streetEdge: '#33445f',
+  facadeBase: '#2c3a54',
+  facadeAlt: '#344662',
+  facadeRoof: '#1d2940',
+  facadeInk: '#e6ecf7',
+  doorInk: '#0b0d13',
+  portalGlow: 'rgba(127, 209, 185, 0.38)',
 } as const;
 
 const FONT_STACK = 'system-ui, -apple-system, "Segoe UI", sans-serif';
@@ -251,6 +266,235 @@ function drawTerrain(context: CanvasRenderingContext2D, level: LevelModel, view:
     context.fillStyle = PALETTE.rockHighlight;
     context.fillRect(solid.x, solid.y, solid.w, Math.min(highlight, solid.h));
   }
+}
+
+/**
+ * The surface street. Drawn after terrain so it replaces the tunnel fill above
+ * the ground with a sky, a street, and depth-sorted facades. All geometry comes
+ * from `SurfaceModel`; the renderer only chooses placeholder shapes.
+ */
+function drawSurface(
+  context: CanvasRenderingContext2D,
+  level: LevelModel,
+  surface: SurfaceModel,
+  activeInteractableId: string | null,
+  view: Rect,
+): void {
+  const { bounds, groundY, tileSize } = surface;
+  const streetBottom = bounds.y + bounds.h;
+
+  const sky = context.createLinearGradient(0, bounds.y, 0, groundY);
+  sky.addColorStop(0, PALETTE.surfaceSkyTop);
+  sky.addColorStop(1, PALETTE.surfaceSkyBottom);
+  context.fillStyle = sky;
+  context.fillRect(bounds.x, bounds.y, bounds.w, Math.max(0, groundY - bounds.y));
+
+  context.fillStyle = PALETTE.street;
+  context.fillRect(bounds.x, groundY, bounds.w, Math.max(0, streetBottom - groundY));
+  context.fillStyle = PALETTE.streetEdge;
+  context.fillRect(bounds.x, groundY, bounds.w, Math.max(1, tileSize * 0.08));
+
+  const shaft = level.ladders.find(
+    (ladder) =>
+      ladder.x <= surface.entrance.x + tileSize / 2 &&
+      ladder.x + ladder.w >= surface.entrance.x + tileSize / 2 &&
+      ladder.y <= groundY + 1 &&
+      ladder.y + ladder.h >= groundY,
+  );
+  if (shaft) {
+    context.fillStyle = PALETTE.doorInk;
+    context.fillRect(surface.entrance.x, groundY, tileSize, Math.min(tileSize, streetBottom - groundY));
+  }
+
+  const facades = [...surface.facades].sort(
+    (a, b) => a.depth - b.depth || a.id.localeCompare(b.id),
+  );
+  for (const facade of facades) {
+    if (!isVisible(facade.rect, view, tileSize * 2)) continue;
+    drawFacade(context, facade, tileSize, facade.id === activeInteractableId);
+  }
+}
+
+function facadeFill(facade: SurfaceFacade): string {
+  return facade.depth % 2 === 0 ? PALETTE.facadeBase : PALETTE.facadeAlt;
+}
+
+function drawScenery(context: CanvasRenderingContext2D, facade: SurfaceFacade, tileSize: number): void {
+  const rect = facade.rect;
+  const baseX = rect.x + rect.w / 2;
+  const baseY = rect.y + rect.h;
+  const weight = Math.max(1, tileSize * 0.035);
+
+  switch (facade.type) {
+    case 'tree': {
+      context.fillStyle = PALETTE.facadeRoof;
+      context.fillRect(baseX - weight * 1.5, baseY - rect.h * 0.5, weight * 3, rect.h * 0.5);
+      context.fillStyle = PALETTE.accent;
+      context.beginPath();
+      context.arc(baseX, baseY - rect.h * 0.72, rect.w * 0.42, 0, Math.PI * 2);
+      context.fill();
+      return;
+    }
+    case 'bush': {
+      context.fillStyle = 'rgba(127, 209, 185, 0.34)';
+      context.beginPath();
+      context.ellipse(baseX, baseY - rect.h * 0.32, rect.w * 0.5, rect.h * 0.36, 0, 0, Math.PI * 2);
+      context.fill();
+      return;
+    }
+    case 'flower': {
+      context.fillStyle = PALETTE.text;
+      context.fillRect(baseX - weight * 0.5, baseY - rect.h * 0.5, weight, rect.h * 0.5);
+      context.fillStyle = PALETTE.player;
+      context.beginPath();
+      context.arc(baseX, baseY - rect.h * 0.55, weight * 2, 0, Math.PI * 2);
+      context.fill();
+      return;
+    }
+    case 'rock': {
+      context.fillStyle = PALETTE.rockHighlight;
+      context.beginPath();
+      context.ellipse(baseX, baseY - rect.h * 0.2, rect.w * 0.38, rect.h * 0.28, 0, 0, Math.PI * 2);
+      context.fill();
+      return;
+    }
+    case 'torch': {
+      context.fillStyle = PALETTE.facadeRoof;
+      context.fillRect(baseX - weight * 0.8, baseY - rect.h * 0.8, weight * 1.6, rect.h * 0.8);
+      context.fillStyle = PALETTE.player;
+      context.beginPath();
+      context.arc(baseX, baseY - rect.h * 0.86, weight * 2.2, 0, Math.PI * 2);
+      context.fill();
+      return;
+    }
+    case 'bench': {
+      context.fillStyle = PALETTE.facadeRoof;
+      context.fillRect(rect.x + rect.w * 0.08, baseY - rect.h * 0.35, rect.w * 0.84, rect.h * 0.16);
+      context.fillRect(rect.x + rect.w * 0.14, baseY - rect.h * 0.18, weight * 1.6, rect.h * 0.18);
+      context.fillRect(rect.x + rect.w * 0.78, baseY - rect.h * 0.18, weight * 1.6, rect.h * 0.18);
+      return;
+    }
+    case 'pond': {
+      context.fillStyle = 'rgba(58, 82, 117, 0.72)';
+      context.fillRect(rect.x, baseY - rect.h * 0.45, rect.w, rect.h * 0.45);
+      context.strokeStyle = PALETTE.accent;
+      context.lineWidth = weight;
+      context.beginPath();
+      context.moveTo(rect.x + rect.w * 0.12, baseY - rect.h * 0.24);
+      context.lineTo(rect.x + rect.w * 0.5, baseY - rect.h * 0.24);
+      context.moveTo(rect.x + rect.w * 0.62, baseY - rect.h * 0.34);
+      context.lineTo(rect.x + rect.w * 0.88, baseY - rect.h * 0.34);
+      context.stroke();
+      return;
+    }
+    case 'gate': {
+      context.fillStyle = PALETTE.facadeRoof;
+      const post = Math.max(2, tileSize * 0.1);
+      context.fillRect(rect.x, rect.y, post, rect.h);
+      context.fillRect(rect.x + rect.w - post, rect.y, post, rect.h);
+      context.fillRect(rect.x, rect.y, rect.w, post * 1.4);
+      return;
+    }
+    default: {
+      context.fillStyle = PALETTE.text;
+      context.fillRect(rect.x, baseY - rect.h, Math.max(1, weight), rect.h);
+    }
+  }
+}
+
+function drawFacade(
+  context: CanvasRenderingContext2D,
+  facade: SurfaceFacade,
+  tileSize: number,
+  active: boolean,
+): void {
+  const rect = facade.rect;
+  if (rect.w <= 0 || rect.h <= 0) return;
+
+  if (!facade.solid) {
+    drawScenery(context, facade, tileSize);
+    if (facade.interactive) drawFacadeSign(context, facade, tileSize, active);
+    return;
+  }
+
+  context.fillStyle = facadeFill(facade);
+  context.fillRect(rect.x, rect.y, rect.w, rect.h);
+
+  context.fillStyle = PALETTE.facadeRoof;
+  context.fillRect(rect.x, rect.y, rect.w, Math.max(2, rect.h * 0.14));
+
+  const floor = Math.max(1, tileSize * 0.04);
+  context.fillStyle = 'rgba(11, 13, 19, 0.24)';
+  for (let y = rect.y + rect.h * 0.32; y < rect.y + rect.h - floor; y += rect.h * 0.24) {
+    context.fillRect(rect.x, y, rect.w, floor);
+  }
+
+  const door = facade.door;
+  if (facade.type === 'portal-icon' || facade.type === 'training-gate' || facade.type === 'fishing-pond') {
+    context.fillStyle = PALETTE.portalGlow;
+    context.fillRect(door.x - tileSize * 0.08, door.y - tileSize * 0.08, door.w + tileSize * 0.16, door.h + tileSize * 0.08);
+  }
+  context.fillStyle = PALETTE.doorInk;
+  context.fillRect(door.x, door.y, door.w, door.h);
+  context.fillStyle = PALETTE.facadeRoof;
+  context.fillRect(door.x + door.w * 0.2, door.y + door.h * 0.45, door.w * 0.6, door.h * 0.55);
+  context.fillStyle = PALETTE.doorInk;
+  context.fillRect(door.x + door.w * 0.3, door.y + door.h * 0.1, door.w * 0.4, door.h * 0.35);
+
+  drawFacadeSign(context, facade, tileSize, active);
+}
+
+function drawFacadeSign(
+  context: CanvasRenderingContext2D,
+  facade: SurfaceFacade,
+  tileSize: number,
+  active: boolean,
+): void {
+  const rect = facade.rect;
+  const pad = Math.max(4, tileSize * 0.1);
+  const signHeight = Math.max(10, tileSize * 0.3);
+  const maxWidth = Math.max(0, rect.w - pad * 2);
+  if (maxWidth <= 0) return;
+
+  const label = facade.subjectName || facade.label;
+  const subtitle =
+    facade.type === 'portal-icon' && facade.roomCount !== undefined
+      ? `${facade.clearedCount ?? 0} / ${facade.roomCount} cleared`
+      : facade.type === 'training-gate'
+        ? 'Tutorial dungeon'
+        : facade.type === 'fishing-pond'
+          ? 'Fishing'
+          : '';
+
+  const signY = rect.y + pad;
+  context.font = `600 ${Math.max(10, signHeight * 0.62)}px ${FONT_STACK}`;
+  const signWidth = Math.min(maxWidth, context.measureText(label).width + pad * 1.4);
+  roundedRectPath(context, rect.x + (rect.w - signWidth) / 2, signY, signWidth, signHeight, signHeight * 0.22);
+  context.fillStyle = PALETTE.labelBackdrop;
+  context.fill();
+
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.fillStyle = PALETTE.facadeInk;
+  context.fillText(
+    fitText(context, label, signWidth - pad * 1.4),
+    rect.x + rect.w / 2,
+    signY + signHeight / 2,
+  );
+
+  if (subtitle) {
+    context.font = `500 ${Math.max(9, signHeight * 0.5)}px ${FONT_STACK}`;
+    context.fillStyle = PALETTE.text;
+    context.fillText(fitText(context, subtitle, maxWidth), rect.x + rect.w / 2, signY + signHeight * 1.45);
+  }
+
+  if (!active) return;
+  const inset = Math.max(3, tileSize * 0.06);
+  context.setLineDash([Math.max(5, tileSize * 0.14), Math.max(3, tileSize * 0.1)]);
+  context.strokeStyle = PALETTE.accent;
+  context.lineWidth = Math.max(2, tileSize * 0.04);
+  context.strokeRect(rect.x + inset, rect.y + inset, rect.w - inset * 2, rect.h - inset * 2);
+  context.setLineDash([]);
 }
 
 function fitText(context: CanvasRenderingContext2D, text: string, maxWidth: number): string {
@@ -660,7 +904,7 @@ function drawVignette(context: CanvasRenderingContext2D, view: Rect): void {
  * (or a zero-sized body) cannot produce negative fills or NaNs.
  */
 export function renderWorld(context: CanvasRenderingContext2D, input: RenderInput): void {
-  const { level, body, camera, activeRoomId, badges, reducedMotion } = input;
+  const { level, body, camera, activeRoomId, surface, activeInteractableId, badges, reducedMotion } = input;
 
   const view: Rect = {
     x: finiteOr(camera.x, 0),
@@ -675,6 +919,7 @@ export function renderWorld(context: CanvasRenderingContext2D, input: RenderInpu
   context.translate(-view.x, -view.y);
 
   drawTerrain(context, level, view);
+  if (surface) drawSurface(context, level, surface, activeInteractableId ?? null, view);
   drawRooms(context, level, activeRoomId, view);
   drawLadders(context, level, view);
   // Labels come after ladders so rungs never cross the text.

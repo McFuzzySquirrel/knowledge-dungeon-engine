@@ -21,6 +21,16 @@ export interface Rect {
   h: number;
 }
 
+/**
+ * P3 frozen interface: the collision subset shared by the surface street and
+ * the placed dungeon. Both live in the same world-pixel coordinate space.
+ */
+export interface CollisionWorld {
+  bounds: Rect;
+  solids: Rect[];
+  ladders: Rect[];
+}
+
 export interface LevelRoom {
   roomId: string;
   topic: string;
@@ -31,21 +41,15 @@ export interface LevelRoom {
   isRoot: boolean;
 }
 
-export interface LevelModel {
+export interface LevelModel extends CollisionWorld {
   subjectId: string;
   /** One engine tile in world pixels (engine tile size × render scale). */
   tileSize: number;
-  /** Level extent in world pixels, anchored at (0, 0). */
-  bounds: Rect;
   /** Player feet position (bottom-centre) inside the root room. */
   spawn: { x: number; y: number };
-  /** Merged solid tile runs. A tile is solid when the walkable mask is 0. */
-  solids: Rect[];
-  /** Climbable vertical corridor runs, extended into their endpoint rooms. */
-  ladders: Rect[];
   rooms: LevelRoom[];
-  /** Reserved for the surface street in P3; always `null` in P1. */
+  /** The surface ground line when the dungeon was placed below a street, else `null`. */
   surfaceY: number | null;
 }
 
-export { buildDungeonLevel, DEFAULT_RENDER_SCALE } from './dungeonLevel';
+export { buildDungeonLevel, DEFAULT_RENDER_SCALE, DEFAULT_TILE_SIZE } from './dungeonLevel';

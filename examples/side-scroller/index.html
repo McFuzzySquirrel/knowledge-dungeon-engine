@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Knowledge Dungeon — Side-Scroller (P2)</title>
+    <title>Knowledge Dungeon — Side-Scroller (P3)</title>
     <style>
       :root {
         color-scheme: dark;
@@ -172,6 +172,7 @@
       button:hover { background: #2d3b59; }
       button:disabled { opacity: 0.55; cursor: progress; }
       button:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+      #game:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
       #panel-title:focus { outline: 3px solid var(--accent); outline-offset: 2px; }
       #overlay button:focus-visible { outline-offset: 4px; }
       .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
@@ -218,7 +219,7 @@
   <body>
     <main>
       <h1>Knowledge Dungeon — Side-Scroller</h1>
-      <p>Phase P2: walk into a room, press <kbd>E</kbd>, and write a note to clear it.</p>
+      <p>Phase P3: walk the village street, enter a portal, write notes, and return through the entrance shaft.</p>
 
       <div class="stage">
         <canvas
@@ -226,7 +227,7 @@
           width="960"
           height="540"
           tabindex="0"
-          aria-label="Side-view dungeon. Move with A and D or the arrow keys, jump with Space, climb with W and S, and press E in a room to write a note."
+          aria-label="Side-view village street above a dungeon. Move with A and D or the arrow keys, jump with Space, climb with W and S, and press E at a door to enter a portal or visit a building. In a dungeon room, press E to write a note."
           aria-describedby="game-help"
         ></canvas>
         <div id="prompt" hidden></div>
@@ -245,8 +246,8 @@
       <p id="game-help" class="controls">
         <kbd>A</kbd>/<kbd>←</kbd> left · <kbd>D</kbd>/<kbd>→</kbd> right · <kbd>Space</kbd> jump ·
         <kbd>W</kbd>/<kbd>↑</kbd> climb up · <kbd>S</kbd>/<kbd>↓</kbd> climb down ·
-        <kbd>E</kbd> write a note · <kbd>Esc</kbd> close the composer.
-        Progress and room status are mirrored in the panel.
+        <kbd>E</kbd> enter a door or write a note · <kbd>Esc</kbd> close the composer.
+        The street and the dungeon share one world; climb the entrance shaft to return.
       </p>
     </main>
 

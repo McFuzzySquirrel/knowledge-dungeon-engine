@@ -5,6 +5,9 @@ import type { LevelModel, LevelRoom, Rect } from './model';
 /** Engine tiles are 24 px; three host pixels per engine pixel keeps a corridor 72 px wide. */
 export const DEFAULT_RENDER_SCALE = 3;
 
+/** One engine tile in host world pixels at the default render scale. */
+export const DEFAULT_TILE_SIZE = 24 * DEFAULT_RENDER_SCALE;
+
 /** How far a ladder may reach into an endpoint room, in tiles. Rooms are 5 tall. */
 const LADDER_ROOM_REACH = 5;
 

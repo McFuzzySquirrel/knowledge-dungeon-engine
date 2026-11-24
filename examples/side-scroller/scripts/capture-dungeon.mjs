@@ -15,6 +15,8 @@
  *
  * P2 adds `--note-loop`, which drives the composer through draft, clear,
  * reload, and a simulated storage failure after the dungeon frames.
+ * P3 adds `--surface`, which captures the village street, portal entry,
+ * clearing a room, the shaft return, and reloads on both screens.
  *
  * The script drives the real app over WebDriver, writes PNGs to `--out`, and
  * writes `<prefix>-manifest.json` plus Markdown table rows for VISUALS.md.
@@ -32,6 +34,7 @@ function parseArgs(argv) {
     lowFps: false,
     reducedMotion: false,
     noteLoop: false,
+    surface: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -42,6 +45,7 @@ function parseArgs(argv) {
     else if (arg === '--low-fps') options.lowFps = true;
     else if (arg === '--reduced-motion') options.reducedMotion = true;
     else if (arg === '--note-loop') options.noteLoop = true;
+    else if (arg === '--surface') options.surface = true;
     else throw new Error(`Unknown argument: ${arg}`);
   }
   return options;
@@ -149,6 +153,8 @@ async function stored(session) {
         if (!state) return done({ error: 'no state' });
         done({
           activeSubjectId: state.activeSubjectId,
+          activeStudy: state.activeStudySessionId !== null,
+          subjects: Object.keys(state.subjects).length,
           world: state.session.world,
           rooms: Object.keys(state.subjects[state.activeSubjectId]?.rooms ?? {}),
           visited: state.studySessions.find((x) => x.sessionId === state.activeStudySessionId)?.roomsVisited ?? [],
@@ -489,31 +495,165 @@ async function captureDungeon(prefix, frames) {
   }
 }
 
+async function captureSurface(prefix, frames) {
+  const session = await openSession();
+  try {
+    await wd('POST', session.session('/url'), { url: APP });
+    await sleep(1800);
+
+    // Reset the example's own save, then reload clean.
+    await session.execute(`window.confirm = () => true; document.querySelector('#clear-save')?.click(); return true;`);
+    await sleep(1400);
+    await wd('POST', session.session('/refresh'), {});
+    await sleep(2200);
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Village street') === true`);
+    await waitForExpr(session, `document.querySelector('#prompt')?.hidden === false`, 5000);
+
+    const boot = await panel(session);
+    const bootState = await stored(session);
+    const bootWorld = bootState.world ?? (bootState.error ? 'fresh save (no durable state yet)' : 'unknown');
+    const nearby = boot.summary.match(/Nearby\n(.+)/)?.[1] ?? 'none';
+    frames.push({
+      file: await session.screenshot(`${prefix}-01-street.png`),
+      label: 'Village street',
+      detail: `world=${bootWorld}; subjects=${bootState.subjects ?? 0}; nearby=${nearby}`,
+    });
+
+    // The spawn is in front of the Training Grounds door; E enters the tutorial.
+    await session.synthDown('KeyE', 'e');
+    await session.synthUp('KeyE', 'e');
+    const enterMs = await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Subject') === true`);
+    const entered = await stored(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-02-dungeon-entry.png`),
+      label: 'Portal entry',
+      detail: `shownIn=${enterMs ?? 'timeout'}ms; world=${entered.world}; active=${entered.activeStudy}; subjects=${entered.subjects}; rooms=${entered.rooms.length}`,
+    });
+
+    // Clear the root room with the same note fixture used at G2.
+    await session.synthDown('KeyE', 'e');
+    await session.synthUp('KeyE', 'e');
+    await waitForExpr(session, `document.querySelector('#note-panel')?.hidden === false`);
+    await session.execute(`
+      const text = document.querySelector('#note-text');
+      text.value = ${JSON.stringify(VALID_NOTE)};
+      document.querySelector('#note-confirmed').checked = true;
+      document.querySelector('#note-submit').click();
+      return true;
+    `);
+    await waitForExpr(session, `document.querySelector('#note-outcome')?.hidden === false`);
+    const cleared = await stored(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-03-cleared.png`),
+      label: 'Room cleared',
+      detail: `world=${cleared.world}; xp=${cleared.xp}; cleared=${cleared.cleared}; active session=${cleared.activeStudy}`,
+    });
+    await session.synthDown('Escape', 'Escape');
+    await session.synthUp('Escape', 'Escape');
+    await sleep(400);
+
+    // Step onto the root-room ladder, climb to the street, and let the exit zone
+    // call returnToVillage().
+    await session.synthDown('KeyD', 'd');
+    await sleep(320);
+    await session.synthUp('KeyD', 'd');
+    await sleep(200);
+    await session.synthDown('KeyW', 'w');
+    const returnMs = await waitForExpr(
+      session,
+      `document.querySelector('#summary')?.innerText.includes('Village street') === true`,
+      25000,
+    );
+    await session.synthUp('KeyW', 'w');
+    await sleep(600);
+    const returned = await panel(session);
+    const returnedState = await stored(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-04-returned.png`),
+      label: 'Returned through the shaft',
+      detail: `climb=${returnMs ?? 'timeout'}ms; world=${returnedState.world}; activeSubject=${returnedState.activeSubjectId}; active session=${returnedState.activeStudy}; sessions=${returnedState.sessions}; portals label=${returned.rooms.includes('First Dungeon (Tutorial)')}`,
+    });
+
+    // Reload on the surface: engine state, subject portals, and cleared count survive.
+    await wd('POST', session.session('/refresh'), {});
+    await sleep(2600);
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Village street') === true`);
+    const reloadSurface = await stored(session);
+    const reloadSurfacePanel = await panel(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-05-reload-surface.png`),
+      label: 'Reload on the street',
+      detail: `world=${reloadSurface.world}; subjects=${reloadSurface.subjects}; activeSubject=${reloadSurface.activeSubjectId}; portal row=${reloadSurfacePanel.rooms.includes('rooms cleared')}`,
+    });
+
+    // Enter the training gate again, then reload in the dungeon. P0-T5 recovery
+    // ends the interrupted session and re-enters the tutorial.
+    await session.synthDown('KeyE', 'e');
+    await session.synthUp('KeyE', 'e');
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Subject') === true`);
+    await wd('POST', session.session('/refresh'), {});
+    await sleep(2600);
+    const reloadDungeon = await stored(session);
+    const reloadDungeonPanel = await panel(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-06-reload-dungeon.png`),
+      label: 'Reload in the dungeon',
+      detail: `world=${reloadDungeon.world}; active=${reloadDungeon.activeStudy}; rooms=${reloadDungeon.rooms.length}; sessions=${reloadDungeon.sessions}; summary has world=${reloadDungeonPanel.summary.includes('dungeon')}`,
+    });
+
+    return {
+      boot: bootState,
+      entered,
+      cleared,
+      returned: returnedState,
+      reloadSurface,
+      reloadDungeon,
+      error: reloadDungeonPanel.error,
+    };
+  } finally {
+    await session.close();
+  }
+}
+
 async function main() {
   await mkdir(OUT, { recursive: true });
   const frames = [];
-  if (options.reducedMotion) await captureReducedMotion(options.prefix, frames);
-  const run = await captureDungeon(options.prefix, frames);
-  const notes = options.noteLoop ? await captureNoteLoop(options.prefix, frames) : null;
+  const surface = options.surface ? await captureSurface(options.prefix, frames) : null;
+  if (!options.surface) {
+    if (options.reducedMotion) await captureReducedMotion(options.prefix, frames);
+    const run = await captureDungeon(options.prefix, frames);
+    const notes = options.noteLoop ? await captureNoteLoop(options.prefix, frames) : null;
+    const manifest = {
+      capturedAt: new Date().toISOString(),
+      app: APP,
+      viewport: 'default headless Firefox (captured window)',
+      prefix: options.prefix,
+      lowFps: options.lowFps,
+      noteLoop: options.noteLoop,
+      frameStats: run.frameStats,
+      finalState: run.final,
+      error: run.error,
+      notes,
+      frames,
+    };
+    await writeFile(resolve(OUT, `${options.prefix}-manifest.json`), JSON.stringify(manifest, null, 2));
+    console.log(JSON.stringify(manifest, null, 2));
+  } else {
+    const manifest = {
+      capturedAt: new Date().toISOString(),
+      app: APP,
+      viewport: 'default headless Firefox (captured window)',
+      prefix: options.prefix,
+      surface: true,
+      result: surface,
+      frames,
+    };
+    await writeFile(resolve(OUT, `${options.prefix}-manifest.json`), JSON.stringify(manifest, null, 2));
+    console.log(JSON.stringify(manifest, null, 2));
+  }
 
-  const manifest = {
-    capturedAt: new Date().toISOString(),
-    app: APP,
-    viewport: 'default headless Firefox (captured window)',
-    prefix: options.prefix,
-    lowFps: options.lowFps,
-    noteLoop: options.noteLoop,
-    frameStats: run.frameStats,
-    finalState: run.final,
-    error: run.error,
-    notes,
-    frames,
-  };
-  await writeFile(resolve(OUT, `${options.prefix}-manifest.json`), JSON.stringify(manifest, null, 2));
-
-  console.log(JSON.stringify(manifest, null, 2));
   console.log('\nMarkdown rows:\n');
-  const date = manifest.capturedAt.slice(0, 10);
+  const date = new Date().toISOString().slice(0, 10);
   for (const frame of frames) {
     console.log(`| ${date} | ${frame.label} | \`${frame.file}\` | ${frame.detail} |`);
   }

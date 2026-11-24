@@ -1,8 +1,9 @@
-import type { DungeonView } from '../projection';
+import type { DungeonView, SurfaceView } from '../projection';
 
 /**
- * DOM HUD. Canvas is not accessible, so progress, room status, and command
- * outcomes are mirrored as real text in the side panel and a live region.
+ * DOM HUD. Canvas is not accessible, so progress, room status, surface
+ * structures, and command outcomes are mirrored as real text in the side panel
+ * and a live region.
  */
 
 export interface HudElements {
@@ -13,7 +14,8 @@ export interface HudElements {
 }
 
 export interface Hud {
-  update(view: DungeonView | null, activeRoomId: string | null): void;
+  updateDungeon(view: DungeonView | null, activeRoomId: string | null): void;
+  updateSurface(view: SurfaceView | null, activeInteractableId: string | null): void;
   announce(message: string): void;
   showError(message: string): void;
   clearError(): void;
@@ -44,11 +46,29 @@ function roomItem(label: string, cleared: boolean, current: boolean): HTMLLIElem
   return item;
 }
 
+function surfaceItem(entry: SurfaceView['entries'][number], current: boolean): HTMLLIElement {
+  const item = document.createElement('li');
+  item.className = current ? 'room current' : 'room';
+  if (current) item.setAttribute('aria-current', 'true');
+
+  const marker = document.createElement('span');
+  marker.className = 'marker';
+  marker.setAttribute('aria-hidden', 'true');
+  marker.textContent = entry.portal ? '◆' : '▸';
+
+  const text = document.createElement('span');
+  const suffix = current ? ' — you are here' : '';
+  text.textContent = `${entry.label} — ${entry.detail}${suffix}`;
+
+  item.append(marker, text);
+  return item;
+}
+
 export function createHud(elements: HudElements): Hud {
   return {
-    update(view, activeRoomId) {
+    updateDungeon(view, activeRoomId) {
       if (!view) {
-        elements.summary.replaceChildren(...row('Subject', 'None — start the tutorial'));
+        elements.summary.replaceChildren(...row('Location', 'Unknown — no active dungeon'));
         elements.rooms.replaceChildren();
         return;
       }
@@ -70,6 +90,29 @@ export function createHud(elements: HudElements): Hud {
         ...view.rooms.map((room) =>
           roomItem(`${room.topic} — ${room.statusLabel}`, room.cleared, room.roomId === activeRoomId),
         ),
+      );
+    },
+
+    updateSurface(view, activeInteractableId) {
+      if (!view) {
+        elements.summary.replaceChildren(...row('Location', 'Unknown — surface unavailable'));
+        elements.rooms.replaceChildren();
+        return;
+      }
+
+      const current = view.entries.find((entry) => entry.id === activeInteractableId);
+      const rows = [
+        ['Location', 'Village street'],
+        ['Phase', view.phase],
+        ['Subject portals', view.portalCount === 1 ? '1 portal' : `${view.portalCount} portals`],
+        ['Rooms cleared (all portals)', `${view.clearedRooms} / ${view.totalRooms}`],
+        ['XP (all subjects)', String(view.xpTotal)],
+        ['Nearby', current ? current.label : 'Nothing in reach'],
+      ];
+      elements.summary.replaceChildren(...rows.flatMap(([term, value]) => row(term, value)));
+
+      elements.rooms.replaceChildren(
+        ...view.entries.map((entry) => surfaceItem(entry, entry.id === activeInteractableId)),
       );
     },
 

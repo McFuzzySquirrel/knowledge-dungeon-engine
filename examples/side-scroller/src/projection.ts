@@ -1,4 +1,4 @@
-import type { EngineState } from '@/index';
+import type { EngineState, village } from '@/index';
 
 /**
  * Pure projections from engine state to the host's view models.
@@ -146,4 +146,88 @@ export function roomBadges(view: DungeonView | null): Record<string, { cleared: 
     badges[room.roomId] = { cleared: room.cleared, label: room.statusLabel };
   }
   return badges;
+}
+
+/** P3: one labelled surface facade, renderer-neutral. */
+export interface SurfaceEntryView {
+  id: string;
+  label: string;
+  type: string;
+  /** Human detail; portal counts are text, never colour-only. */
+  detail: string;
+  subjectId?: string;
+  portal: boolean;
+  clearedCount: number;
+  roomCount: number;
+}
+
+export interface SurfaceView {
+  world: 'village' | 'dungeon' | 'fishing';
+  phase: 'creator' | 'scribe' | 'archaeologist';
+  entries: SurfaceEntryView[];
+  portalCount: number;
+  totalRooms: number;
+  clearedRooms: number;
+  xpTotal: number;
+  rank: string;
+}
+
+const TYPE_LABELS: Record<string, string> = {
+  'portal-icon': 'Dungeon portal',
+  'training-gate': 'Tutorial dungeon',
+  'fishing-pond': 'Fishing pond',
+  'guild-hall': 'Guild hall',
+  library: 'Library',
+  'keeper-tower': "Keeper's tower",
+  'trophy-hall': 'Trophy hall',
+  workshop: 'Workshop',
+  fountain: 'Fountain',
+  'fish-stand': 'Fish stand',
+};
+
+function entryDetail(structure: village.VillageStructure): string {
+  if (structure.type === 'portal-icon') {
+    const cleared = structure.clearedCount ?? 0;
+    const total = structure.roomCount ?? 0;
+    return `${cleared} / ${total} rooms cleared`;
+  }
+  return TYPE_LABELS[structure.type] ?? structure.type.replace(/-/g, ' ');
+}
+
+function sumXp(state: EngineState): number {
+  return Object.values(state.progression).reduce((sum, record) => sum + (record?.xpTotal ?? 0), 0);
+}
+
+/**
+ * Project the surface HUD from engine state plus the engine's
+ * `villageStructures()` list. The host never hard-codes subject portals: the
+ * list comes from the engine and this function only presents it.
+ */
+export function projectSurface(
+  state: EngineState,
+  structures: village.VillageStructure[],
+): SurfaceView {
+  const entries = structures
+    .filter((structure) => structure.label.trim().length > 0)
+    .map((structure) => ({
+      id: structure.id,
+      label: structure.label,
+      type: structure.type,
+      detail: entryDetail(structure),
+      subjectId: structure.subjectId,
+      portal: structure.type === 'portal-icon',
+      clearedCount: structure.clearedCount ?? 0,
+      roomCount: structure.roomCount ?? 0,
+    }));
+
+  return {
+    world: state.session.world,
+    phase: state.session.phase,
+    entries,
+    portalCount: entries.filter((entry) => entry.portal).length,
+    totalRooms: entries.reduce((sum, entry) => sum + entry.roomCount, 0),
+    clearedRooms: entries.reduce((sum, entry) => sum + entry.clearedCount, 0),
+    xpTotal: sumXp(state),
+    rank: state.progression[state.activeSubjectId ?? '']?.rank ?? DEFAULT_RANK,
+  };
 }

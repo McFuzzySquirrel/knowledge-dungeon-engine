@@ -41,8 +41,16 @@ passed.
 | 2026-11-23 | G2 | uncommitted | Composer closed | [`10-closed.png`](visuals/p2/2026-11-23-g2-10-closed.png) | `Escape` closes; focus returns to `#game`; artifact count 1 |
 | 2026-11-23 | G2 | uncommitted | Reload after clear | [`11-reload.png`](visuals/p2/2026-11-23-g2-11-reload.png) | XP 28, cleared 1, artifact 1 survive IndexedDB |
 | 2026-11-23 | G2 | uncommitted | Save failure | [`12-not-saved.png`](visuals/p2/2026-11-23-g2-12-not-saved.png) | Simulated quota failure; "Not saved" in panel and HUD; XP 28→28, cleared 1→1 |
+| 2026-11-23 | G3 | uncommitted (base `fd8c171`) | Village street | [`01-street.png`](visuals/p3/2026-11-23-g3-01-street.png) | Fresh save; 0 subject portals; nearby Training Grounds; prompt visible; canvas focus outline |
+| 2026-11-23 | G3 | uncommitted | Portal entry | [`02-dungeon-entry.png`](visuals/p3/2026-11-23-g3-02-dungeon-entry.png) | Training gate enters in 16 ms; world dungeon; 3 rooms; active session |
+| 2026-11-23 | G3 | uncommitted | Room cleared | [`03-cleared.png`](visuals/p3/2026-11-23-g3-03-cleared.png) | 28 XP; room `Cleared`; artifact outcome; active session |
+| 2026-11-23 | G3 | uncommitted | Returned through the shaft | [`04-returned.png`](visuals/p3/2026-11-23-g3-04-returned.png) | Climb ≈4.0 s; world village; active subject null; session closed; subject portal row shows 1/3 |
+| 2026-11-23 | G3 | uncommitted | Reload on the street | [`05-reload-surface.png`](visuals/p3/2026-11-23-g3-05-reload-surface.png) | World village; one subject portal; cleared count survives |
+| 2026-11-23 | G3 | uncommitted | Reload in the dungeon | [`06-reload-dungeon.png`](visuals/p3/2026-11-23-g3-06-reload-dungeon.png) | P0-T5 recovery; world dungeon; 3 rooms; active session |
 
-Manifest: [`2026-11-23-g1-manifest.json`](visuals/p1/2026-11-23-g1-manifest.json).
+Manifests: [`2026-11-23-g1-manifest.json`](visuals/p1/2026-11-23-g1-manifest.json),
+[`2026-11-23-g2-manifest.json`](visuals/p2/2026-11-23-g2-manifest.json),
+[`2026-11-23-g3-manifest.json`](visuals/p3/2026-11-23-g3-manifest.json).
 
 P0 predates this record: it proved boot and storage with a debug panel and captured no
 frames. The record starts at P1.
@@ -111,6 +119,39 @@ canvas; the artifact is plain text in a `<pre>`; no frame contains learner conte
 
 Manifest: [`2026-11-23-g2-manifest.json`](visuals/p2/2026-11-23-g2-manifest.json).
 
+## P3 — Surface village
+
+P3 adds the side-view street above the dungeon. Frame `01` is a fresh save with no
+subject portals yet; `04` is the same street after the tutorial clear, with the engine's
+subject portal row and the Training Grounds facade. The portal overlaps the gate because
+its `gridX/gridY` places it behind the gate at the documented depth ordering.
+
+### Village street (fresh save)
+
+![Village street](visuals/p3/2026-11-23-g3-01-street.png)
+
+### Portal entry
+
+![Portal entry](visuals/p3/2026-11-23-g3-02-dungeon-entry.png)
+
+### Room cleared
+
+![Room cleared](visuals/p3/2026-11-23-g3-03-cleared.png)
+
+### Returned through the entrance shaft
+
+![Returned through the shaft](visuals/p3/2026-11-23-g3-04-returned.png)
+
+### Reload on the street
+
+![Reload on the street](visuals/p3/2026-11-23-g3-05-reload-surface.png)
+
+### Reload in the dungeon
+
+![Reload in the dungeon](visuals/p3/2026-11-23-g3-06-reload-dungeon.png)
+
+Manifest: [`2026-11-23-g3-manifest.json`](visuals/p3/2026-11-23-g3-manifest.json).
+
 ## Capturing the next phase
 
 Prerequisites: example dependencies installed, Firefox on `PATH`, and `geckodriver`
@@ -148,6 +189,17 @@ then captures: composer open, draft, clear, close/focus return, reload, and a si
 storage failure (the next IndexedDB `put` throws). The script injects that failure through
 `IDBObjectStore.prototype.put` in the page; the app has no test hooks and its normal
 "not saved" path runs.
+
+With `--surface`, a separate mode captures the P3 street and the portal/return loop:
+street, Training Grounds entry, cleared room, shaft return, reload on the street, and
+reload in the dungeon. It uses the same real app and key events; no test hooks are added.
+
+```sh
+node examples/side-scroller/scripts/capture-dungeon.mjs \
+  --out docs/plans/side-scroller-host/visuals/p3 \
+  --prefix 2026-11-23-g3 \
+  --surface
+```
 
 It does not add test hooks to the page or change engine state beyond normal commands.
 Use a new `--prefix` for every gate so the record stays append-only.

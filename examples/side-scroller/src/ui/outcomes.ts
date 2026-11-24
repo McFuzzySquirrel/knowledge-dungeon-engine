@@ -27,6 +27,21 @@ export function notCollectedMessage(error: unknown): string {
   return `Not collected: ${detail(error)}. The artifact was not added to your journal. Try again.`;
 }
 
+/** P3: a portal or village interaction was rejected; the player stays put. */
+export function interactionFailedMessage(label: string, error: unknown): string {
+  return `Could not use ${label}: ${detail(error)}. Nothing was committed; you stayed on the street.`;
+}
+
+/** P3: the village-gate return was rejected; the dungeon session remains open. */
+export function returnFailedMessage(error: unknown): string {
+  return `Could not return to the village: ${detail(error)}. Nothing was committed; the study session is still open.`;
+}
+
+/** P3-T6: a fishing save cannot be resumed until P4 ships. */
+export function sessionNotResumedMessage(): string {
+  return 'Session could not be resumed: fishing is not available in this build. Returned to the village street.';
+}
+
 /** A typed refusal from the encounter command (`{ ok: false }`), shown verbatim. */
 export function refusalMessage(code: string, message: string): string {
   return `Refused (${code}): ${message}`;
