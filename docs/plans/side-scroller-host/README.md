@@ -508,7 +508,7 @@ Rules:
 | P9 | Not started | G9 pending | — |
 | P10 | Not started | G10 pending | — |
 
-Visual record: [VISUALS.md](VISUALS.md) — P1/G1, P2/G2, P3/G3 frames captured 2026-11-23; P3 layout follow-up 2026-11-24; P3 polish frames 2026-11-24; P4/G4 pond loop frames 2026-11-24 and the interaction-feedback follow-up (`g4b`); P5/G5 review frames 2026-11-24 in a normal and a reduced-motion run (`g5`, `g5rm`). P6–P10 append their own `visuals/pN/` folders as they ship.
+Visual record: [VISUALS.md](VISUALS.md) — P1/G1, P2/G2, P3/G3 frames captured 2026-11-23; P3 layout follow-up 2026-11-24; P3 polish frames 2026-11-24; P4/G4 pond loop frames 2026-11-24 and the interaction-feedback follow-up (`g4b`); P5/G5 review frames 2026-11-24 in a normal and a reduced-motion run (`g5`, `g5rm`), plus the shared-player follow-up (`g5player`). P6–P10 append their own `visuals/pN/` folders as they ship.
 
 ## 15. Assumptions
 
@@ -541,3 +541,4 @@ phase relies on a changed answer.
 | 2026-11-24 | 1.9 | Interaction-feedback follow-up after playtest: pond refusals and non-portal facade messages appear as a canvas toast, plus copy tests and a `g4b` re-capture |
 | 2026-11-24 | 2.0 | Post-P4 roadmap planned: P5 review, P6 Creator + three demo subjects, P7 village services, P8 journal/settings/assistance, P9 title/save/touch, P10 local polish/docs. Placeholder art and silence remain; local-only release; strict example-only boundary plus [ENGINE-BOUNDARY.md](ENGINE-BOUNDARY.md) |
 | 2026-11-24 | 2.1 | P5 executed and G5 passed; 0–5 review panel, due queue and HUD count, `R` from a room and the street, save/resume/discard across reload, duplicate ledger proof, rejected-write path, `--review` capture mode with a reduced-motion re-run; frames under `visuals/p5/`; engine count unchanged and no `src/` diff |
+| 2026-11-24 | 2.2 | Post-P5 fix: the fishing pond draws the same capsule player as the dungeon and street through `src/render/playerFigure.ts`, replacing its separate rectangular-torso avatar; `g5player` comparison frames in `visuals/p5/` |

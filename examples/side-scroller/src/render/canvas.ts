@@ -1,6 +1,7 @@
 import type { LevelModel, LevelRoom, Rect } from '../level/model';
 import type { SurfaceFacade, SurfaceModel } from '../level/surfaceLevel';
 import type { Body } from '../physics';
+import { drawPlayerFigure, PLAYER_COLORS } from './playerFigure';
 
 /**
  * Canvas 2D renderer for the side-scroller example.
@@ -52,13 +53,12 @@ const PALETTE = {
   chamber: 'rgba(29, 39, 64, 0.78)',
   chamberBorder: 'rgba(127, 209, 185, 0.3)',
   ladder: '#7fd1b9',
-  player: '#ffd479',
-  playerShade: '#b98d3a',
-  playerInk: '#20180a',
+  player: PLAYER_COLORS.body,
+  playerShade: PLAYER_COLORS.shade,
+  playerInk: PLAYER_COLORS.ink,
   text: '#a8b3c9',
   textBright: '#e6ecf7',
   accent: '#7fd1b9',
-  shadow: 'rgba(5, 8, 14, 0.45)',
   labelBackdrop: 'rgba(7, 10, 18, 0.68)',
   vignette: 'rgba(4, 6, 10, 0.55)',
   surfaceSkyTop: '#1b2740',
@@ -942,114 +942,27 @@ function roundedRectPath(
 }
 
 /**
- * The player is a rounded body whose silhouette changes with state:
- * narrow + arms out on a ladder, legs tucked + no contact shadow while
- * airborne, feet bar on the ground. The eye flips with horizontal velocity.
+ * Draw the shared player figure from the physics body.
+ *
+ * The silhouette changes with state: narrow + arms out on a ladder, legs tucked
+ * + no contact shadow while airborne, feet bar on the ground. The eye flips with
+ * horizontal velocity. The pond scene draws the same `drawPlayerFigure`, so the
+ * character is one implementation (P5 follow-up).
  */
 function drawPlayer(
   context: CanvasRenderingContext2D,
   body: Body,
   reducedMotion: boolean,
 ): void {
-  const width = body.w;
-  const height = body.h;
-  if (!(width > 0) || !(height > 0)) return;
-  if (![body.x, body.y].every(Number.isFinite)) return;
-
-  const centreX = body.x + width / 2;
-  const top = body.y;
-  const facing = body.vx < 0 ? -1 : 1;
-  const onLadder = body.onLadder;
-  const airborne = !body.onGround && !onLadder;
-
-  const bodyWidth = onLadder ? width * 0.68 : width;
-  const left = centreX - bodyWidth / 2;
-  const radius = Math.min(bodyWidth, height) * 0.3;
-  const weight = Math.max(1, height * 0.05);
-
-  context.save();
-  context.lineJoin = 'round';
-  context.lineCap = 'round';
-
-  if (!airborne) {
-    // Static contact shadow; reads as grounding without any animation.
-    context.beginPath();
-    context.ellipse(
-      centreX,
-      top + height,
-      bodyWidth * 0.52,
-      Math.max(1.5, height * 0.07),
-      0,
-      0,
-      Math.PI * 2,
-    );
-    context.fillStyle = PALETTE.shadow;
-    context.fill();
-  }
-
-  if (onLadder) {
-    // Arms reaching for the rails.
-    const armY = top + height * 0.38;
-    const armLength = width * 0.28;
-    context.strokeStyle = PALETTE.player;
-    context.lineWidth = weight * 1.2;
-    context.beginPath();
-    context.moveTo(left - armLength, armY);
-    context.lineTo(left, armY);
-    context.moveTo(left + bodyWidth, armY);
-    context.lineTo(left + bodyWidth + armLength, armY);
-    context.stroke();
-  } else if (airborne) {
-    // Tucked legs: two short diagonals, visible below the torso.
-    context.strokeStyle = PALETTE.player;
-    context.lineWidth = weight;
-    context.beginPath();
-    context.moveTo(left + bodyWidth * 0.3, top + height);
-    context.lineTo(left + bodyWidth * 0.18, top + height + height * 0.16);
-    context.moveTo(left + bodyWidth * 0.7, top + height);
-    context.lineTo(left + bodyWidth * 0.82, top + height + height * 0.16);
-    context.stroke();
-
-    if (!reducedMotion) {
-      // Falling streak: the only motion-flavoured cue, dropped for reduced motion.
-      context.strokeStyle = 'rgba(255, 212, 121, 0.45)';
-      context.lineWidth = Math.max(1, weight * 0.6);
-      context.beginPath();
-      context.moveTo(centreX - bodyWidth * 0.3, top - height * 0.2);
-      context.lineTo(centreX - bodyWidth * 0.3, top - height * 0.42);
-      context.moveTo(centreX + bodyWidth * 0.3, top - height * 0.16);
-      context.lineTo(centreX + bodyWidth * 0.3, top - height * 0.34);
-      context.stroke();
-    }
-  }
-
-  roundedRectPath(context, left, top, bodyWidth, height, radius);
-  context.fillStyle = PALETTE.player;
-  context.fill();
-  context.strokeStyle = PALETTE.playerShade;
-  context.lineWidth = weight;
-  context.stroke();
-
-  if (!airborne && !onLadder) {
-    // Feet bar: an extra ground-only silhouette cue under the torso.
-    context.strokeStyle = PALETTE.playerShade;
-    context.lineWidth = weight * 1.2;
-    context.beginPath();
-    context.moveTo(left + bodyWidth * 0.22, top + height + weight * 0.5);
-    context.lineTo(left + bodyWidth * 0.78, top + height + weight * 0.5);
-    context.stroke();
-  }
-
-  // Eye on the leading edge; flips with vx, defaults to right when idle.
-  const eyeRadius = Math.max(1.2, width * 0.075);
-  const eyeX = centreX + facing * bodyWidth * 0.24;
-  const eyeY = top + height * 0.3;
-  context.beginPath();
-  context.arc(eyeX, eyeY, eyeRadius, 0, Math.PI * 2);
-  context.fillStyle = PALETTE.playerInk;
-  context.fill();
-
-  context.restore();
+  drawPlayerFigure(context, {
+    centreX: body.x + body.w / 2,
+    feetY: body.y + body.h,
+    width: body.w,
+    height: body.h,
+    facing: body.vx < 0 ? -1 : 1,
+    pose: body.onLadder ? 'ladder' : body.onGround ? 'ground' : 'air',
+    reducedMotion,
+  });
 }
 
 /** Static vignette; deterministic and independent of time. */

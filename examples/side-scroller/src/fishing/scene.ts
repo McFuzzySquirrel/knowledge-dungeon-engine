@@ -1,4 +1,7 @@
 import { fishingState } from '@/index';
+import { DEFAULT_TILE_SIZE } from '../level/model';
+import { bodyDimensions } from '../physics';
+import { drawPlayerFigure } from '../render/playerFigure';
 
 /**
  * Canvas 2D fishing scene.
@@ -23,8 +26,6 @@ const COLORS = {
   shorelineDark: '#8e7f5b',
   shore: '#33405a',
   shoreEdge: '#26324a',
-  player: '#ffd479',
-  playerInk: '#20180a',
   rod: '#c9a066',
   line: 'rgba(232, 236, 246, 0.55)',
   bobber: '#ff8f8f',
@@ -196,6 +197,12 @@ function drawShore(
   }
 }
 
+/**
+ * The pond uses the same figure as the dungeon and the street: one capsule
+ * body, shade outline, contact shadow, feet bar, and a facing eye. The body is
+ * the world's player size, so walking from the shore into a dungeon does not
+ * change the character (P5 follow-up).
+ */
 function drawPlayer(
   context: CanvasRenderingContext2D,
   state: fishingState.FishingMachineState,
@@ -203,28 +210,24 @@ function drawPlayer(
   const playerY = fishingState.fishingPlayerY(state.viewport);
   const x = state.playerX;
   const facing = state.facing === 'left' ? -1 : 1;
+  const { w: width, h: height } = bodyDimensions(DEFAULT_TILE_SIZE);
 
-  context.fillStyle = 'rgba(5, 8, 14, 0.35)';
-  context.beginPath();
-  context.ellipse(x, playerY + 4, 18, 5, 0, 0, Math.PI * 2);
-  context.fill();
+  drawPlayerFigure(context, {
+    centreX: x,
+    feetY: playerY,
+    width,
+    height,
+    facing,
+    pose: 'ground',
+  });
 
-  context.fillStyle = COLORS.player;
-  context.fillRect(x - 9, playerY - 34, 18, 34);
-  context.fillStyle = COLORS.playerInk;
-  context.beginPath();
-  context.arc(x + facing * 2, playerY - 42, 9, 0, Math.PI * 2);
-  context.fill();
-  context.fillStyle = COLORS.player;
-  context.fillRect(x - 9, playerY - 28, 5, 14);
-  context.fillRect(x + 4, playerY - 28, 5, 14);
-
-  // The rod, held toward the water.
+  // The rod, held toward the water. The tip stays engine-authored.
   const tip = fishingState.fishingRodTip(state.playerX, state.viewport);
   context.strokeStyle = COLORS.rod;
   context.lineWidth = 3;
+  context.lineCap = 'round';
   context.beginPath();
-  context.moveTo(x + facing * 6, playerY - 30);
+  context.moveTo(x + facing * width * 0.18, playerY - height * 0.55);
   context.lineTo(tip.x, tip.y);
   context.stroke();
 }

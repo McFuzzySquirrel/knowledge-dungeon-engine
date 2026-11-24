@@ -1,0 +1,303 @@
+{
+  "capturedAt": "2026-11-24T11:02:09.512Z",
+  "app": "http://localhost:5174/",
+  "viewport": "default headless Firefox (captured window)",
+  "prefix": "2026-11-24-g5player",
+  "fishing": true,
+  "result": {
+    "entered": {
+      "activeSubjectId": "tutorial-first-walkthrough",
+      "activeStudy": true,
+      "subjects": 1,
+      "world": "dungeon",
+      "rooms": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "visited": [
+        "tut-note"
+      ],
+      "sessions": 1,
+      "xp": 0,
+      "xpTotal": 0,
+      "fish": 0,
+      "cleared": 0,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassCounts": {
+        "tut-note": 0,
+        "tut-tools": 0,
+        "tut-map": 0
+      },
+      "nextReview": {
+        "tut-note": null,
+        "tut-tools": null,
+        "tut-map": null
+      },
+      "marker": null
+    },
+    "cleared": {
+      "activeSubjectId": "tutorial-first-walkthrough",
+      "activeStudy": true,
+      "subjects": 1,
+      "world": "dungeon",
+      "rooms": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "visited": [
+        "tut-note"
+      ],
+      "sessions": 1,
+      "xp": 28,
+      "xpTotal": 28,
+      "fish": 0,
+      "cleared": 1,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassCounts": {
+        "tut-note": 0,
+        "tut-tools": 0,
+        "tut-map": 0
+      },
+      "nextReview": {
+        "tut-note": null,
+        "tut-tools": null,
+        "tut-map": null
+      },
+      "marker": null
+    },
+    "pond": {
+      "activeSubjectId": null,
+      "activeStudy": false,
+      "subjects": 1,
+      "world": "fishing",
+      "rooms": [],
+      "visited": [],
+      "sessions": 1,
+      "xp": null,
+      "xpTotal": 28,
+      "fish": 0,
+      "cleared": 0,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassCounts": {},
+      "nextReview": {},
+      "marker": null
+    },
+    "reduced": false,
+    "frameStats": {
+      "frames": 601,
+      "avgMs": 16.64,
+      "p95Ms": 17.16,
+      "maxMs": 17.5,
+      "over16_7": 316
+    },
+    "focusOrder": [
+      "fishing-answered-incorrect",
+      "fishing-release",
+      "fishing-later",
+      "fishing-answered-correct"
+    ],
+    "caughtFocus": "fishing-answered-correct",
+    "questionShown": true,
+    "beforeFailure": {
+      "activeSubjectId": null,
+      "activeStudy": false,
+      "subjects": 1,
+      "world": "fishing",
+      "rooms": [],
+      "visited": [],
+      "sessions": 1,
+      "xp": null,
+      "xpTotal": 28,
+      "fish": 0,
+      "cleared": 0,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassCounts": {},
+      "nextReview": {},
+      "marker": null
+    },
+    "afterFailure": {
+      "activeSubjectId": null,
+      "activeStudy": false,
+      "subjects": 1,
+      "world": "fishing",
+      "rooms": [],
+      "visited": [],
+      "sessions": 1,
+      "xp": null,
+      "xpTotal": 28,
+      "fish": 0,
+      "cleared": 0,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassCounts": {},
+      "nextReview": {},
+      "marker": null
+    },
+    "kept": {
+      "activeSubjectId": null,
+      "activeStudy": false,
+      "subjects": 1,
+      "world": "fishing",
+      "rooms": [],
+      "visited": [],
+      "sessions": 1,
+      "xp": null,
+      "xpTotal": 33,
+      "fish": 1,
+      "cleared": 0,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassCounts": {},
+      "nextReview": {},
+      "marker": null
+    },
+    "released": {
+      "activeSubjectId": null,
+      "activeStudy": false,
+      "subjects": 1,
+      "world": "fishing",
+      "rooms": [],
+      "visited": [],
+      "sessions": 1,
+      "xp": null,
+      "xpTotal": 33,
+      "fish": 1,
+      "cleared": 0,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassCounts": {},
+      "nextReview": {},
+      "marker": null
+    },
+    "reloaded": {
+      "activeSubjectId": null,
+      "activeStudy": false,
+      "subjects": 1,
+      "world": "village",
+      "rooms": [],
+      "visited": [],
+      "sessions": 1,
+      "xp": null,
+      "xpTotal": 33,
+      "fish": 1,
+      "cleared": 0,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassCounts": {},
+      "nextReview": {},
+      "marker": null
+    },
+    "recovered": {
+      "summary": "Location\nVillage street\nPhase\nscribe\nSubject portals\n1 portal\nRooms cleared (all portals)\n1 / 3\nXP (all subjects)\n33\nNearby\nTraining Grounds",
+      "rooms": "▸\nLibrary\n▸\nKeeper's Tower\n▸\nTraining Grounds — Tutorial dungeon — you are here\n▸\nGuild Hall\n▸\nTrophy Hall\n▸\nArtisan Workshop\n▸\nCentral Fountain\n▸\nFishing Pond (north-west)\n▸\nFishing Pond (south-west)\n▸\nFishing Pond (east)\n▸\nFish Stand\n◆\nFirst Dungeon (Tutorial) — 1 / 3 rooms cleared",
+      "status": "Near Training Grounds. Press E to enter.",
+      "error": "",
+      "overlayHidden": true,
+      "recovery": "Session could not be resumed: a cast in progress is not saved. Returned to the village street.",
+      "fishing": null,
+      "focus": "panel-title"
+    },
+    "recoveredState": {
+      "activeSubjectId": null,
+      "activeStudy": false,
+      "subjects": 1,
+      "world": "village",
+      "rooms": [],
+      "visited": [],
+      "sessions": 1,
+      "xp": null,
+      "xpTotal": 33,
+      "fish": 1,
+      "cleared": 0,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassCounts": {},
+      "nextReview": {},
+      "marker": null
+    },
+    "error": ""
+  },
+  "frames": [
+    {
+      "file": "2026-11-24-g5player-01a-pond-refusal.png",
+      "label": "Pond before a clear",
+      "detail": "nearby=Fishing Pond (north-west); shownIn=35ms; canvas message=\"No dungeon subject is in focus. Enter a dungeon and clear a room before fishing.\""
+    },
+    {
+      "file": "2026-11-24-g5player-01-dungeon-entry.png",
+      "label": "Dungeon entry",
+      "detail": "world=dungeon; active session=true; rooms=3"
+    },
+    {
+      "file": "2026-11-24-g5player-02-pond-on-street.png",
+      "label": "Pond on the street",
+      "detail": "cleared=1; nearby=Fishing Pond (north-west); prompt=Near Fishing Pond. Press E to fish."
+    },
+    {
+      "file": "2026-11-24-g5player-03-pond-idle.png",
+      "label": "Pond entry",
+      "detail": "shownIn=7ms; world=fishing; subject=host-resolved; xp=28; fish=0; reduced-motion=false; frame avg=16.64ms p95=17.16ms max=17.5ms over16.7=316/601"
+    },
+    {
+      "file": "2026-11-24-g5player-03b-powering.png",
+      "label": "Charging the cast",
+      "detail": "phase=powering; prompt=Fishing at Fishing Pond in First Dungeon (Tutorial). Hold Space to charge the cast."
+    },
+    {
+      "file": "2026-11-24-g5player-04-waiting.png",
+      "label": "Cast waiting",
+      "detail": "phase=waiting; prompt=Waiting for a bite."
+    },
+    {
+      "file": "2026-11-24-g5player-05-bite.png",
+      "label": "Bite",
+      "detail": "shownIn=5478ms; screen-reader message present=true"
+    },
+    {
+      "file": "2026-11-24-g5player-06-recall.png",
+      "label": "Recall dialog",
+      "detail": "shownIn=635ms; focus=fishing-answered-correct; question shown=true; collection row=0 fish"
+    },
+    {
+      "file": "2026-11-24-g5player-07-not-saved.png",
+      "label": "Catch save failure",
+      "detail": "shownIn=11ms; error=true; dialog still open=true; fish 0→0"
+    },
+    {
+      "file": "2026-11-24-g5player-08-kept.png",
+      "label": "Kept with recall",
+      "detail": "shownIn=12ms; fish=1; xp=33; focus=game; message=\"Kept. 5 XP gained. Collection: 1.\""
+    },
+    {
+      "file": "2026-11-24-g5player-09-released.png",
+      "label": "Released",
+      "detail": "fish=1 (unchanged from 1); focus=game; message=\"Released. Nothing was added to the collection.\""
+    },
+    {
+      "file": "2026-11-24-g5player-10-street.png",
+      "label": "Left the pond",
+      "detail": "shownIn=19ms; world=village; fish=1"
+    },
+    {
+      "file": "2026-11-24-g5player-11-reload.png",
+      "label": "Reload after a catch",
+      "detail": "fish=1; xp=33; world=village"
+    },
+    {
+      "file": "2026-11-24-g5player-11a-library.png",
+      "label": "Non-portal building",
+      "detail": "nearby=Library; canvas message=\"Library is a facade in this example. Only subject portals and the Training Grounds open a dungeon.\""
+    },
+    {
+      "file": "2026-11-24-g5player-12-mid-cast-reload.png",
+      "label": "Mid-cast reload recovery",
+      "detail": "world=village; notice=true; fish=1"
+    }
+  ]
+}

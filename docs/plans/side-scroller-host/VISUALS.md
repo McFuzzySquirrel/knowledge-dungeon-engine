@@ -102,6 +102,8 @@ gate is captured.
 | 2026-11-24 | G5 (reduced motion) | uncommitted (base `6525c22`) | Reload after review work | [`11-reload.png`](visuals/p5/2026-11-24-g5rm-11-reload.png) | Reduced-motion re-run; world=dungeon; cleared=3/3; reviewPasses=1; passCounts={"tut-note":0,"tut-tools":0,"tut-map":1}; nextReview set=true; marker=null; focus=panel-title |
 | 2026-11-24 | G5 (reduced motion) | uncommitted (base `6525c22`) | Street review shortcut | [`12-street-shortcut.png`](visuals/p5/2026-11-24-g5rm-12-street-shortcut.png) | Reduced-motion re-run; street=3790ms; panel=18ms; focus=review-rating-0; previous="Previous rating None chosen yet"; subject activated for the command=true |
 | 2026-11-24 | G5 (reduced motion) | uncommitted (base `6525c22`) | Street review closed | [`13-street-closed.png`](visuals/p5/2026-11-24-g5rm-13-street-closed.png) | Reduced-motion re-run; world=village; activeSubject=null; study session open=false; focus=game; reviews due still listed=true |
+| 2026-11-24 | G5 follow-up | uncommitted (base `9c9ef3d`) | Dungeon figure | [`g5player-01-dungeon-entry.png`](visuals/p5/2026-11-24-g5player-01-dungeon-entry.png) | Shared capsule body, shade outline, feet bar, contact shadow, and facing eye |
+| 2026-11-24 | G5 follow-up | uncommitted (base `9c9ef3d`) | Pond figure | [`g5player-03-pond-idle.png`](visuals/p5/2026-11-24-g5player-03-pond-idle.png) | Same figure at the pond; replaces the P4 rectangular torso plus circular head |
 | 2026-11-24 | P4 follow-up | uncommitted (base `066844b`) | Pond before a clear | [`01a-pond-refusal.png`](visuals/p4/2026-11-24-g4b-01a-pond-refusal.png) | Canvas toast: "No dungeon subject is in focus…"; prompt still offers `E` |
 | 2026-11-24 | P4 follow-up | uncommitted | Non-portal building | [`11a-library.png`](visuals/p4/2026-11-24-g4b-11a-library.png) | Canvas toast: "Library is a facade…; only subject portals and the Training Grounds open a dungeon" |
 
@@ -481,6 +483,25 @@ The whole path repeated with `matchMedia('(prefers-reduced-motion: reduce)')` tr
 ![Street review shortcut — reduced motion](visuals/p5/2026-11-24-g5rm-12-street-shortcut.png)
 
 ![Street review closed — reduced motion](visuals/p5/2026-11-24-g5rm-13-street-closed.png)
+
+### Follow-up: one player figure (2026-11-24)
+
+The P4 pond drew its own avatar — a rectangular torso with a separate circular
+head and no eye — while the dungeon and the street drew the capsule figure. The
+pond now calls the same `drawPlayerFigure` (`src/render/playerFigure.ts`) at the
+world body size, so the character does not change when the learner walks from the
+shore into a dungeon. The full `--fishing` run is kept under the `g5player`
+prefix; the two frames below show the comparison.
+
+#### Dungeon figure
+
+![Dungeon figure](visuals/p5/2026-11-24-g5player-01-dungeon-entry.png)
+
+#### Pond figure
+
+![Pond figure](visuals/p5/2026-11-24-g5player-03-pond-idle.png)
+
+Manifest: [`2026-11-24-g5player-manifest.json`](visuals/p5/2026-11-24-g5player-manifest.json).
 
 ## Capturing the next phase
 
