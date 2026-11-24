@@ -24,11 +24,11 @@ the gate outcome and the baseline facts later gates compare against.
 
 | Field | Value |
 |---|---|
-| Plan version | 1.6 |
+| Plan version | 1.7 |
 | Plan written | 2026-11-23 |
 | Engine test baseline | **13 files / 280 tests at `3951737`; unchanged after P0–P3** |
 | First gate run | 2026-11-23 |
-| Latest gate passed | G3 re-run (2026-11-24) |
+| Latest gate passed | G3 polish re-run (2026-11-24) |
 | Current phase | P3 complete; P4 next |
 | Open failures | None recorded; one accepted P3 observation, two resolved |
 
@@ -41,6 +41,7 @@ the gate outcome and the baseline facts later gates compare against.
 | G2 | [P2 — note loop](phase-2-note-loop.md#execution-evidence) | 2026-11-23 | uncommitted (base `f0eda0e`) | pass | 13 / 280 | 9 / 49 | [P2 evidence](phase-2-note-loop.md#execution-evidence) |
 | G3 | [P3 — surface village](phase-3-surface-village.md#execution-evidence) | 2026-11-23 | uncommitted (base `fd8c171`) | pass | 13 / 280 | 14 / 79 | [P3 evidence](phase-3-surface-village.md#execution-evidence) |
 | G3 re-run | [P3 — playtest layout fix](phase-3-surface-village.md#execution-evidence) | 2026-11-24 | uncommitted (base `b44f24a`) | pass | 13 / 280 | 14 / 84 | [P3 evidence](phase-3-surface-village.md#execution-evidence) |
+| G3 polish | [P3 — street atmosphere and HUD](phase-3-surface-village.md#execution-evidence) | 2026-11-24 | uncommitted (base `1ef03cf`) | pass | 13 / 280 | 14 / 85 | [P3 evidence](phase-3-surface-village.md#execution-evidence) |
 | G4 | [P4 — fishing](phase-4-fishing.md#execution-evidence) | — | — | Pending | — | — | — |
 
 ## Baseline record (P0)
@@ -56,6 +57,7 @@ changes size, add a new baseline row and explain why.
 | 2026-11-23 | uncommitted (base `f0eda0e`) | 13 | 280 | pass | pass | 0 `examples/` paths | G2 checkpoint; no baseline change; example suite 9 files / 49 tests |
 | 2026-11-23 | uncommitted (base `fd8c171`) | 13 | 280 | pass | pass | 0 `examples/` paths | G3 checkpoint; no baseline change; example suite 14 files / 79 tests |
 | 2026-11-24 | uncommitted (base `b44f24a`) | 13 | 280 | pass | pass | 0 `examples/` paths | G3 re-run after street layout/movement fix; example suite 14 files / 84 tests |
+| 2026-11-24 | uncommitted (base `1ef03cf`) | 13 | 280 | pass | pass | 0 `examples/` paths | G3 polish re-run; example suite 14 files / 85 tests |
 
 ## Per-task evidence links
 

@@ -94,6 +94,21 @@ describe('projectSurface', () => {
     expect(view.clearedRooms).toBe(0);
   });
 
+  it('adds a direction suffix when labels repeat', () => {
+    const structures: village.VillageStructure[] = [
+      { id: 'pond-fish-nw', type: 'fishing-pond', label: 'Fishing Pond', gridX: 2, gridY: 5, width: 2, height: 2 },
+      { id: 'pond-fish-sw', type: 'fishing-pond', label: 'Fishing Pond', gridX: 10, gridY: 23, width: 2, height: 2 },
+      { id: 'pond-fish-e', type: 'fishing-pond', label: 'Fishing Pond', gridX: 32, gridY: 13, width: 2, height: 2 },
+    ];
+
+    const view = projectSurface(createEmptyState(), structures);
+    expect(view.entries.map((entry) => entry.label)).toEqual([
+      'Fishing Pond (north-west)',
+      'Fishing Pond (south-west)',
+      'Fishing Pond (east)',
+    ]);
+  });
+
   it('reads subject portals from engine.villageStructures(), not a host list', async () => {
     const engine = await KnowledgeDungeonEngine.open({
       storage: new MemoryEngineStorage(),

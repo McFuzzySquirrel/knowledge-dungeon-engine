@@ -58,7 +58,10 @@ function surfaceItem(entry: SurfaceView['entries'][number], current: boolean): H
 
   const text = document.createElement('span');
   const suffix = current ? ' — you are here' : '';
-  text.textContent = `${entry.label} — ${entry.detail}${suffix}`;
+  const detail = entry.detail.trim();
+  const redundant =
+    detail.length === 0 || entry.label.toLowerCase().includes(detail.toLowerCase());
+  text.textContent = `${redundant ? entry.label : `${entry.label} — ${entry.detail}`}${suffix}`;
 
   item.append(marker, text);
   return item;

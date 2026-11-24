@@ -576,13 +576,16 @@ function updateInteractable(): void {
   if (!surface || !body || screen !== 'surface') return;
   const nearest = findNearestInteractable(surface, playerCentre(body));
   const nextId = nearest?.id ?? null;
-  if (nextId === (activeInteractable?.id ?? null)) return;
+  const previous = activeInteractable;
+  if (nextId === (previous?.id ?? null)) return;
 
   activeInteractable = nearest;
   syncPrompt();
   hud.updateSurface(surfaceView, activeInteractable?.id ?? null);
   if (nearest) {
     hud.announce(`Near ${nearest.label}. Press E to ${interactionVerb(nearest.type)}.`);
+  } else if (previous) {
+    hud.announce('No door in reach.');
   }
 }
 

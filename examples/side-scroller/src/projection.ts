@@ -194,6 +194,25 @@ function entryDetail(structure: village.VillageStructure): string {
   return TYPE_LABELS[structure.type] ?? structure.type.replace(/-/g, ' ');
 }
 
+const LOCATION_WORDS: Record<string, string> = {
+  nw: 'north-west',
+  ne: 'north-east',
+  sw: 'south-west',
+  se: 'south-east',
+  n: 'north',
+  s: 'south',
+  e: 'east',
+  w: 'west',
+};
+
+/** A short direction suffix for repeated labels such as three Fishing Ponds. */
+function locationSuffix(id: string): string {
+  const parts = id.split('-');
+  const token = parts[parts.length - 1]?.toLowerCase() ?? '';
+  const word = LOCATION_WORDS[token];
+  return word ? ` (${word})` : '';
+}
+
 function sumXp(state: EngineState): number {
   return Object.values(state.progression).reduce((sum, record) => sum + (record?.xpTotal ?? 0), 0);
 }
@@ -207,18 +226,25 @@ export function projectSurface(
   state: EngineState,
   structures: village.VillageStructure[],
 ): SurfaceView {
-  const entries = structures
-    .filter((structure) => structure.label.trim().length > 0)
-    .map((structure) => ({
+  const labelled = structures.filter((structure) => structure.label.trim().length > 0);
+  const labelCounts = new Map<string, number>();
+  for (const structure of labelled) {
+    labelCounts.set(structure.label, (labelCounts.get(structure.label) ?? 0) + 1);
+  }
+
+  const entries = labelled.map((structure) => {
+    const duplicate = (labelCounts.get(structure.label) ?? 0) > 1;
+    return {
       id: structure.id,
-      label: structure.label,
+      label: duplicate ? `${structure.label}${locationSuffix(structure.id)}` : structure.label,
       type: structure.type,
       detail: entryDetail(structure),
       subjectId: structure.subjectId,
       portal: structure.type === 'portal-icon',
       clearedCount: structure.clearedCount ?? 0,
       roomCount: structure.roomCount ?? 0,
-    }));
+    };
+  });
 
   return {
     world: state.session.world,

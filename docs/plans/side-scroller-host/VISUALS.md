@@ -53,11 +53,18 @@ passed.
 | 2026-11-24 | G3 re-run | uncommitted | Returned through the shaft | [`04-returned.png`](visuals/p3/2026-11-24-g3-04-returned.png) | Climb ≈4.0 s; world village; session closed; portal row shows 1/3 |
 | 2026-11-24 | G3 re-run | uncommitted | Reload on the street | [`05-reload-surface.png`](visuals/p3/2026-11-24-g3-05-reload-surface.png) | World village; one subject portal; cleared count survives |
 | 2026-11-24 | G3 re-run | uncommitted | Reload in the dungeon | [`06-reload-dungeon.png`](visuals/p3/2026-11-24-g3-06-reload-dungeon.png) | P0-T5 recovery; world dungeon; 3 rooms; active session |
+| 2026-11-24 | G3 polish | uncommitted (base `1ef03cf`) | Village street (polished) | [`01-street.png`](visuals/p3/2026-11-24-g3p-01-street.png) | Skyline, moon, lit windows, contact shadows, paving; HUD deduped with pond locations |
+| 2026-11-24 | G3 polish | uncommitted | Portal entry | [`02-dungeon-entry.png`](visuals/p3/2026-11-24-g3p-02-dungeon-entry.png) | Training gate enters in 72 ms; world dungeon; 3 rooms |
+| 2026-11-24 | G3 polish | uncommitted | Room cleared | [`03-cleared.png`](visuals/p3/2026-11-24-g3p-03-cleared.png) | 28 XP; room `Cleared`; active session |
+| 2026-11-24 | G3 polish | uncommitted | Returned through the shaft | [`04-returned.png`](visuals/p3/2026-11-24-g3p-04-returned.png) | Climb ≈4.2 s; full portal sign; world village; session closed |
+| 2026-11-24 | G3 polish | uncommitted | Reload on the street | [`05-reload-surface.png`](visuals/p3/2026-11-24-g3p-05-reload-surface.png) | World village; one subject portal; cleared count survives |
+| 2026-11-24 | G3 polish | uncommitted | Reload in the dungeon | [`06-reload-dungeon.png`](visuals/p3/2026-11-24-g3p-06-reload-dungeon.png) | P0-T5 recovery; world dungeon; 3 rooms; active session |
 
 Manifests: [`2026-11-23-g1-manifest.json`](visuals/p1/2026-11-23-g1-manifest.json),
 [`2026-11-23-g2-manifest.json`](visuals/p2/2026-11-23-g2-manifest.json),
 [`2026-11-23-g3-manifest.json`](visuals/p3/2026-11-23-g3-manifest.json),
-[`2026-11-24-g3-manifest.json`](visuals/p3/2026-11-24-g3-manifest.json).
+[`2026-11-24-g3-manifest.json`](visuals/p3/2026-11-24-g3-manifest.json),
+[`2026-11-24-g3p-manifest.json`](visuals/p3/2026-11-24-g3p-manifest.json).
 
 P0 predates this record: it proved boot and storage with a debug panel and captured no
 frames. The record starts at P1.
@@ -194,6 +201,40 @@ the Training Grounds door. The 2026-11-23 frames are retained as the earlier rec
 ![Reload in the dungeon](visuals/p3/2026-11-24-g3-06-reload-dungeon.png)
 
 Manifest: [`2026-11-24-g3-manifest.json`](visuals/p3/2026-11-24-g3-manifest.json).
+
+### Polish pass (2026-11-24)
+
+The polish pass adds a deterministic skyline and moon, warm window lights, contact
+shadows, door frames and steps, paving seams, a street gradient, and a small chevron at
+the entrance shaft. Portal signs may extend into the 3-tile building gap so the subject
+name stays readable, and the surface HUD drops redundant type repeats and labels the
+three ponds by direction.
+
+#### Polished street
+
+![Polished village street](visuals/p3/2026-11-24-g3p-01-street.png)
+
+#### Portal entry
+
+![Portal entry](visuals/p3/2026-11-24-g3p-02-dungeon-entry.png)
+
+#### Room cleared
+
+![Room cleared](visuals/p3/2026-11-24-g3p-03-cleared.png)
+
+#### Returned through the shaft
+
+![Returned through the shaft](visuals/p3/2026-11-24-g3p-04-returned.png)
+
+#### Reload on the street
+
+![Reload on the street](visuals/p3/2026-11-24-g3p-05-reload-surface.png)
+
+#### Reload in the dungeon
+
+![Reload in the dungeon](visuals/p3/2026-11-24-g3p-06-reload-dungeon.png)
+
+Manifest: [`2026-11-24-g3p-manifest.json`](visuals/p3/2026-11-24-g3p-manifest.json).
 
 ## Capturing the next phase
 

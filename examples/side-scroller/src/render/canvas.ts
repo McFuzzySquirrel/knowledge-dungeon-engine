@@ -63,12 +63,17 @@ const PALETTE = {
   vignette: 'rgba(4, 6, 10, 0.55)',
   surfaceSkyTop: '#1b2740',
   surfaceSkyBottom: '#3a5275',
+  surfaceSkylineFar: 'rgba(24, 34, 56, 0.55)',
+  surfaceSkylineNear: 'rgba(34, 47, 72, 0.72)',
   street: '#243047',
   streetEdge: '#33445f',
+  streetPebble: 'rgba(11, 13, 19, 0.2)',
   facadeBase: '#2c3a54',
   facadeAlt: '#344662',
   facadeRoof: '#1d2940',
   facadeInk: '#e6ecf7',
+  facadeWindow: 'rgba(255, 212, 121, 0.72)',
+  facadeWindowDark: 'rgba(11, 13, 19, 0.5)',
   doorInk: '#0b0d13',
   portalGlow: 'rgba(127, 209, 185, 0.38)',
 } as const;
@@ -269,6 +274,68 @@ function drawTerrain(context: CanvasRenderingContext2D, level: LevelModel, view:
 }
 
 /**
+ * A distant, deterministic skyline and a moon in screen space. The camera is
+ * cancelled with a translate so these layers can use a slow parallax while the
+ * street and facades stay in world coordinates.
+ */
+function drawSurfaceSkyline(
+  context: CanvasRenderingContext2D,
+  surface: SurfaceModel,
+  view: Rect,
+): void {
+  const groundScreenY = surface.groundY - view.y;
+  if (groundScreenY <= 0) return;
+
+  context.save();
+  context.translate(view.x, view.y);
+  context.beginPath();
+  context.rect(0, 0, view.w, groundScreenY);
+  context.clip();
+
+  const moonX = view.w * 0.78;
+  const moonY = groundScreenY * 0.24;
+  const moonRadius = Math.max(9, surface.tileSize * 0.24);
+  const glow = context.createRadialGradient(moonX, moonY, moonRadius * 0.4, moonX, moonY, moonRadius * 3.2);
+  glow.addColorStop(0, 'rgba(232, 236, 247, 0.18)');
+  glow.addColorStop(1, 'rgba(232, 236, 247, 0)');
+  context.fillStyle = glow;
+  context.fillRect(moonX - moonRadius * 4, moonY - moonRadius * 4, moonRadius * 8, moonRadius * 8);
+  context.fillStyle = 'rgba(232, 236, 247, 0.5)';
+  context.beginPath();
+  context.arc(moonX, moonY, moonRadius, 0, Math.PI * 2);
+  context.fill();
+
+  const band = (
+    factor: number,
+    period: number,
+    baseHeight: number,
+    variance: number,
+    fill: string,
+  ): void => {
+    const offset = -view.x * factor;
+    const first = Math.floor(-offset / period) - 1;
+    const count = Math.ceil(view.w / period) + 3;
+    context.fillStyle = fill;
+    for (let index = 0; index < count; index += 1) {
+      const slot = first + index;
+      const positive = ((slot % 11) + 11) % 11;
+      const wobble = (((slot * 13) % 17) + 17) % 17;
+      const width = period * (0.52 + wobble / 40);
+      const height = baseHeight + (positive / 11) * variance;
+      context.fillRect(slot * period + offset, groundScreenY - height, width, height);
+      // A small roof notch breaks the flat silhouette without randomness.
+      if (positive % 3 === 0) {
+        context.fillRect(slot * period + offset + width * 0.35, groundScreenY - height - period * 0.12, width * 0.3, period * 0.12);
+      }
+    }
+  };
+
+  band(0.12, 180, groundScreenY * 0.1, groundScreenY * 0.1, PALETTE.surfaceSkylineFar);
+  band(0.22, 140, groundScreenY * 0.16, groundScreenY * 0.12, PALETTE.surfaceSkylineNear);
+  context.restore();
+}
+
+/**
  * The surface street. Drawn after terrain so it replaces the tunnel fill above
  * the ground with a sky, a street, and depth-sorted facades. All geometry comes
  * from `SurfaceModel`; the renderer only chooses placeholder shapes.
@@ -288,11 +355,25 @@ function drawSurface(
   sky.addColorStop(1, PALETTE.surfaceSkyBottom);
   context.fillStyle = sky;
   context.fillRect(bounds.x, bounds.y, bounds.w, Math.max(0, groundY - bounds.y));
+  drawSurfaceSkyline(context, surface, view);
 
   context.fillStyle = PALETTE.street;
   context.fillRect(bounds.x, groundY, bounds.w, Math.max(0, streetBottom - groundY));
   context.fillStyle = PALETTE.streetEdge;
   context.fillRect(bounds.x, groundY, bounds.w, Math.max(1, tileSize * 0.08));
+
+  // Sparse paving seams keep the long street from reading as a flat slab.
+  const seamSpacing = tileSize * 2;
+  const firstSeam = Math.floor(view.x / seamSpacing) * seamSpacing;
+  context.fillStyle = PALETTE.streetPebble;
+  for (let x = firstSeam; x < view.x + view.w + seamSpacing; x += seamSpacing) {
+    context.fillRect(x, groundY + tileSize * 0.15, tileSize * 0.9, Math.max(1, tileSize * 0.02));
+  }
+  const streetShade = context.createLinearGradient(0, groundY, 0, streetBottom);
+  streetShade.addColorStop(0, 'rgba(5, 8, 14, 0)');
+  streetShade.addColorStop(1, 'rgba(5, 8, 14, 0.35)');
+  context.fillStyle = streetShade;
+  context.fillRect(bounds.x, groundY, bounds.w, Math.max(0, streetBottom - groundY));
 
   const shaft = level.ladders.find(
     (ladder) =>
@@ -304,6 +385,17 @@ function drawSurface(
   if (shaft) {
     context.fillStyle = PALETTE.doorInk;
     context.fillRect(surface.entrance.x, groundY, tileSize, Math.min(tileSize, streetBottom - groundY));
+    // A small chevron in the opening says "up" without adding a floating sign.
+    const centre = surface.entrance.x + tileSize / 2;
+    const tip = groundY + tileSize * 0.35;
+    const size = tileSize * 0.16;
+    context.strokeStyle = PALETTE.accent;
+    context.lineWidth = Math.max(1.5, tileSize * 0.035);
+    context.beginPath();
+    context.moveTo(centre - size, tip + size);
+    context.lineTo(centre, tip);
+    context.lineTo(centre + size, tip + size);
+    context.stroke();
   }
 
   const facades = [...surface.facades].sort(
@@ -406,6 +498,46 @@ function drawScenery(context: CanvasRenderingContext2D, facade: SurfaceFacade, t
   }
 }
 
+function facadeHash(id: string): number {
+  let hash = 0;
+  for (let index = 0; index < id.length; index += 1) {
+    hash = (hash * 31 + id.charCodeAt(index)) | 0;
+  }
+  return Math.abs(hash);
+}
+
+/** A deterministic grid of small warm/dark windows between the sign and door. */
+function drawFacadeWindows(
+  context: CanvasRenderingContext2D,
+  facade: SurfaceFacade,
+  tileSize: number,
+): void {
+  const rect = facade.rect;
+  const pad = Math.max(4, tileSize * 0.1);
+  const signHeight = Math.max(10, tileSize * 0.3);
+  const top = rect.y + pad + signHeight * 1.45 + tileSize * 0.04;
+  const bottom = facade.door.y - tileSize * 0.08;
+  if (bottom - top < tileSize * 0.12) return;
+
+  const rows = Math.max(1, Math.min(2, Math.floor((bottom - top) / (tileSize * 0.3))));
+  const cols = Math.max(1, Math.min(3, Math.floor(rect.w / (tileSize * 0.6))));
+  const rowStep = (bottom - top) / (rows + 1);
+  const colStep = rect.w / (cols + 1);
+  const windowW = Math.max(3, Math.min(tileSize * 0.16, colStep * 0.36));
+  const windowH = Math.max(3, Math.min(tileSize * 0.18, rowStep * 0.55));
+  const hash = facadeHash(facade.id);
+
+  for (let row = 0; row < rows; row += 1) {
+    for (let col = 0; col < cols; col += 1) {
+      const x = rect.x + colStep * (col + 1) - windowW / 2;
+      const y = top + rowStep * (row + 1) - windowH / 2;
+      const lit = ((hash >> ((row * 3 + col) % 24)) & 3) !== 0;
+      context.fillStyle = lit ? PALETTE.facadeWindow : PALETTE.facadeWindowDark;
+      context.fillRect(x, y, windowW, windowH);
+    }
+  }
+}
+
 function drawFacade(
   context: CanvasRenderingContext2D,
   facade: SurfaceFacade,
@@ -421,17 +553,28 @@ function drawFacade(
     return;
   }
 
+  const baseY = rect.y + rect.h;
+  // Contact shadow on the street grounds the facade without making it solid.
+  context.fillStyle = 'rgba(5, 8, 14, 0.32)';
+  context.fillRect(rect.x - tileSize * 0.12, baseY, rect.w + tileSize * 0.24, tileSize * 0.12);
+
   context.fillStyle = facadeFill(facade);
   context.fillRect(rect.x, rect.y, rect.w, rect.h);
 
   context.fillStyle = PALETTE.facadeRoof;
   context.fillRect(rect.x, rect.y, rect.w, Math.max(2, rect.h * 0.14));
+  context.fillStyle = 'rgba(230, 236, 247, 0.12)';
+  context.fillRect(rect.x, rect.y, rect.w, Math.max(1, tileSize * 0.02));
 
   const floor = Math.max(1, tileSize * 0.04);
   context.fillStyle = 'rgba(11, 13, 19, 0.24)';
   for (let y = rect.y + rect.h * 0.32; y < rect.y + rect.h - floor; y += rect.h * 0.24) {
     context.fillRect(rect.x, y, rect.w, floor);
   }
+
+  context.fillStyle = 'rgba(11, 13, 19, 0.28)';
+  context.fillRect(rect.x, baseY - tileSize * 0.08, rect.w, tileSize * 0.08);
+  drawFacadeWindows(context, facade, tileSize);
 
   const door = facade.door;
   if (facade.type === 'portal-icon' || facade.type === 'training-gate' || facade.type === 'fishing-pond') {
@@ -445,6 +588,12 @@ function drawFacade(
   context.fillStyle = PALETTE.doorInk;
   context.fillRect(door.x + door.w * 0.3, door.y + door.h * 0.1, door.w * 0.4, door.h * 0.35);
 
+  // Door frame and a thin step.
+  context.fillStyle = PALETTE.facadeRoof;
+  context.fillRect(door.x - tileSize * 0.08, door.y - tileSize * 0.1, door.w + tileSize * 0.16, tileSize * 0.08);
+  context.fillStyle = 'rgba(127, 209, 185, 0.18)';
+  context.fillRect(door.x - tileSize * 0.05, baseY - tileSize * 0.05, door.w + tileSize * 0.1, tileSize * 0.05);
+
   drawFacadeSign(context, facade, tileSize, active);
 }
 
@@ -457,7 +606,12 @@ function drawFacadeSign(
   const rect = facade.rect;
   const pad = Math.max(4, tileSize * 0.1);
   const signHeight = Math.max(10, tileSize * 0.3);
-  const maxWidth = Math.max(0, rect.w - pad * 2);
+  // Subject names are longer than a two-tile portal; let that sign use the
+  // guaranteed gap on either side instead of truncating the name.
+  const maxWidth = Math.max(
+    rect.w - pad * 2,
+    facade.type === 'portal-icon' ? tileSize * 3 : 0,
+  );
   if (maxWidth <= 0) return;
 
   const label = facade.subjectName || facade.label;
@@ -471,11 +625,20 @@ function drawFacadeSign(
           : '';
 
   const signY = rect.y + pad;
-  context.font = `600 ${Math.max(10, signHeight * 0.62)}px ${FONT_STACK}`;
+  let fontSize = Math.max(10, signHeight * 0.62);
+  context.font = `600 ${fontSize}px ${FONT_STACK}`;
+  while (fontSize > 9 && context.measureText(label).width > maxWidth - pad * 1.4) {
+    fontSize -= 1;
+    context.font = `600 ${fontSize}px ${FONT_STACK}`;
+  }
   const signWidth = Math.min(maxWidth, context.measureText(label).width + pad * 1.4);
-  roundedRectPath(context, rect.x + (rect.w - signWidth) / 2, signY, signWidth, signHeight, signHeight * 0.22);
+  const signX = rect.x + (rect.w - signWidth) / 2;
+  roundedRectPath(context, signX, signY, signWidth, signHeight, signHeight * 0.22);
   context.fillStyle = PALETTE.labelBackdrop;
   context.fill();
+  context.strokeStyle = 'rgba(127, 209, 185, 0.28)';
+  context.lineWidth = Math.max(1, tileSize * 0.015);
+  context.stroke();
 
   context.textAlign = 'center';
   context.textBaseline = 'middle';
@@ -489,7 +652,11 @@ function drawFacadeSign(
   if (subtitle) {
     context.font = `500 ${Math.max(9, signHeight * 0.5)}px ${FONT_STACK}`;
     context.fillStyle = PALETTE.text;
-    context.fillText(fitText(context, subtitle, maxWidth), rect.x + rect.w / 2, signY + signHeight * 1.45);
+    context.fillText(
+      fitText(context, subtitle, signWidth - pad * 0.6),
+      rect.x + rect.w / 2,
+      signY + signHeight * 1.45,
+    );
   }
 
   if (!active) return;

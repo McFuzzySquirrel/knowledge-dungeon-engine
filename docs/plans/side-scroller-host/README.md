@@ -2,8 +2,8 @@
 
 | Field | Value |
 |---|---|
-| Plan version | 1.6 |
-| Status | In progress — P0–P3 done (P3 re-verified 2026-11-24); P4 next |
+| Plan version | 1.7 |
+| Status | In progress — P0–P3 done (P3 polished 2026-11-24); P4 next |
 | Created | 2026-11-23 |
 | Owner | Unassigned |
 | Phase documents | [P0](phase-0-scaffold.md) · [P1](phase-1-dungeon-level.md) · [P2](phase-2-note-loop.md) · [P3](phase-3-surface-village.md) · [P4](phase-4-fishing.md) |
@@ -377,7 +377,7 @@ Rules:
 | P3 | Done — G3 passed | G3 passed 2026-11-23 | [phase-3 evidence](phase-3-surface-village.md#execution-evidence) |
 | P4 | Not started | G4 pending | — |
 
-Visual record: [VISUALS.md](VISUALS.md) — P1/G1, P2/G2, and P3/G3 frames captured 2026-11-23; P3 layout follow-up frames captured 2026-11-24.
+Visual record: [VISUALS.md](VISUALS.md) — P1/G1, P2/G2, P3/G3 frames captured 2026-11-23; P3 layout follow-up 2026-11-24; P3 polish frames 2026-11-24.
 
 ## 15. Assumptions to confirm at the G0 gate
 
@@ -403,3 +403,4 @@ update this section before P1.
 | 2026-11-23 | 1.4 | P2 executed and G2 passed; note composer, draft/clear/refusal/save-failure states, `projectHud`, save-failure harness, keyboard trap, and the `--note-loop` capture mode; frames under `visuals/p2/` |
 | 2026-11-23 | 1.5 | P3 executed and G3 passed; side-view surface from `VILLAGE_MAP`, dungeon placement below the street, climbable entrance shaft, portal/return routing, surface HUD, `--surface` capture mode; frames under `visuals/p3/` |
 | 2026-11-24 | 1.6 | P3 playtest fix and G3 re-run; facades are background-only, buildings are spaced 1.6× with a 3-tile minimum gap, spawn/entrance/return follow the Training Grounds door; new frames under `visuals/p3/` (`2026-11-24-g3`) |
+| 2026-11-24 | 1.7 | P3 polish pass; skyline/moon, facade lights and shadows, paving, shaft chevron, readable portal signs, deduped surface HUD with pond locations, and a “No door in reach” announcement; frames under `visuals/p3/` (`2026-11-24-g3p`) |

@@ -8,7 +8,7 @@
 | Blocks | [P4](phase-4-fishing.md) |
 | Requirements | R-07, R-08, R-09, R-10, R-13, R-14 |
 | Exit gate | [G3](#exit-gate-g3) |
-| Status | Done — G3 passed 2026-11-23; re-run 2026-11-24 |
+| Status | Done — G3 passed 2026-11-23; layout and polish re-runs 2026-11-24 |
 
 ## Objective
 
@@ -247,6 +247,9 @@ playable dungeon loop without a surface.
 | 2026-11-24 | Buildings are spread 1.6× from `gridX` with a 3-tile minimum gap; scenery stays near its spread x; spawn and entrance follow the Training Grounds door | Playtest: raw `gridX` clumped facades; spacing the gate also moved the shaft, so both now derive from the placed door |
 | 2026-11-24 | Return zone unions the decorative gate with the shaft top | The gate rect and the shaft can drift apart after spacing; a return must always work at the shaft |
 | 2026-11-24 | Decorative gate drawn as low posts and a threshold instead of a full beam | The wide beam visually joined neighbouring buildings |
+| 2026-11-24 | Surface polish: deterministic skyline and moon, facade window lights, contact shadows, door frames and steps, a street gradient/paving seams, and a shaft chevron | The corrected street was readable but flat; the polish adds depth and makes the entrance shaft cue clearer |
+| 2026-11-24 | Portal signs may extend into the building gap; sign font shrinks before truncating | A two-tile portal facade truncated “First Dungeon (Tutorial)”; the 3-tile building gap leaves room for the full name |
+| 2026-11-24 | Surface HUD drops redundant type repeats and adds a direction suffix to repeated labels; leaving a door announces “No door in reach.” | Three “Fishing Pond” rows were ambiguous and “Library — Library” wasted space; the live region previously stayed on the last door after leaving |
 
 ### Visual review (K-10)
 
@@ -270,6 +273,11 @@ portal occupies its own gap. The old 2026-11-23 frames remain in the record; the
   real `D` and `A` holds walked right to the Fishing Pond and left to the world edge.
   The player stayed on screen, the camera clamped, and returning to the gate and pressing
   `E` entered the dungeon. No facade blocked movement.
+- **Surface readability (2026-11-24).** The polish capture shows the skyline, moon,
+  lit windows, contact shadows, paving seams, and the shaft chevron. The portal sign
+  carries the full subject name after walking into view, and the HUD reads
+  `Fishing Pond (north-west)`, `Fishing Pond (south-west)`, and `Fishing Pond (east)`
+  instead of three identical rows. Leaving a door announces “No door in reach.”
 - **Reduced motion.** A session opened with `ui.prefersReducedMotion=1` reports
   `matchMedia` true, still enters the dungeon, and keeps the room visit count at 1.
 - **Reload.** Reload on the street restores `world=village`, one subject portal, and the
@@ -293,3 +301,5 @@ portal occupies its own gap. The old 2026-11-23 frames remain in the record; the
 | 2026-11-23 | G3 | uncommitted (base `fd8c171`) | example 14 files / 79 tests; root 13 / 280; both typechecks and builds; isolation 0 `examples/` paths | pass | A-07, A-08, E-02, E-03, E-08, E-10, E-11 verified; no `src/` diff; portal entry/return and surface/dungeon reload verified; visuals in `visuals/p3/` |
 | 2026-11-24 | P3 playtest fix — spacing and movement | uncommitted (base `b44f24a`) | `tests/surfaceLevel.test.ts`; frames [`01-street`](visuals/p3/2026-11-24-g3-01-street.png), [`04-returned`](visuals/p3/2026-11-24-g3-04-returned.png) | pass | Facades no longer collide; buildings keep a 3-tile gap; spawn is centred on the Training Grounds door; real-key walk left/right and gate entry verified; shaft return green |
 | 2026-11-24 | G3 re-run | uncommitted (base `b44f24a`) | example 14 files / 84 tests; root 13 / 280; both typechecks and builds; isolation 0 `examples/` paths | pass | A-07 and A-08 rechecked on the corrected street; new visuals `2026-11-24-g3`; old `2026-11-23-g3` frames retained |
+| 2026-11-24 | P3 polish — street atmosphere and HUD | uncommitted (base `1ef03cf`) | `tests/surfaceProjection.test.ts`; frames [`01-street`](visuals/p3/2026-11-24-g3p-01-street.png), [`04-returned`](visuals/p3/2026-11-24-g3p-04-returned.png) | pass | Skyline, moon, window lights, shadows, paving, shaft chevron; full portal name; HUD dedupe and pond locations; `No door in reach.` announcement |
+| 2026-11-24 | G3 polish re-run | uncommitted (base `1ef03cf`) | example 14 files / 85 tests; root 13 / 280; both typechecks and builds; isolation 0 `examples/` paths | pass | A-07 and A-08 rechecked; new visuals `2026-11-24-g3p`; earlier visual sets retained |
