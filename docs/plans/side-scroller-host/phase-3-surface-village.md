@@ -8,7 +8,7 @@
 | Blocks | [P4](phase-4-fishing.md) |
 | Requirements | R-07, R-08, R-09, R-10, R-13, R-14 |
 | Exit gate | [G3](#exit-gate-g3) |
-| Status | Done — G3 passed 2026-11-23 |
+| Status | Done — G3 passed 2026-11-23; re-run 2026-11-24 |
 
 ## Objective
 
@@ -81,13 +81,13 @@ the code header:
 
 | Engine field | Side-view use |
 |---|---|
-| `structure.gridX` | street x position (`gridX × tileSize`) |
+| `structure.gridX` | street x intent, spread by 1.6× and pushed right by a minimum 3-tile building gap so facades do not clump |
 | `structure.gridY` | depth ordering only (background/foreground draw order), not vertical position |
 | `structure.width` | facade width (`width × tileSize`) |
 | `structure.height` | facade height (`height × tileSize`), clamped to a documented range |
 | `structure.label` | facade sign and interaction prompt |
-| `VILLAGE_MAP.playerStart.x` | surface spawn x |
-| `VILLAGE_MAP.entranceTile.x` | surface entrance/shaft x |
+| `VILLAGE_MAP.playerStart.x` | fallback spawn x; the Training Grounds door is used when present |
+| `VILLAGE_MAP.entranceTile.x` | fallback entrance/shaft x; the Training Grounds door is used when present |
 | `VILLAGE_MAP.playerStart.y`, `entranceTile.y` | unused in side view; record the choice |
 
 If the result reads poorly, adjust presentation constants in `surfaceLevel.ts`; do not
@@ -100,9 +100,14 @@ mutate `VILLAGE_MAP`.
 - [x] `buildSurface` derives a single ground strip, facade rectangles, doors, and
       interaction rects from the engine-provided structure list.
 - [x] Draw order uses `gridY` as depth; collision does not.
-- [x] Solid set includes the ground and building bodies, with a door gap only where the
-      player can stand in front of the door.
-- [x] Spawn is on the ground near `playerStart.x`, clear of solids.
+- [x] Solid set contains the street ground and invisible world-edge walls. Facades are
+      background presentation only, so the player can walk past every building.
+      *(Amended 2026-11-24 after playtest: solid building bodies trapped the spawn inside
+      the Training Grounds doorway.)*
+- [x] Spawn is on the ground in front of the Training Grounds door (or near
+      `playerStart.x` when no gate exists), clear of solids.
+- [x] Buildings are laid out with a 3-tile minimum gap and 1.6× horizontal spread.
+      *(Amended 2026-11-24 after playtest: raw `gridX` clumped facades together.)*
 - [x] Structures with no label (signposts with `label: ''`) render as scenery only and
       are not interactable.
 - [x] Unit tests with a fixed structure fixture:
@@ -110,6 +115,7 @@ mutate `VILLAGE_MAP`.
       - [x] Interaction rects lie within the surface bounds.
       - [x] Spawn is not inside a solid.
       - [x] A portal structure keeps its `subjectId` and `label`.
+      - [x] Facades do not collide and buildings keep a real gap.
 
 ### P3-T2 — Dungeon placement below the surface
 
@@ -237,13 +243,18 @@ playable dungeon loop without a surface.
 | 2026-11-23 | `shaftBottomSpawn` exists and is tested, but normal portal entry uses `placed.spawn` | A village world has no active subject, so walking down the entrance shaft is not a world transition in P3; the helper keeps the physical-descent path available without a second level model |
 | 2026-11-23 | Capture script gained `--surface` (frames 01–06) | D-09 requires a dated visual record for G3 |
 | 2026-11-23 | `#game:focus-visible` outline added | The canvas is the primary keyboard target; the check now shows a 3 px accent outline |
+| 2026-11-24 | Facades no longer contribute collision; the street ground and invisible world-edge walls are the only solids | Playtest: solid building bodies plus a door gap trapped the spawn inside the Training Grounds footprint |
+| 2026-11-24 | Buildings are spread 1.6× from `gridX` with a 3-tile minimum gap; scenery stays near its spread x; spawn and entrance follow the Training Grounds door | Playtest: raw `gridX` clumped facades; spacing the gate also moved the shaft, so both now derive from the placed door |
+| 2026-11-24 | Return zone unions the decorative gate with the shaft top | The gate rect and the shaft can drift apart after spacing; a return must always work at the shaft |
+| 2026-11-24 | Decorative gate drawn as low posts and a threshold instead of a full beam | The wide beam visually joined neighbouring buildings |
 
 ### Visual review (K-10)
 
-The top-down village data overlaps one subject portal (`gridX: 3`) with the Training
-Grounds facade (`gridX: 4`). The portal is drawn behind the gate because its `gridY` is
-smaller, exactly as the documented depth mapping requires. The portal's own sign and
-HUD row remain legible; no engine layout was changed to hide the overlap.
+The original raw-grid layout overlapped the first subject portal (`gridX: 3`) with the
+Training Grounds facade (`gridX: 4`). The 2026-11-24 spacing pass removes that overlap:
+buildings keep `gridX` order but receive a 1.6× spread and a 3-tile minimum gap, so the
+portal occupies its own gap. The old 2026-11-23 frames remain in the record; the
+2026-11-24 frames show the corrected street.
 
 ## Manual checks
 
@@ -255,6 +266,10 @@ HUD row remain legible; no engine layout was changed to hide the overlap.
   Focus returned to `#game`; the live region reported `Room cleared. 28 XP gained.`
   Climbing with real `W` returned through the shaft in one hold; the live region changed
   to the street and announced the Training Grounds proximity prompt.
+- **Street movement (2026-11-24).** From the spawn in front of the Training Grounds door,
+  real `D` and `A` holds walked right to the Fishing Pond and left to the world edge.
+  The player stayed on screen, the camera clamped, and returning to the gate and pressing
+  `E` entered the dungeon. No facade blocked movement.
 - **Reduced motion.** A session opened with `ui.prefersReducedMotion=1` reports
   `matchMedia` true, still enters the dungeon, and keeps the room visit count at 1.
 - **Reload.** Reload on the street restores `world=village`, one subject portal, and the
@@ -276,3 +291,5 @@ HUD row remain legible; no engine layout was changed to hide the overlap.
 | 2026-11-23 | P3-T6 — recovery and failure | uncommitted | `tests/portalFlow.test.ts` (failing-storage cases), `tests/routing.test.ts` | pass | Failed portal save stays on the street; failed return keeps the session open and retries; fishing boot notice deferred to P4 |
 | 2026-11-23 | P3-T7 — manual proof | uncommitted | keyboard probe; frames [`01`–`06`](visuals/p3/) | pass | Keyboard-only enter/clear/climb/return; reload on both screens; reduced motion true |
 | 2026-11-23 | G3 | uncommitted (base `fd8c171`) | example 14 files / 79 tests; root 13 / 280; both typechecks and builds; isolation 0 `examples/` paths | pass | A-07, A-08, E-02, E-03, E-08, E-10, E-11 verified; no `src/` diff; portal entry/return and surface/dungeon reload verified; visuals in `visuals/p3/` |
+| 2026-11-24 | P3 playtest fix — spacing and movement | uncommitted (base `b44f24a`) | `tests/surfaceLevel.test.ts`; frames [`01-street`](visuals/p3/2026-11-24-g3-01-street.png), [`04-returned`](visuals/p3/2026-11-24-g3-04-returned.png) | pass | Facades no longer collide; buildings keep a 3-tile gap; spawn is centred on the Training Grounds door; real-key walk left/right and gate entry verified; shaft return green |
+| 2026-11-24 | G3 re-run | uncommitted (base `b44f24a`) | example 14 files / 84 tests; root 13 / 280; both typechecks and builds; isolation 0 `examples/` paths | pass | A-07 and A-08 rechecked on the corrected street; new visuals `2026-11-24-g3`; old `2026-11-23-g3` frames retained |

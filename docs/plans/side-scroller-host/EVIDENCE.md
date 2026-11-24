@@ -24,13 +24,13 @@ the gate outcome and the baseline facts later gates compare against.
 
 | Field | Value |
 |---|---|
-| Plan version | 1.5 |
+| Plan version | 1.6 |
 | Plan written | 2026-11-23 |
 | Engine test baseline | **13 files / 280 tests at `3951737`; unchanged after P0–P3** |
 | First gate run | 2026-11-23 |
-| Latest gate passed | G3 (2026-11-23) |
+| Latest gate passed | G3 re-run (2026-11-24) |
 | Current phase | P3 complete; P4 next |
-| Open failures | None recorded; two accepted P3 observations |
+| Open failures | None recorded; one accepted P3 observation, two resolved |
 
 ## Gate index
 
@@ -40,6 +40,7 @@ the gate outcome and the baseline facts later gates compare against.
 | G1 | [P1 — dungeon level](phase-1-dungeon-level.md#execution-evidence) | 2026-11-23 | uncommitted (base `989acf1`) | pass | 13 / 280 | 7 / 39 | [P1 evidence](phase-1-dungeon-level.md#execution-evidence) |
 | G2 | [P2 — note loop](phase-2-note-loop.md#execution-evidence) | 2026-11-23 | uncommitted (base `f0eda0e`) | pass | 13 / 280 | 9 / 49 | [P2 evidence](phase-2-note-loop.md#execution-evidence) |
 | G3 | [P3 — surface village](phase-3-surface-village.md#execution-evidence) | 2026-11-23 | uncommitted (base `fd8c171`) | pass | 13 / 280 | 14 / 79 | [P3 evidence](phase-3-surface-village.md#execution-evidence) |
+| G3 re-run | [P3 — playtest layout fix](phase-3-surface-village.md#execution-evidence) | 2026-11-24 | uncommitted (base `b44f24a`) | pass | 13 / 280 | 14 / 84 | [P3 evidence](phase-3-surface-village.md#execution-evidence) |
 | G4 | [P4 — fishing](phase-4-fishing.md#execution-evidence) | — | — | Pending | — | — | — |
 
 ## Baseline record (P0)
@@ -54,6 +55,7 @@ changes size, add a new baseline row and explain why.
 | 2026-11-23 | uncommitted (base `989acf1`) | 13 | 280 | pass | pass | 0 `examples/` paths | G1 checkpoint; no baseline change; example suite 7 files / 39 tests |
 | 2026-11-23 | uncommitted (base `f0eda0e`) | 13 | 280 | pass | pass | 0 `examples/` paths | G2 checkpoint; no baseline change; example suite 9 files / 49 tests |
 | 2026-11-23 | uncommitted (base `fd8c171`) | 13 | 280 | pass | pass | 0 `examples/` paths | G3 checkpoint; no baseline change; example suite 14 files / 79 tests |
+| 2026-11-24 | uncommitted (base `b44f24a`) | 13 | 280 | pass | pass | 0 `examples/` paths | G3 re-run after street layout/movement fix; example suite 14 files / 84 tests |
 
 ## Per-task evidence links
 
@@ -114,4 +116,5 @@ Notes:
 | P1-O2 | G1 | Physics has no cross-frame accumulator: a frame delta is subdivided into at most 5 × 1/120 s steps, so under 24 fps the simulation slows down instead of spending time. This is the conservative K-03 choice and is covered by the 100 ms terminal-velocity test. | Host example | Accepted — documented in P1 amendments |
 | P2-O1 | G2 | Headless Firefox software compositing cannot reach the plan's 16.7 ms frame target: `about:blank` measures avg 18.49 ms. The app adds ≈3.8 ms (avg 22.25 ms, p95 33.94 ms). The deliberate 55 ms/80 ms hog run showed no tunneling. | Host example | Accepted — environment exception, not a product regression |
 | P3-O1 | G3 | Normal portal entry uses `placeDungeonBelow(...).spawn` (the dungeon root), matching P3-T3's portal rule. `shaftBottomSpawn` is implemented and tested for a physical descent, but P3's village world has no active subject, so walking down the shaft is not itself a world transition. | Host example | Accepted — documented in P3 amendments |
-| P3-O2 | G3 | The top-down village data overlaps the first subject portal (`gridX: 3`) with the Training Grounds facade (`gridX: 4`). Depth sorting draws the portal behind the gate, as `gridY` requires; its sign and HUD row remain legible. No engine layout was changed. | Host example | Accepted — documented as K-10 visual review |
+| P3-O2 | G3 | The top-down village data overlapped the first subject portal (`gridX: 3`) with the Training Grounds facade (`gridX: 4`). Depth sorting drew the portal behind the gate. | Host example | Resolved 2026-11-24 — the spacing pass gives every building a 3-tile gap, so the portal occupies its own gap |
+| P3-O3 | P3 playtest | Raw `gridX` clumped facades, and solid building bodies plus a door gap trapped the player inside the Training Grounds footprint. | Host example | Resolved 2026-11-24 — facades are background-only; buildings are spread 1.6× with a 3-tile minimum gap; spawn, entrance, and return zone follow the Training Grounds door |

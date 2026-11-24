@@ -54,10 +54,6 @@ const STRUCTURES: village.VillageStructure[] = [
   },
 ];
 
-function pointInRect(x: number, y: number, rect: { x: number; y: number; w: number; h: number }): boolean {
-  return x >= rect.x && x < rect.x + rect.w && y >= rect.y && y < rect.y + rect.h;
-}
-
 function surface(): SurfaceModel {
   return buildSurface(STRUCTURES, MAP);
 }
@@ -123,18 +119,69 @@ describe('buildSurface', () => {
     }
   });
 
-  it('leaves a door gap in a building body where the player can stand', () => {
+  it('keeps facades out of collision so the street is walkable', () => {
+    const model = surface();
+    const gate = model.facades.find((facade) => facade.id === 'training-gate');
+    if (!gate) throw new Error('Training gate missing');
+    const playerBand = {
+      x: gate.rect.x - model.tileSize * 2,
+      y: model.groundY - model.tileSize * 0.7,
+      w: gate.rect.w + model.tileSize * 4,
+      h: model.tileSize * 0.7,
+    };
+
+    expect(model.solids.filter((solid) => overlaps(playerBand, solid))).toEqual([]);
+  });
+
+  it('has invisible edges that keep the player on the street', () => {
+    const model = surface();
+    const leftEdge = model.solids.find((solid) => Math.abs(solid.x + solid.w - model.bounds.x) < 1e-6);
+    const rightEdge = model.solids.find(
+      (solid) => Math.abs(solid.x - (model.bounds.x + model.bounds.w)) < 1e-6,
+    );
+
+    expect(leftEdge).toBeDefined();
+    expect(rightEdge).toBeDefined();
+  });
+
+  it('spaces building facades with a real gap', () => {
+    const model = surface();
+    const buildings = model.facades
+      .filter((facade) => facade.building)
+      .sort((a, b) => a.rect.x - b.rect.x);
+
+    expect(buildings.length).toBeGreaterThan(1);
+    for (let index = 1; index < buildings.length; index += 1) {
+      const previous = buildings[index - 1];
+      const current = buildings[index];
+      const gap = current.rect.x - (previous.rect.x + previous.rect.w);
+      expect(gap, `${previous.id} → ${current.id}`).toBeGreaterThanOrEqual(model.tileSize * 1.5);
+    }
+  });
+
+  it('aligns the entrance shaft with the Training Grounds door', () => {
     const model = surface();
     const gate = model.facades.find((facade) => facade.id === 'training-gate');
     if (!gate) throw new Error('Training gate missing');
 
-    const doorX = gate.door.x + gate.door.w / 2;
-    const doorY = model.groundY - model.tileSize * 0.5;
-    expect(model.solids.some((solid) => pointInRect(doorX, doorY, solid))).toBe(false);
+    expect(model.entrance.x).toBeCloseTo(gate.door.x, 6);
+  });
 
-    // The jambs on either side still collide.
-    const leftJamb = gate.rect.x + model.tileSize * 0.1;
-    expect(model.solids.some((solid) => pointInRect(leftJamb, doorY, solid))).toBe(true);
+  it('spawns in front of the Training Grounds door', () => {
+    const model = surface();
+    const gate = model.facades.find((facade) => facade.id === 'training-gate');
+    if (!gate) throw new Error('Training gate missing');
+
+    expect(model.spawn.x).toBeCloseTo(gate.door.x + gate.door.w / 2, 6);
+  });
+
+  it('covers the entrance shaft with the return zone', () => {
+    const model = surface();
+
+    expect(model.exitZone.x).toBeLessThanOrEqual(model.entrance.x);
+    expect(model.exitZone.x + model.exitZone.w).toBeGreaterThanOrEqual(
+      model.entrance.x + model.tileSize,
+    );
   });
 
   it('finds the nearest interactable and ignores scenery', () => {

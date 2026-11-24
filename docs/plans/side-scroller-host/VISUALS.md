@@ -47,10 +47,17 @@ passed.
 | 2026-11-23 | G3 | uncommitted | Returned through the shaft | [`04-returned.png`](visuals/p3/2026-11-23-g3-04-returned.png) | Climb ≈4.0 s; world village; active subject null; session closed; subject portal row shows 1/3 |
 | 2026-11-23 | G3 | uncommitted | Reload on the street | [`05-reload-surface.png`](visuals/p3/2026-11-23-g3-05-reload-surface.png) | World village; one subject portal; cleared count survives |
 | 2026-11-23 | G3 | uncommitted | Reload in the dungeon | [`06-reload-dungeon.png`](visuals/p3/2026-11-23-g3-06-reload-dungeon.png) | P0-T5 recovery; world dungeon; 3 rooms; active session |
+| 2026-11-24 | G3 re-run | uncommitted (base `b44f24a`) | Village street (fixed layout) | [`01-street.png`](visuals/p3/2026-11-24-g3-01-street.png) | Facades are background-only; 3-tile building gap; spawn centred on the Training Grounds door; player can walk both ways |
+| 2026-11-24 | G3 re-run | uncommitted | Portal entry | [`02-dungeon-entry.png`](visuals/p3/2026-11-24-g3-02-dungeon-entry.png) | Training gate enters in 21 ms; world dungeon; 3 rooms; active session |
+| 2026-11-24 | G3 re-run | uncommitted | Room cleared | [`03-cleared.png`](visuals/p3/2026-11-24-g3-03-cleared.png) | 28 XP; room `Cleared`; active session |
+| 2026-11-24 | G3 re-run | uncommitted | Returned through the shaft | [`04-returned.png`](visuals/p3/2026-11-24-g3-04-returned.png) | Climb ≈4.0 s; world village; session closed; portal row shows 1/3 |
+| 2026-11-24 | G3 re-run | uncommitted | Reload on the street | [`05-reload-surface.png`](visuals/p3/2026-11-24-g3-05-reload-surface.png) | World village; one subject portal; cleared count survives |
+| 2026-11-24 | G3 re-run | uncommitted | Reload in the dungeon | [`06-reload-dungeon.png`](visuals/p3/2026-11-24-g3-06-reload-dungeon.png) | P0-T5 recovery; world dungeon; 3 rooms; active session |
 
 Manifests: [`2026-11-23-g1-manifest.json`](visuals/p1/2026-11-23-g1-manifest.json),
 [`2026-11-23-g2-manifest.json`](visuals/p2/2026-11-23-g2-manifest.json),
-[`2026-11-23-g3-manifest.json`](visuals/p3/2026-11-23-g3-manifest.json).
+[`2026-11-23-g3-manifest.json`](visuals/p3/2026-11-23-g3-manifest.json),
+[`2026-11-24-g3-manifest.json`](visuals/p3/2026-11-24-g3-manifest.json).
 
 P0 predates this record: it proved boot and storage with a debug panel and captured no
 frames. The record starts at P1.
@@ -123,8 +130,9 @@ Manifest: [`2026-11-23-g2-manifest.json`](visuals/p2/2026-11-23-g2-manifest.json
 
 P3 adds the side-view street above the dungeon. Frame `01` is a fresh save with no
 subject portals yet; `04` is the same street after the tutorial clear, with the engine's
-subject portal row and the Training Grounds facade. The portal overlaps the gate because
-its `gridX/gridY` places it behind the gate at the documented depth ordering.
+subject portal row and the Training Grounds facade. These are the first P3 frames; the
+[2026-11-24 follow-up](#follow-up-spacing-and-movement-fix-2026-11-24) fixes the facade
+spacing and removes the portal/gate overlap.
 
 ### Village street (fresh save)
 
@@ -151,6 +159,41 @@ its `gridX/gridY` places it behind the gate at the documented depth ordering.
 ![Reload in the dungeon](visuals/p3/2026-11-23-g3-06-reload-dungeon.png)
 
 Manifest: [`2026-11-23-g3-manifest.json`](visuals/p3/2026-11-23-g3-manifest.json).
+
+### Follow-up: spacing and movement fix (2026-11-24)
+
+Playtest feedback found two problems in the first P3 pass: the raw top-down `gridX`
+values clumped facades together, and solid building bodies plus a door gap trapped the
+player inside the Training Grounds footprint. The follow-up makes facades background
+presentation, keeps only the street ground and invisible world edges as collision,
+spaces buildings by 1.6× with a 3-tile minimum gap, and centres the spawn/entrance on
+the Training Grounds door. The 2026-11-23 frames are retained as the earlier record.
+
+#### Fixed street: buildings separated, player free to walk
+
+![Fixed village street](visuals/p3/2026-11-24-g3-01-street.png)
+
+#### Portal entry on the fixed street
+
+![Portal entry](visuals/p3/2026-11-24-g3-02-dungeon-entry.png)
+
+#### Room cleared
+
+![Room cleared](visuals/p3/2026-11-24-g3-03-cleared.png)
+
+#### Returned through the shaft
+
+![Returned through the shaft](visuals/p3/2026-11-24-g3-04-returned.png)
+
+#### Reload on the street
+
+![Reload on the street](visuals/p3/2026-11-24-g3-05-reload-surface.png)
+
+#### Reload in the dungeon
+
+![Reload in the dungeon](visuals/p3/2026-11-24-g3-06-reload-dungeon.png)
+
+Manifest: [`2026-11-24-g3-manifest.json`](visuals/p3/2026-11-24-g3-manifest.json).
 
 ## Capturing the next phase
 

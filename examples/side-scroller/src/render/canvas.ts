@@ -388,11 +388,15 @@ function drawScenery(context: CanvasRenderingContext2D, facade: SurfaceFacade, t
       return;
     }
     case 'gate': {
+      // A low threshold and two short posts: the gate is an exit marker, not a
+      // beam that visually joins neighbouring buildings.
+      const post = Math.max(2, tileSize * 0.08);
+      const postHeight = Math.min(rect.h, tileSize * 0.9);
       context.fillStyle = PALETTE.facadeRoof;
-      const post = Math.max(2, tileSize * 0.1);
-      context.fillRect(rect.x, rect.y, post, rect.h);
-      context.fillRect(rect.x + rect.w - post, rect.y, post, rect.h);
-      context.fillRect(rect.x, rect.y, rect.w, post * 1.4);
+      context.fillRect(rect.x, baseY - postHeight, post, postHeight);
+      context.fillRect(rect.x + rect.w - post, baseY - postHeight, post, postHeight);
+      context.fillStyle = PALETTE.streetEdge;
+      context.fillRect(rect.x, baseY - Math.max(1, tileSize * 0.06), rect.w, Math.max(1, tileSize * 0.06));
       return;
     }
     default: {
@@ -411,7 +415,7 @@ function drawFacade(
   const rect = facade.rect;
   if (rect.w <= 0 || rect.h <= 0) return;
 
-  if (!facade.solid) {
+  if (!facade.building) {
     drawScenery(context, facade, tileSize);
     if (facade.interactive) drawFacadeSign(context, facade, tileSize, active);
     return;

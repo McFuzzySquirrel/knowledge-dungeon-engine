@@ -8,14 +8,19 @@ import type { CollisionWorld, LevelModel, LevelRoom, Rect } from './model';
  *
  * | Engine field             | Side-view use                                      |
  * |--------------------------|----------------------------------------------------|
- * | `structure.gridX`        | street x position (`gridX × tileSize`)             |
+ * | `structure.gridX`        | street x intent, spread to `gridX × tileSize × 1.6` and pushed right by a minimum gap so buildings do not overlap |
  * | `structure.gridY`        | depth ordering only, never vertical position       |
  * | `structure.width`        | facade width (`width × tileSize`)                  |
  * | `structure.height`       | facade height, clamped to 1…4 tiles                |
  * | `structure.label`        | facade sign and interaction prompt                 |
  * | `playerStart.x`          | surface spawn x                                    |
- * | `entranceTile.x`         | entrance shaft x (left edge of one tile)           |
+ * | `entranceTile.x`         | fallback entrance shaft x when no Training Gate exists; otherwise the shaft follows the Training Gate door |
  * | `playerStart.y`, `entranceTile.y` | unused in side view                       |
+ *
+ * Facades are background presentation. The street ground is the only collision
+ * surface, so the player can walk freely in front of every building. This was
+ * changed after playtest feedback: making building bodies solid trapped the
+ * spawn inside the Training Grounds doorway.
  *
  * The village tile size is the caller's `map.tileSize`. The host passes the
  * placed dungeon's tile size so the surface and the dungeon share one world
@@ -32,6 +37,12 @@ const DOOR_WIDTH_TILES = 1;
 const DOOR_HEIGHT_TILES = 2;
 const INTERACTION_WIDTH_TILES = 2.4;
 const INTERACTION_HEIGHT_TILES = 1.5;
+/** Spread the top-down grid horizontally so the side-view street reads openly. */
+const SURFACE_X_SPREAD = 1.6;
+/** Minimum gap between two building facades, in tiles. */
+const BUILDING_GAP_TILES = 3;
+/** Left margin before the first building, in tiles. */
+const BUILDING_MARGIN_TILES = 2;
 
 /** Scenery is drawn but never blocks the street or offers an interaction. */
 const SCENERY_TYPES: ReadonlySet<string> = new Set([
@@ -59,10 +70,10 @@ export interface SurfaceFacade {
   depth: number;
   /** Drawn building rectangle. */
   rect: Rect;
-  /** Doorway opening in the facade; interaction happens in front of it. */
+  /** Doorway drawing and interaction anchor. */
   door: { x: number; y: number; w: number; h: number };
-  /** Whether the facade contributes collision. */
-  solid: boolean;
+  /** Whether the facade is drawn as a building body rather than scenery. */
+  building: boolean;
   /** Scenery only; never offered as an interaction. */
   interactive: boolean;
 }
@@ -116,6 +127,14 @@ function translate(rect: Rect, dx: number, dy: number): Rect {
   return { x: rect.x + dx, y: rect.y + dy, w: rect.w, h: rect.h };
 }
 
+function unionRect(a: Rect, b: Rect): Rect {
+  const x = Math.min(a.x, b.x);
+  const y = Math.min(a.y, b.y);
+  const right = Math.max(a.x + a.w, b.x + b.w);
+  const bottom = Math.max(a.y + a.h, b.y + b.h);
+  return { x, y, w: right - x, h: bottom - y };
+}
+
 function facadeHeight(structure: village.VillageStructure, tilePx: number): number {
   const rows = clamp(structure.height, MIN_FACADE_HEIGHT_TILES, MAX_FACADE_HEIGHT_TILES);
   return rows * tilePx;
@@ -130,25 +149,6 @@ function facadeDoor(structure: village.VillageStructure, rect: Rect, tilePx: num
     w: width,
     h: height,
   };
-}
-
-/**
- * Split a solid around a doorway: left jamb, right jamb, and the lintel above
- * the opening. A door gap is passable so the player can stand in it, which is
- * where the interaction prompt appears.
- */
-function facadeSolids(rect: Rect, door: SurfaceFacade['door']): Rect[] {
-  const leftW = door.x - rect.x;
-  const rightX = door.x + door.w;
-  const rightW = rect.x + rect.w - rightX;
-  const lintelH = door.y - rect.y;
-  const solids: Rect[] = [];
-
-  if (leftW > 0) solids.push({ x: rect.x, y: rect.y, w: leftW, h: rect.h });
-  if (rightW > 0) solids.push({ x: rightX, y: rect.y, w: rightW, h: rect.h });
-  if (lintelH > 0) solids.push({ x: door.x, y: rect.y, w: door.w, h: lintelH });
-
-  return solids;
 }
 
 function interactionRect(door: SurfaceFacade['door'], bounds: Rect, groundY: number, tilePx: number): Rect {
@@ -185,34 +185,88 @@ function findSpawnX(
   return clamp(preferredX, minX, maxX);
 }
 
+interface FacadeLayout {
+  rect: Rect;
+  building: boolean;
+}
+
+function isBuilding(structure: village.VillageStructure): boolean {
+  return !SCENERY_TYPES.has(structure.type);
+}
+
+/**
+ * Spread buildings along the street instead of copying the top-down grid.
+ *
+ * Buildings keep their `gridX` order, are shifted right by at least
+ * `BUILDING_GAP_TILES`, and never overlap. Scenery stays near its spread grid
+ * x so trees, ponds, and flowers still frame the buildings. This is a
+ * presentation layout: no engine data is mutated.
+ */
+function layoutFacades(
+  structures: village.VillageStructure[],
+  tilePx: number,
+  groundY: number,
+): Map<string, FacadeLayout> {
+  const layout = new Map<string, FacadeLayout>();
+  const buildings = structures
+    .filter(isBuilding)
+    .sort((a, b) => a.gridX - b.gridX || a.gridY - b.gridY || a.id.localeCompare(b.id));
+
+  let cursor = tilePx * BUILDING_MARGIN_TILES;
+  for (const structure of buildings) {
+    const h = facadeHeight(structure, tilePx);
+    const w = Math.max(tilePx * 0.5, structure.width * tilePx);
+    const desired = Math.round(structure.gridX * tilePx * SURFACE_X_SPREAD);
+    const x = Math.max(desired, cursor);
+    layout.set(structure.id, { rect: { x, y: groundY - h, w, h }, building: true });
+    cursor = x + w + tilePx * BUILDING_GAP_TILES;
+  }
+
+  for (const structure of structures) {
+    if (layout.has(structure.id)) continue;
+    const h = facadeHeight(structure, tilePx);
+    const w = Math.max(tilePx * 0.5, structure.width * tilePx);
+    const x = Math.round(structure.gridX * tilePx * SURFACE_X_SPREAD);
+    layout.set(structure.id, { rect: { x, y: groundY - h, w, h }, building: false });
+  }
+
+  return layout;
+}
+
 /**
  * Derive the side-view street. Every structure produces exactly one facade;
- * only labelled structures become interactables.
+ * only labelled structures become interactables. The ground is the only
+ * collision surface: facades are background, so the player can walk freely
+ * past every building.
  */
 export function buildSurface(
   structures: village.VillageStructure[],
   map: village.VillageMapDef,
 ): SurfaceModel {
   const tilePx = map.tileSize;
-  const bounds: Rect = { x: 0, y: 0, w: map.width * tilePx, h: SURFACE_ROWS * tilePx };
   const groundY = GROUND_ROW * tilePx;
-  const facades: SurfaceFacade[] = [];
-  const solids: Rect[] = [{ x: bounds.x, y: groundY, w: bounds.w, h: tilePx }];
-
-  for (const structure of structures) {
-    const rect: Rect = {
-      x: structure.gridX * tilePx,
-      y: groundY - facadeHeight(structure, tilePx),
-      w: structure.width * tilePx,
-      h: facadeHeight(structure, tilePx),
-    };
-    const door = facadeDoor(structure, rect, tilePx);
-    const solid = !SCENERY_TYPES.has(structure.type) && rect.w > 0 && rect.h > 0;
-    const interactive = structure.label.trim().length > 0;
-
-    if (solid) solids.push(...facadeSolids(rect, door));
-
-    facades.push({
+  const layout = layoutFacades(structures, tilePx, groundY);
+  const maxRight = Math.max(
+    0,
+    ...[...layout.values()].map(({ rect }) => rect.x + rect.w),
+  );
+  const bounds: Rect = {
+    x: 0,
+    y: 0,
+    w: Math.max(map.width * tilePx * SURFACE_X_SPREAD, maxRight + tilePx * 2),
+    h: SURFACE_ROWS * tilePx,
+  };
+  const solids: Rect[] = [
+    { x: bounds.x, y: groundY, w: bounds.w, h: tilePx },
+    // Invisible world edges keep the player on the street; the camera clamps
+    // to the same bounds.
+    { x: bounds.x - tilePx, y: bounds.y, w: tilePx, h: bounds.h },
+    { x: bounds.x + bounds.w, y: bounds.y, w: tilePx, h: bounds.h },
+  ];
+  const facades: SurfaceFacade[] = structures.map((structure) => {
+    const placed = layout.get(structure.id);
+    if (!placed) throw new Error(`Missing facade layout for ${structure.id}`);
+    return {
       id: structure.id,
       type: structure.type,
       label: structure.label,
@@ -221,12 +275,12 @@ export function buildSurface(
       roomCount: structure.roomCount,
       clearedCount: structure.clearedCount,
       depth: structure.gridY,
-      rect,
-      door,
-      solid,
-      interactive,
-    });
-  }
+      rect: placed.rect,
+      door: facadeDoor(structure, placed.rect, tilePx),
+      building: placed.building,
+      interactive: structure.label.trim().length > 0,
+    };
+  });
 
   const interactables: SurfaceInteractable[] = facades
     .filter((facade) => facade.interactive)
@@ -244,12 +298,48 @@ export function buildSurface(
       depth: facade.depth,
     }));
 
-  const spawnX = findSpawnX(map.playerStart.x * tilePx + tilePx / 2, groundY, tilePx, bounds, solids);
-  const gate = structures.find((structure) => structure.type === 'gate');
-  const entranceX = map.entranceTile.x * tilePx;
-  const exitZone: Rect = gate
-    ? { x: gate.gridX * tilePx, y: groundY - tilePx, w: gate.width * tilePx, h: tilePx }
-    : { x: entranceX - tilePx, y: groundY - tilePx, w: tilePx * 3, h: tilePx };
+  const trainingGate = structures.find((structure) => structure.type === 'training-gate');
+  const trainingGateRect = trainingGate ? layout.get(trainingGate.id)?.rect : undefined;
+  const trainingGateDoor = trainingGate && trainingGateRect
+    ? facadeDoor(trainingGate, trainingGateRect, tilePx)
+    : undefined;
+  const entranceX = trainingGateDoor
+    ? trainingGateDoor.x
+    : map.entranceTile.x * tilePx * SURFACE_X_SPREAD;
+
+  // Spawn in front of the Training Grounds door when it exists; otherwise use
+  // the engine player start. The door is the intended first interaction.
+  const spawnX = findSpawnX(
+    trainingGateDoor
+      ? trainingGateDoor.x + trainingGateDoor.w / 2
+      : map.playerStart.x * tilePx * SURFACE_X_SPREAD + tilePx / 2,
+    groundY,
+    tilePx,
+    bounds,
+    solids,
+  );
+
+  const gateStructure = structures.find((structure) => structure.type === 'gate');
+  const gateRect = gateStructure ? layout.get(gateStructure.id)?.rect : undefined;
+  const entranceZone: Rect = {
+    x: entranceX - tilePx,
+    y: groundY - tilePx,
+    w: tilePx * 3,
+    h: tilePx,
+  };
+  // The return zone must always cover the shaft top; the decorative gate is
+  // unioned in so its whole threshold also ends the session.
+  const exitZone: Rect = gateRect
+    ? unionRect(
+        {
+          x: gateRect.x - tilePx * 0.5,
+          y: groundY - tilePx,
+          w: gateRect.w + tilePx,
+          h: tilePx,
+        },
+        entranceZone,
+      )
+    : entranceZone;
 
   return {
     tileSize: tilePx,
