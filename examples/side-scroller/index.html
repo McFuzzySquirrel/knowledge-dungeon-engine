@@ -2,8 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Knowledge Dungeon — Side-Scroller (P8)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Knowledge Dungeon — Side-Scroller (P9)</title>
     <style>
       :root {
         color-scheme: dark;
@@ -17,54 +17,45 @@
       }
       html[data-text-scale="large"] { font-size: 20px; }
       * { box-sizing: border-box; }
+      html, body { height: 100%; }
       body {
         margin: 0;
-        min-height: 100vh;
+        overflow: hidden;
         background: var(--bg);
         color: var(--ink);
         font: 1rem/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) 24rem;
-        gap: 1rem;
-        padding: 1rem;
       }
       h1 { font-size: 1.25rem; margin: 0 0 0.25rem; }
       h2 { font-size: 1rem; margin: 1.25rem 0 0.5rem; color: var(--accent); }
       h2:first-of-type { margin-top: 0; }
       p { margin: 0.25rem 0; color: var(--muted); }
-      main { min-width: 0; }
-      .stage {
-        position: relative;
-        margin-top: 0.5rem;
+
+      /* The canvas is the viewport. Everything else floats over it. */
+      main.stage {
+        position: fixed;
+        inset: 0;
+        height: 100dvh;
+        overflow: hidden;
+        background: #0b0d13;
       }
       #game {
         display: block;
         width: 100%;
-        aspect-ratio: 16 / 9;
-        border: 1px solid #2b3550;
-        border-radius: 0.5rem;
+        height: 100%;
         background: #0b0d13;
+        touch-action: none;
       }
-      #overlay {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        gap: 0.75rem;
-        padding: 1.5rem;
-        text-align: center;
-        border-radius: 0.5rem;
-        background: rgb(11 13 19 / 88%);
+      #game:focus-visible {
+        outline: 3px solid var(--accent);
+        outline-offset: -3px;
       }
-      #overlay[hidden] { display: none; }
-      #overlay p { color: var(--ink); max-width: 28rem; }
+
       #prompt {
         position: absolute;
-        left: 0.75rem;
-        top: 0.75rem;
+        left: calc(env(safe-area-inset-left) + 0.75rem);
+        top: calc(env(safe-area-inset-top) + 0.75rem);
         z-index: 2;
+        max-width: calc(100% - 9rem);
         padding: 0.35rem 0.6rem;
         border: 1px solid #3a4a6d;
         border-radius: 0.35rem;
@@ -82,10 +73,12 @@
         font: inherit;
         font-size: 0.85rem;
       }
+      #prompt .prompt-line { display: block; }
+
       #toast {
         position: absolute;
-        top: 0.75rem;
-        right: 0.75rem;
+        top: calc(env(safe-area-inset-top) + 4.5rem);
+        right: calc(env(safe-area-inset-right) + 0.75rem);
         z-index: 2;
         max-width: min(26rem, calc(100% - 1.5rem));
         padding: 0.45rem 0.7rem;
@@ -97,15 +90,16 @@
       }
       #toast.error { border-color: #7a3535; background: rgb(42 21 24 / 96%); color: var(--danger); }
       #toast[hidden] { display: none; }
+
       #recovery {
         position: absolute;
-        left: 0.75rem;
-        right: 0.75rem;
-        bottom: 0.75rem;
+        left: calc(env(safe-area-inset-left) + 0.75rem);
+        top: calc(env(safe-area-inset-top) + 4.5rem);
         z-index: 2;
         display: flex;
         gap: 0.75rem;
         align-items: center;
+        max-width: min(32rem, calc(100% - 1.5rem));
         padding: 0.5rem 0.75rem;
         border: 1px solid #7a6a35;
         border-radius: 0.35rem;
@@ -115,16 +109,234 @@
       }
       #recovery[hidden] { display: none; }
       #recovery p { margin: 0; flex: 1; color: var(--ink); }
-      #note-panel, #fishing-panel, #review-panel, #creator-panel, #service-panel, #journal-panel, #help-panel {
+
+      /* ── Title and onboarding ─────────────────────────────────────────── */
+      #overlay {
         position: absolute;
         inset: 0;
         z-index: 3;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 0.75rem;
+        padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right))
+          max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+        text-align: center;
+        background: rgb(11 13 19 / 92%);
         overflow: auto;
-        padding: 1rem;
-        border-radius: 0.5rem;
+      }
+      #overlay[hidden] { display: none; }
+      #overlay > #overlay-text { color: var(--ink); max-width: 28rem; }
+      #title-panel[hidden] { display: none; }
+      #title-panel { width: 100%; display: flex; justify-content: center; }
+      /* The title owns the screen: no prompt, toast, panel, or touch layer leaks through. */
+      body[data-title="true"] #prompt,
+      body[data-title="true"] #toast,
+      body[data-title="true"] #recovery,
+      body[data-title="true"] #npc-dialogue,
+      body[data-title="true"] #touch-controls,
+      body[data-title="true"] #toggle-panel,
+      body[data-title="true"] #progress-panel { display: none; }
+      .title-card {
+        width: min(42rem, 100%);
+        text-align: left;
+        padding: 1.25rem;
+        border: 1px solid #2b3550;
+        border-radius: 0.75rem;
+        background: rgb(26 32 48 / 96%);
+        max-height: calc(100dvh - 2rem);
+        overflow: auto;
+      }
+      .title-card h1 { font-size: 1.6rem; margin-bottom: 0.15rem; }
+      .title-subtitle { color: var(--accent); }
+      .title-status { color: var(--ink); margin: 0.5rem 0 0.75rem; }
+      .title-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.5rem 0; }
+      .title-actions button { min-height: 44px; }
+      .title-primary { background: #2f6b5d; border-color: var(--accent); font-weight: 600; }
+      .title-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+      .title-archetypes {
+        margin: 0.75rem 0;
+        padding: 0.6rem 0.75rem;
+        border: 1px solid #2b3550;
+        border-radius: 0.35rem;
+      }
+      .title-archetypes[hidden] { display: none; }
+      .title-archetype-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.5rem; }
+      .title-archetype {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        text-align: left;
+        min-height: 44px;
+      }
+      .title-archetype strong { color: var(--ink); }
+      .title-archetype span { color: var(--muted); font-size: 0.9rem; }
+      .title-archetype[aria-pressed="true"] { background: #2f6b5d; border-color: var(--accent); }
+      .title-import {
+        margin: 0.75rem 0;
+        padding: 0.6rem 0.75rem;
+        border: 1px solid #2b3550;
+        border-radius: 0.35rem;
+      }
+      .title-import[hidden] { display: none; }
+      .title-import label { display: block; color: var(--ink); margin-top: 0.4rem; }
+      .title-import-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+      .title-import input[type="file"],
+      .title-import textarea {
+        width: 100%;
+        font: 0.9rem/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+        color: var(--ink);
+        background: #101725;
+        border: 1px solid #3a4a6d;
+        border-radius: 0.35rem;
+        padding: 0.4rem 0.5rem;
+      }
+      .title-hint { margin-top: 0.75rem; font-size: 0.9rem; }
+      #title-error, #note-error, #fishing-error, #review-error, #creator-error, #service-error, #journal-error {
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #7a3535;
+        border-radius: 0.35rem;
+        background: #2a1518;
+        color: var(--danger);
+      }
+      #title-error { margin: 0.5rem 0 0; }
+      #title-error[hidden],
+      #note-error[hidden],
+      #fishing-error[hidden],
+      #review-error[hidden],
+      #creator-error[hidden],
+      #service-error[hidden],
+      #journal-error[hidden] { display: none; }
+
+      /* ── Modals over the world ────────────────────────────────────────── */
+      #note-panel, #fishing-panel, #review-panel, #creator-panel, #service-panel, #journal-panel, #help-panel {
+        position: absolute;
+        inset: 0;
+        z-index: 4;
+        overflow: auto;
+        padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right))
+          max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
         background: rgb(11 13 19 / 92%);
       }
       #note-panel[hidden], #fishing-panel[hidden], #review-panel[hidden], #creator-panel[hidden], #service-panel[hidden], #journal-panel[hidden], #help-panel[hidden] { display: none; }
+
+      /* ── Touch controls ───────────────────────────────────────────────── */
+      #touch-controls {
+        position: absolute;
+        inset: auto 0 0 0;
+        z-index: 1;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        padding: 0 max(0.75rem, env(safe-area-inset-right))
+          max(0.75rem, env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
+        pointer-events: none;
+      }
+      #touch-controls[hidden] { display: none; }
+      .touch-pad {
+        display: grid;
+        grid-template-columns: repeat(3, 3.25rem);
+        grid-template-rows: repeat(2, 3.25rem);
+        gap: 0.35rem;
+      }
+      .touch-actions { display: flex; align-items: flex-end; gap: 0.5rem; }
+      .touch-button {
+        pointer-events: auto;
+        min-width: 44px;
+        min-height: 44px;
+        padding: 0.2rem;
+        font-size: 0.9rem;
+        background: rgb(36 48 74 / 92%);
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      .touch-pad .touch-button { width: 100%; height: 100%; }
+      .touch-actions .touch-button { width: auto; height: auto; }
+      .touch-button:active, .touch-button[data-pressed="true"] { background: #2f6b5d; border-color: var(--accent); }
+      .touch-up { grid-column: 2; grid-row: 1; }
+      .touch-left { grid-column: 1; grid-row: 2; }
+      .touch-down { grid-column: 2; grid-row: 2; }
+      .touch-right { grid-column: 3; grid-row: 2; }
+      .touch-jump { width: 3.5rem; height: 3.5rem; border-radius: 50%; flex: none; }
+      .touch-action { min-width: 5.5rem; min-height: 3.5rem; font-weight: 600; flex: none; }
+
+      /* ── Progress overlay / sheet ─────────────────────────────────────── */
+      #toggle-panel {
+        position: absolute;
+        top: calc(env(safe-area-inset-top) + 0.75rem);
+        right: calc(env(safe-area-inset-right) + 0.75rem);
+        z-index: 2;
+        min-height: 44px;
+      }
+      #progress-panel {
+        position: absolute;
+        top: calc(env(safe-area-inset-top) + 3.75rem);
+        right: calc(env(safe-area-inset-right) + 0.75rem);
+        width: min(24rem, calc(100% - 1.5rem));
+        max-height: calc(100% - 5rem);
+        overflow: auto;
+        z-index: 2;
+        padding: 1rem;
+        border: 1px solid #2b3550;
+        border-radius: 0.5rem;
+        background: rgb(26 32 48 / 96%);
+      }
+      #progress-panel[hidden] { display: none; }
+      #progress-panel .panel-heading h2 { color: var(--accent); }
+      dl { display: grid; grid-template-columns: 10rem 1fr; gap: 0.25rem 0.75rem; margin: 0; }
+      dt { color: var(--muted); }
+      dd { margin: 0; overflow-wrap: anywhere; }
+      ul { margin: 0; padding: 0; list-style: none; }
+      li.room { display: flex; gap: 0.5rem; align-items: baseline; margin: 0.2rem 0; }
+      li.room .marker { color: var(--accent); width: 1ch; flex: none; }
+      li.room.current { font-weight: 600; }
+      li.room.current .marker { color: var(--ink); }
+      #error {
+        margin-top: 0.75rem;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #7a3535;
+        border-radius: 0.35rem;
+        background: #2a1518;
+        color: var(--danger);
+      }
+      #error[hidden] { display: none; }
+      #status { margin-top: 0.75rem; color: var(--accent); min-height: 2.5em; }
+
+      /* ── Shared controls ──────────────────────────────────────────────── */
+      button {
+        font: inherit;
+        color: var(--ink);
+        background: #24304a;
+        border: 1px solid #3a4a6d;
+        border-radius: 0.35rem;
+        padding: 0.4rem 0.7rem;
+        cursor: pointer;
+      }
+      button:hover { background: #2d3b59; }
+      button:disabled { opacity: 0.55; cursor: not-allowed; }
+      button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+        outline: 3px solid var(--accent);
+        outline-offset: 2px;
+      }
+      .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
+      .panel-heading { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: baseline; justify-content: space-between; }
+      .panel-heading h2 { margin: 0; }
+      .panel-heading button { padding: 0.25rem 0.5rem; font-size: 0.9rem; min-height: 36px; }
+      .controls { margin-top: 0.75rem; font-size: 0.9rem; color: var(--muted); }
+      .controls kbd, #help-panel kbd {
+        display: inline-block;
+        padding: 0 0.3rem;
+        border: 1px solid #3a4a6d;
+        border-radius: 0.25rem;
+        background: #141a28;
+        color: var(--ink);
+        font: inherit;
+        font-size: 0.85rem;
+      }
+
+      /* ── Existing panel internals ─────────────────────────────────────── */
       .note-form {
         max-width: 44rem;
         margin: 0 auto;
@@ -172,15 +384,6 @@
         color: var(--ink);
         font: 0.85rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
       }
-      #note-error, #fishing-error, #review-error, #creator-error, #service-error, #journal-error {
-        padding: 0.5rem 0.75rem;
-        border: 1px solid #7a3535;
-        border-radius: 0.35rem;
-        background: #2a1518;
-        color: var(--danger);
-      }
-      #note-error[hidden], #fishing-error[hidden], #review-error[hidden], #creator-error[hidden], #service-error[hidden], #journal-error[hidden] { display: none; }
-      #prompt .prompt-line { display: block; }
       .review-ratings {
         margin: 0.5rem 0;
         padding: 0.6rem 0.75rem;
@@ -350,7 +553,7 @@
       #npc-dialogue {
         position: absolute;
         left: 50%;
-        bottom: 0.75rem;
+        bottom: max(0.75rem, env(safe-area-inset-bottom));
         transform: translateX(-50%);
         z-index: 2;
         display: flex;
@@ -367,61 +570,6 @@
       #npc-dialogue[hidden] { display: none; }
       #npc-dialogue strong { color: var(--accent); flex: 1 1 100%; }
       .npc-dialogue-body { margin: 0; flex: 1 1 16rem; color: var(--ink); }
-      aside {
-        background: var(--panel);
-        border: 1px solid #2b3550;
-        border-radius: 0.5rem;
-        padding: 1rem;
-        align-self: start;
-      }
-      dl { display: grid; grid-template-columns: 10rem 1fr; gap: 0.25rem 0.75rem; margin: 0; }
-      dt { color: var(--muted); }
-      dd { margin: 0; overflow-wrap: anywhere; }
-      ul { margin: 0; padding: 0; list-style: none; }
-      li.room { display: flex; gap: 0.5rem; align-items: baseline; margin: 0.2rem 0; }
-      li.room .marker { color: var(--accent); width: 1ch; flex: none; }
-      li.room.current { font-weight: 600; }
-      li.room.current .marker { color: var(--ink); }
-      button {
-        font: inherit;
-        color: var(--ink);
-        background: #24304a;
-        border: 1px solid #3a4a6d;
-        border-radius: 0.35rem;
-        padding: 0.4rem 0.7rem;
-        cursor: pointer;
-      }
-      button:hover { background: #2d3b59; }
-      button:disabled { opacity: 0.55; cursor: progress; }
-      button:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-      #game:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-      #panel-title:focus { outline: 3px solid var(--accent); outline-offset: 2px; }
-      #overlay button:focus-visible { outline-offset: 4px; }
-      .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
-      .panel-heading { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: baseline; justify-content: space-between; }
-      .panel-heading h2 { margin: 0; }
-      .panel-heading button { padding: 0.25rem 0.5rem; font-size: 0.9rem; }
-      #error {
-        margin-top: 0.75rem;
-        padding: 0.5rem 0.75rem;
-        border: 1px solid #7a3535;
-        border-radius: 0.35rem;
-        background: #2a1518;
-        color: var(--danger);
-      }
-      #error[hidden] { display: none; }
-      #status { margin-top: 0.75rem; color: var(--accent); min-height: 2.5em; }
-      .controls { margin-top: 0.75rem; font-size: 0.9rem; color: var(--muted); }
-      .controls kbd, #help-panel kbd {
-        display: inline-block;
-        padding: 0 0.3rem;
-        border: 1px solid #3a4a6d;
-        border-radius: 0.25rem;
-        background: #141a28;
-        color: var(--ink);
-        font: inherit;
-        font-size: 0.85rem;
-      }
       .help-form { max-width: 44rem; margin: 0 auto; }
       .help-header h2 { margin: 0; color: var(--ink); }
       .help-body { display: grid; gap: 0.25rem; }
@@ -439,8 +587,27 @@
         white-space: nowrap;
         border: 0;
       }
+
       @media (max-width: 900px) {
-        body { grid-template-columns: 1fr; }
+        #progress-panel {
+          top: auto;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          width: 100%;
+          max-height: 70dvh;
+          border-radius: 0.75rem 0.75rem 0 0;
+          padding-bottom: max(1rem, env(safe-area-inset-bottom));
+        }
+        #toast { max-width: calc(100% - 1.5rem); }
+        #recovery {
+          top: auto;
+          left: calc(env(safe-area-inset-left) + 0.75rem);
+          right: calc(env(safe-area-inset-right) + 0.75rem);
+          bottom: calc(env(safe-area-inset-bottom) + 9.5rem);
+          max-width: none;
+        }
+        #npc-dialogue { bottom: calc(env(safe-area-inset-bottom) + 9rem); }
       }
       @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -453,109 +620,119 @@
       }
     </style>
   </head>
-  <body>
-    <main>
-      <h1>Knowledge Dungeon — Side-Scroller</h1>
-      <p>Phase P8: walk the village street, open every service, create and enter subject portals, write notes, review cleared rooms, fish with a recall check, and open the journal for progress, records, assistance, and device settings.</p>
+  <body data-title="true">
+    <main class="stage">
+      <canvas
+        id="game"
+        width="960"
+        height="540"
+        tabindex="0"
+        aria-label="Side-view village street above a dungeon. Move with A and D or the arrow keys, jump with Space, climb with W and S, press E at a door to enter a portal or open a village service, press E beside a person to talk, press C to open the Creator, press R to review the last-studied dungeon, and press J to open the journal. In a dungeon room, press E to write a note and R to review a cleared room."
+        aria-describedby="game-help"
+      ></canvas>
 
-      <div class="stage">
-        <canvas
-          id="game"
-          width="960"
-          height="540"
-          tabindex="0"
-          aria-label="Side-view village street above a dungeon. Move with A and D or the arrow keys, jump with Space, climb with W and S, press E at a door to enter a portal or open a village service, press E beside a person to talk, press C to open the Creator, press R to review the last-studied dungeon, and press J to open the journal. In a dungeon room, press E to write a note and R to review a cleared room."
-          aria-describedby="game-help"
-        ></canvas>
-        <div id="prompt" hidden></div>
-        <div id="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
-        <div id="recovery" role="status" aria-live="polite" hidden>
-          <p id="recovery-text"></p>
-          <button id="recovery-dismiss" type="button">Dismiss</button>
-        </div>
-        <div id="overlay">
-          <p id="overlay-text">Loading the engine…</p>
-          <button id="start-tutorial" type="button">Start tutorial</button>
-        </div>
-        <section
-          id="note-panel"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="note-panel-title"
-          hidden
-        ></section>
-        <section
-          id="fishing-panel"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="fishing-panel-title"
-          hidden
-        ></section>
-        <section
-          id="review-panel"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="review-panel-title"
-          hidden
-        ></section>
-        <section
-          id="creator-panel"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="creator-panel-title"
-          hidden
-        ></section>
-        <section
-          id="service-panel"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="service-panel-title"
-          aria-describedby="service-panel-subtitle"
-          hidden
-        ></section>
-        <section
-          id="journal-panel"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="journal-panel-title"
-          aria-describedby="journal-panel-subtitle"
-          hidden
-        ></section>
-        <section
-          id="help-panel"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="help-panel-title"
-          aria-describedby="help-panel-subtitle"
-          hidden
-        ></section>
-        <div id="npc-dialogue" role="group" aria-labelledby="npc-dialogue-label" hidden></div>
+      <div id="prompt" hidden></div>
+      <div id="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+      <div id="recovery" role="status" aria-live="polite" hidden>
+        <p id="recovery-text"></p>
+        <button id="recovery-dismiss" type="button">Dismiss</button>
       </div>
-      <p id="game-help" class="controls">
-        Press <kbd>?</kbd> or choose <strong>Controls</strong> in the side panel for the full
-        keyboard map, review keys, and pond commands.
-      </p>
+      <div id="npc-dialogue" role="group" aria-labelledby="npc-dialogue-label" hidden></div>
+      <div id="touch-controls" hidden></div>
+
+      <button id="toggle-panel" type="button" aria-controls="progress-panel" aria-expanded="false">
+        Progress
+      </button>
+      <aside id="progress-panel" aria-labelledby="panel-title" hidden>
+        <div class="panel-heading">
+          <h2 id="panel-title" tabindex="-1">Progress</h2>
+          <button id="open-help" type="button">Controls (?)</button>
+        </div>
+        <dl id="summary"></dl>
+
+        <h2 id="rooms-title">Rooms</h2>
+        <ul id="rooms"></ul>
+
+        <div class="actions">
+          <button id="open-journal" type="button">Journal (J)</button>
+          <button id="open-review" type="button">Review (R)</button>
+          <button id="open-creator" type="button">Creator (C)</button>
+          <button id="export-save" type="button">Export save</button>
+          <button id="clear-save" type="button">Clear saved state</button>
+          <button id="leave-fishing" type="button" hidden>Leave pond</button>
+        </div>
+
+        <div id="error" role="alert" hidden></div>
+        <div id="status"></div>
+        <p class="controls">
+          State persists in IndexedDB. Press <kbd>?</kbd> for the full keyboard map.
+        </p>
+      </aside>
+
+      <div id="overlay">
+        <p id="overlay-text">Loading the engine…</p>
+        <div id="title-panel" role="dialog" aria-modal="true" aria-labelledby="title-heading" hidden></div>
+      </div>
+
+      <section
+        id="note-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="note-panel-title"
+        hidden
+      ></section>
+      <section
+        id="fishing-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="fishing-panel-title"
+        hidden
+      ></section>
+      <section
+        id="review-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="review-panel-title"
+        hidden
+      ></section>
+      <section
+        id="creator-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="creator-panel-title"
+        hidden
+      ></section>
+      <section
+        id="service-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="service-panel-title"
+        aria-describedby="service-panel-subtitle"
+        hidden
+      ></section>
+      <section
+        id="journal-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="journal-panel-title"
+        aria-describedby="journal-panel-subtitle"
+        hidden
+      ></section>
+      <section
+        id="help-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="help-panel-title"
+        aria-describedby="help-panel-subtitle"
+        hidden
+      ></section>
     </main>
 
-    <aside aria-labelledby="panel-title">
-      <div class="panel-heading">
-        <h2 id="panel-title" tabindex="-1">Progress</h2>
-        <button id="open-help" type="button">Controls (?)</button>
-      </div>
-      <dl id="summary"></dl>
-
-      <h2 id="rooms-title">Rooms</h2>
-      <ul id="rooms"></ul>
-
-      <div class="actions">
-        <button id="clear-save" type="button">Clear saved state</button>
-        <button id="leave-fishing" type="button" hidden>Leave pond</button>
-      </div>
-
-      <div id="error" role="alert" hidden></div>
-      <div id="status" role="status" aria-live="polite" aria-atomic="true"></div>
-      <p class="controls">State persists in IndexedDB. Reload to verify.</p>
-    </aside>
+    <p id="game-help" class="sr-only">
+      Press question mark or choose Controls in the progress panel for the full keyboard map,
+      review keys, and pond commands.
+    </p>
+    <div id="live" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
 
     <script type="module" src="/src/main.ts"></script>
   </body>

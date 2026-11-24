@@ -116,6 +116,13 @@ and touch preference never enter a save. The assistance engine accepts a boolean
 projection over the public `progression`, `statistics`, `review`, and `assistance`
 namespaces.
 
+P9 adds a host JSON envelope around **one** `EngineState`: attachment bytes are base64,
+the decoder validates the envelope and required keys before any write, and import uses
+the host storage adapter (one atomic save) followed by a reload. This is portability, not
+multi-slot storage; host settings are not in the bundle. Touch buttons call the same
+`IntentState` as the keyboard and the same fishing machine events — no second movement or
+cast implementation lives in the host.
+
 ## 7. Compat and review
 
 - Every gate runs the engine and example suites, both typechecks, both builds, and the

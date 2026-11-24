@@ -24,13 +24,13 @@ the gate outcome and the baseline facts later gates compare against.
 
 | Field | Value |
 |---|---|
-| Plan version | 2.8 |
+| Plan version | 2.9 |
 | Plan written | 2026-11-23 |
-| Engine test baseline | **13 files / 280 tests at `3951737`; unchanged after P0–P8** |
+| Engine test baseline | **13 files / 280 tests at `3951737`; unchanged after P0–P9** |
 | First gate run | 2026-11-23 |
-| Latest gate passed | G8 (2026-11-24) |
-| Current phase | P0–P8 complete; P9–P10 planned, P9 next |
-| Open failures | None recorded; accepted P2-O1 performance exception, the P4 amendments, and the P8-O1 touch deferral below |
+| Latest gate passed | G9 (2026-11-24) |
+| Current phase | P0–P9 complete; P10 next |
+| Open failures | None recorded; accepted P2-O1 performance exception, the P4 amendments, the P8-O1 touch deferral (closed by P9), and the P9-O1 browser-matrix exception below |
 
 ## Gate index
 
@@ -49,7 +49,7 @@ the gate outcome and the baseline facts later gates compare against.
 | G8 | [P8 — journal](phase-8-journal.md#execution-evidence) | 2026-11-24 | uncommitted (base `3e8039b`) | pass | 13 / 280 | 31 / 199 | [P8 evidence](phase-8-journal.md#execution-evidence) |
 | G8 follow-up | [P8 — controls help](phase-8-journal.md#execution-evidence) | 2026-11-24 | uncommitted (base `3e8039b`) | pass | 13 / 280 | 32 / 201 | [P8 follow-up evidence](phase-8-journal.md#execution-evidence) |
 | G8 follow-up | [P8 — room openings](phase-8-journal.md#execution-evidence) | 2026-11-24 | uncommitted (base `3e8039b`) | pass | 13 / 280 | 32 / 202 | [P8 follow-up evidence](phase-8-journal.md#execution-evidence) |
-| G9 | [P9 — shell and touch](phase-9-shell-mobile.md#execution-evidence) | — | — | Planned | — | — | — |
+| G9 | [P9 — shell and touch](phase-9-shell-mobile.md#execution-evidence) | 2026-11-24 | uncommitted (base `5b76c82`) | pass | 13 / 280 | 35 / 228 | [P9 evidence](phase-9-shell-mobile.md#execution-evidence) |
 | G10 | [P10 — local polish](phase-10-polish.md#execution-evidence) | — | — | Planned | — | — | — |
 
 ## Baseline record (P0)
@@ -74,6 +74,7 @@ changes size, add a new baseline row and explain why.
 | 2026-11-24 | uncommitted (base `3e8039b`) | 13 | 280 | pass | pass | 0 `examples/` paths | G8 checkpoint; no baseline change; example suite 31 files / 199 tests; `src` status and diff empty; three new P8 suites, no new dependency |
 | 2026-11-24 | uncommitted (base `3e8039b`) | 13 | 280 | pass | pass | 0 `examples/` paths | Post-G8 controls follow-up; example suite 32 files / 201 tests; `src` status and diff empty; `--help` capture mode and `g8b` frames |
 | 2026-11-24 | uncommitted (base `3e8039b`) | 13 | 280 | pass | pass | 0 `examples/` paths | Room-opening follow-up; example suite 32 files / 202 tests; `src` status and diff empty; `--openings` capture mode and `g8c` frames |
+| 2026-11-24 | uncommitted (base `5b76c82`) | 13 | 280 | pass | pass | 0 `examples/` paths | G9 checkpoint; no baseline change; example suite 35 files / 228 tests; `src` status and diff empty; title/save/touch shell, `--mobile` capture mode, `g9` and `g9rm` frames |
 
 ## Per-task evidence links
 
@@ -152,4 +153,5 @@ Notes:
 | P4-O1 | G4 | The engine clears `activeSubjectId` in `returnToVillage()`, so P3's return flow reaches the street with no active subject. `resolveFishingSubject` uses active → host-remembered → most-cleared, and the pond payload uses that subject (never the nearest portal). | Host example | Accepted — P4 Amendment 1 |
 | P4-O2 | G4 | `pullRecallQuestion` draws with `Math.random`, so recall selection is not seedable. Replay covers phase, candidate, cast number, and effects; recall tests pass a fixed `roomId`, and the UI presents the engine's own `catch.recall`. | Host example | Accepted — documented in P4 Findings |
 | P4-O3 | G4 | Headless Firefox software compositing measures 16.79 ms average with 319/596 frames just over 16.7 ms during the 10 s pond capture (max 33.74 ms, one dropped frame). This is within the headless software-compositing variance recorded in P2-O1 and is not attributable to fishing. | Host example | Accepted — environment exception (P2-O1) |
-| P8-O1 | G8 | P8 stores the touch-layout preference, resolves `auto` against `(pointer: coarse)`, and publishes `data-touch-layout`, but there is no touch control surface until P9. The P8-T5 "adds/removes controls immediately" checkbox is deferred rather than marked passed. | Host example | Accepted — P9 consumes the attribute; documented in P8 amendments |
+| P8-O1 | G8 | P8 stores the touch-layout preference, resolves `auto` against `(pointer: coarse)`, and publishes `data-touch-layout`, but there is no touch control surface until P9. The P8-T5 "adds/removes controls immediately" checkbox is deferred rather than marked passed. | Host example | Closed by P9 — the overlay consumes the resolved attribute; `auto/on/off` is tested |
+| P9-O1 | G9 | Physical iOS Safari and Android Chrome were not available in this environment. The touch-only path was run in Firefox 150 with a 390×844 viewport at DPR 2 through WebDriver BiDi, and the layout was additionally checked at 500×672 with large text. The app uses only IndexedDB, Canvas 2D, pointer events, `dvh`, and `env(safe-area-inset-*)`, all supported by current mobile Safari/Chrome. | Host example | Accepted — environment limitation; S-01 target documented, physical-device pass still recommended before P10 ship |

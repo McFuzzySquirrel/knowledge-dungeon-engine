@@ -53,6 +53,7 @@ function parseArgs(argv) {
     journal: false,
     help: false,
     openings: false,
+    shell: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -71,6 +72,7 @@ function parseArgs(argv) {
     else if (arg === '--journal') options.journal = true;
     else if (arg === '--help') options.help = true;
     else if (arg === '--openings') options.openings = true;
+    else if (arg === '--shell' || arg === '--mobile') options.shell = true;
     else throw new Error(`Unknown argument: ${arg}`);
   }
   return options;
@@ -99,16 +101,57 @@ async function openSession(prefs = {}) {
     capabilities: {
       alwaysMatch: {
         browserName: 'firefox',
+        webSocketUrl: true,
         'moz:firefoxOptions': { args: ['-headless'], prefs },
       },
     },
   });
   const id = created.value.sessionId;
+  const bidiUrl = created.value.capabilities?.webSocketUrl ?? null;
   const session = (path) => `/session/${id}${path}`;
+  let bidi = null;
+  let bidiNext = 1;
+  const bidiPending = new Map();
+
+  function bidiCommand(method, params) {
+    if (!bidi) throw new Error('WebDriver BiDi is not available for this session');
+    const messageId = bidiNext++;
+    bidi.send(JSON.stringify({ id: messageId, method, params }));
+    return new Promise((resolve) => bidiPending.set(messageId, resolve));
+  }
+
+  async function setViewport(width, height, devicePixelRatio = 1) {
+    if (!bidiUrl) return false;
+    if (!bidi) {
+      bidi = new WebSocket(bidiUrl);
+      await new Promise((resolve, reject) => {
+        bidi.onopen = resolve;
+        bidi.onerror = reject;
+      });
+      bidi.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        if (message.id && bidiPending.has(message.id)) {
+          bidiPending.get(message.id)(message);
+          bidiPending.delete(message.id);
+        }
+      };
+    }
+    const tree = await bidiCommand('browsingContext.getTree', { maxDepth: 0 });
+    const context = tree.result.contexts[0].context;
+    const result = await bidiCommand('browsingContext.setViewport', {
+      context,
+      viewport: { width, height },
+      devicePixelRatio,
+    });
+    return result.type === 'success';
+  }
+
   return {
     id,
     session,
+    setViewport,
     async close() {
+      bidi?.close();
       await wd('DELETE', session(''));
     },
     async execute(script) {
@@ -223,6 +266,10 @@ async function stored(session) {
           ),
           marker:
             state.progression[state.activeSubjectId]?.extraFields?.interruptedReviewSession?.roomId ?? null,
+          attachmentKeys: Object.keys(state.attachmentBytes ?? {}),
+          attachmentSizes: Object.fromEntries(
+            Object.entries(state.attachmentBytes ?? {}).map(([key, bytes]) => [key, bytes?.length ?? 0]),
+          ),
         });
       };
     };
@@ -244,6 +291,7 @@ async function waitForRoom(session, needle, timeoutMs = 20000, stepMs = 250) {
 }
 
 async function startTutorial(session) {
+  await waitForExpr(session, `document.querySelector('#start-tutorial') !== null`, 10000);
   await session.execute(`document.querySelector('#start-tutorial').click(); return true;`);
   await sleep(1500);
 }
@@ -2681,9 +2729,638 @@ async function captureServices(prefix, frames) {
   }
 }
 
+async function touchDown(session, intent, pointerId = 21) {
+  return session.execute(`
+    const el = document.querySelector('[data-intent="${intent}"]');
+    if (!el) return false;
+    el.dispatchEvent(new PointerEvent('pointerdown', {
+      bubbles: true, cancelable: true, pointerId: ${pointerId}, pointerType: 'touch',
+    }));
+    return true;
+  `);
+}
+
+async function touchUp(session, intent, pointerId = 21) {
+  return session.execute(`
+    const el = document.querySelector('[data-intent="${intent}"]');
+    if (!el) return false;
+    el.dispatchEvent(new PointerEvent('pointerup', {
+      bubbles: true, cancelable: true, pointerId: ${pointerId}, pointerType: 'touch',
+    }));
+    return true;
+  `);
+}
+
+async function touchHold(session, intent, ms) {
+  await touchDown(session, intent);
+  await sleep(ms);
+  await touchUp(session, intent);
+  await sleep(200);
+}
+
+async function touchHoldUntil(session, intent, predicate, timeoutMs = 20000) {
+  await touchDown(session, intent);
+  const started = Date.now();
+  let matched = false;
+  while (Date.now() - started < timeoutMs) {
+    await sleep(100);
+    if (await session.execute(`return (${predicate});`)) {
+      matched = true;
+      break;
+    }
+  }
+  await touchUp(session, intent);
+  await sleep(250);
+  return matched;
+}
+
+/** One tap of the contextual touch action button. */
+async function tapTouchAction(session, pointerId = 30) {
+  await touchDown(session, 'action', pointerId);
+  await sleep(80);
+  await touchUp(session, 'action', pointerId);
+}
+
+/** Open the composer with the touch action, submit the fixture, close it. */
+async function touchClearRoom(session) {
+  await tapTouchAction(session);
+  const opened = await waitForExpr(
+    session,
+    `document.querySelector('#note-panel')?.hidden === false`,
+    5000,
+  );
+  if (!opened) throw new Error('The touch action did not open the note composer');
+  await session.execute(`
+    const text = document.querySelector('#note-text');
+    text.value = ${JSON.stringify(VALID_NOTE)};
+    document.querySelector('#note-confirmed').checked = true;
+    document.querySelector('#note-submit').click();
+    return true;
+  `);
+  const cleared = await waitForExpr(
+    session,
+    `document.querySelector('#note-outcome')?.hidden === false`,
+    8000,
+  );
+  if (!cleared) throw new Error('The touch note did not clear the room');
+  await session.synthDown('Escape', 'Escape');
+  await session.synthUp('Escape', 'Escape');
+  await sleep(450);
+}
+
+async function shellState(session) {
+  return session.execute(`
+    const title = document.querySelector('#title-panel');
+    const touch = document.querySelector('#touch-controls');
+    const imports = document.querySelector('#title-import-panel');
+    const error = document.querySelector('#title-error');
+    return {
+      titleVisible: title?.hidden === false && document.querySelector('#overlay')?.hidden === false,
+      overlayVisible: document.querySelector('#overlay')?.hidden === false,
+      status: document.querySelector('#title-status')?.innerText ?? '',
+      touchVisible: touch?.hidden === false,
+      touchLayout: document.documentElement.dataset.touchLayout ?? '',
+      touchPreference: document.documentElement.dataset.touchLayoutPreference ?? '',
+      actionLabel: document.querySelector('[data-intent="action"]')?.innerText ?? '',
+      importOpen: imports?.hidden === false,
+      importError: error?.hidden ? '' : (error?.innerText ?? ''),
+      viewport: { width: window.innerWidth, height: window.innerHeight },
+      panelOpen: document.querySelector('#progress-panel')?.hidden === false,
+      panelSheet: getComputedStyle(document.querySelector('#progress-panel')).borderTopLeftRadius,
+      focus: document.activeElement?.id ?? document.activeElement?.tagName ?? '',
+      overflow: getComputedStyle(document.body).overflow,
+    };
+  `);
+}
+
+/**
+ * Keyboard-only regression on the same build (P9-T7).
+ *
+ * Focus starts on Continue, Tab and Shift+Tab move inside the title, Enter
+ * starts the game, `d` walks with the real keyboard, and `j`/Escape open and
+ * close the journal. No pointer event is dispatched.
+ */
+async function captureKeyboardRegression() {
+  const session = await openSession(
+    options.reducedMotion ? { 'ui.prefersReducedMotion': 1 } : {},
+  );
+  try {
+    await session.setViewport(1280, 800, 1);
+    await wd('POST', session.session('/url'), { url: APP });
+    await sleep(2200);
+    await waitForExpr(session, `document.querySelector('#title-panel')?.hidden === false`, 15000);
+    const initialFocus = await session.execute(`return document.activeElement?.id ?? '';`);
+
+    await session.hold('\uE004', 40); // Tab
+    const afterTab = await session.execute(`return document.activeElement?.id ?? '';`);
+    await wd('POST', session.session('/actions'), {
+      actions: [
+        {
+          type: 'key',
+          id: 'keyboard',
+          actions: [
+            { type: 'keyDown', value: '\uE008' },
+            { type: 'keyDown', value: '\uE004' },
+            { type: 'keyUp', value: '\uE004' },
+            { type: 'keyUp', value: '\uE008' },
+          ],
+        },
+      ],
+    });
+    const afterShiftTab = await session.execute(`return document.activeElement?.id ?? '';`);
+
+    await session.hold('\uE007', 40); // Enter on Continue
+    const continued = await waitForExpr(
+      session,
+      `document.querySelector('#overlay')?.hidden === true`,
+      8000,
+    );
+    const focusAfterContinue = await session.execute(`return document.activeElement?.id ?? document.activeElement?.tagName ?? '';`);
+
+    await session.hold('d', 700);
+    await sleep(300);
+    const walked = await session.execute(
+      `return document.querySelector('#summary')?.innerText.includes('Village street') === true;`,
+    );
+
+    await session.hold('j', 40);
+    const journalOpened = await waitForExpr(
+      session,
+      `document.querySelector('#journal-panel')?.hidden === false`,
+      6000,
+    );
+    await session.hold('\uE00C', 40); // Escape
+    const journalClosed = await waitForExpr(
+      session,
+      `document.querySelector('#journal-panel')?.hidden === true`,
+      6000,
+    );
+
+    return {
+      initialFocus,
+      afterTab,
+      afterShiftTab,
+      continued: continued !== null,
+      focusAfterContinue,
+      walked,
+      journalOpened: journalOpened !== null,
+      journalClosed: journalClosed !== null,
+    };
+  } finally {
+    await session.close();
+  }
+}
+
+/**
+ * P9 shell: desktop title, mobile title, archetype choice, a rejected import,
+ * touch controls on the street, in a dungeon room, and at the pond, plus the
+ * responsive progress sheet. Movement and actions in the mobile segment use
+ * pointer events on the same buttons a player would tap.
+ */
+async function captureShell(prefix, frames) {
+  const keyboard = await captureKeyboardRegression();
+  const session = await openSession(
+    options.reducedMotion ? { 'ui.prefersReducedMotion': 1 } : {},
+  );
+  try {
+    await session.setViewport(1280, 800, 1);
+    await wd('POST', session.session('/url'), { url: APP });
+    await sleep(2200);
+    await waitForExpr(session, `document.querySelector('#title-panel')?.hidden === false`, 15000);
+
+    const desktop = await shellState(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-01-title-desktop.png`),
+      label: 'Title — desktop',
+      detail: `title=${desktop.titleVisible}; viewport=${desktop.viewport.width}×${desktop.viewport.height}; focus=${desktop.focus}; touch=${desktop.touchLayout}; no page scroll=${desktop.overflow === 'hidden'}; status="${desktop.status}"`,
+    });
+
+    // Fresh save: clear through the host's own reset, then reload.
+    await session.execute(`window.confirm = () => true; document.querySelector('#clear-save')?.click(); return true;`);
+    await sleep(1400);
+    await wd('POST', session.session('/refresh'), {});
+    await sleep(2400);
+    await waitForExpr(session, `document.querySelector('#title-panel')?.hidden === false`, 15000);
+    await session.setViewport(390, 844, 2);
+    await sleep(500);
+
+    const mobileTitle = await shellState(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-02-title-mobile.png`),
+      label: 'Title — phone viewport',
+      detail: `title=${mobileTitle.titleVisible}; viewport=${mobileTitle.viewport.width}×${mobileTitle.viewport.height}; no horizontal overflow=${await session.execute(`return document.documentElement.scrollWidth <= window.innerWidth;`)}; archetype buttons=${await session.execute(`return document.querySelectorAll('[data-archetype]').length;`)}; status="${mobileTitle.status}"`,
+    });
+
+    const archetypes = await session.execute(`
+      return [...document.querySelectorAll('[data-archetype]')].map((button) => ({
+        id: button.dataset.archetype,
+        text: button.innerText.replace(/\\n/g, ' / '),
+        pressed: button.getAttribute('aria-pressed'),
+      }));
+    `);
+    await session.execute(`document.querySelector('[data-archetype="scholar"]').click(); return true;`);
+    await sleep(700);
+    const chosen = await shellState(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-03-archetype.png`),
+      label: 'Archetype chosen',
+      detail: `offered=${archetypes.map((entry) => entry.id).join(',')}; chosen=scholar; engine status="${chosen.status}"; archetype panel hidden=${await session.execute(`return document.querySelector('#title-archetypes')?.hidden === true;`)}`,
+    });
+
+    // A hostile import is refused without touching the save.
+    const beforeImport = await stored(session);
+    await session.execute(`document.querySelector('#title-import-toggle').click(); return true;`);
+    await session.execute(`
+      const text = document.querySelector('#title-import-text');
+      text.value = '{"bundleVersion":2,"app":"knowledge-dungeon-side-scroller","state":{}}';
+      document.querySelector('#title-import-apply').click();
+      return true;
+    `);
+    await sleep(500);
+    const refused = await shellState(session);
+    const afterImport = await stored(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-04-import-error.png`),
+      label: 'Import refused',
+      detail: `panel=${refused.importOpen}; error="${refused.importError}"; save unchanged=${beforeImport.subjects === afterImport.subjects && beforeImport.xpTotal === afterImport.xpTotal}; title still usable=${refused.titleVisible}`,
+    });
+
+    // Touch layout on, then Continue with the same pointer layer a phone uses.
+    await session.execute(`
+      localStorage.setItem('knowledge-dungeon.host-settings.v1', JSON.stringify({
+        reducedMotion: 'system', assistanceMode: 'gentle', textScale: 'normal', touchLayout: 'on',
+      }));
+      return true;
+    `);
+    await wd('POST', session.session('/refresh'), {});
+    await sleep(2400);
+    await waitForExpr(session, `document.querySelector('#title-panel')?.hidden === false`, 15000);
+    await session.execute(`document.querySelector('#title-continue').click(); return true;`);
+    await sleep(1200);
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Village street') === true`, 12000);
+
+    const street = await shellState(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-05-touch-street.png`),
+      label: 'Touch controls on the street',
+      detail: `touch=${street.touchVisible}; layout=${street.touchLayout} (${street.touchPreference}); action="${street.actionLabel}"; viewport=${street.viewport.width}×${street.viewport.height}; no page scroll=${street.overflow === 'hidden'}`,
+    });
+
+    // Orientation change: the canvas resizes and the engine state is untouched.
+    const worldBeforeRotate = await stored(session);
+    await session.setViewport(844, 390, 2);
+    await sleep(500);
+    const landscape = await shellState(session);
+    const worldAfterRotate = await stored(session);
+    await session.setViewport(390, 844, 2);
+    await sleep(500);
+    const orientation = {
+      landscape: `${landscape.viewport.width}×${landscape.viewport.height}`,
+      portrait: `${(await shellState(session)).viewport.width}×${(await shellState(session)).viewport.height}`,
+      worldKept: worldAfterRotate.world === worldBeforeRotate.world,
+      touchKept: landscape.touchVisible,
+    };
+
+    // The progress panel is a sheet over the world on this width.
+    await session.execute(`document.querySelector('#toggle-panel').click(); return true;`);
+    await sleep(400);
+    const sheet = await shellState(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-06-responsive-hud.png`),
+      label: 'Responsive progress sheet',
+      detail: `open=${sheet.panelOpen}; sheet radius=${sheet.panelSheet}; summary="${(await panel(session)).summary.split('\\n').slice(0, 6).join(' / ')}"; touch still visible=${sheet.touchVisible}`,
+    });
+    await session.execute(`document.querySelector('#toggle-panel').click(); return true;`);
+    await sleep(300);
+
+    // Walk right to the Training Grounds with the touch pad, then tap action.
+    const reached = await touchHoldUntil(
+      session,
+      'right',
+      `document.querySelector('#summary')?.innerText.includes('Training Grounds') === true`,
+      20000,
+    );
+    if (!reached) throw new Error('Touch movement did not reach the Training Grounds');
+    await session.execute(`document.querySelector('[data-intent="action"]').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerId: 22, pointerType: 'touch' })); return true;`);
+    await sleep(120);
+    await session.execute(`document.querySelector('[data-intent="action"]').dispatchEvent(new PointerEvent('pointerup', { bubbles: true, cancelable: true, pointerId: 22, pointerType: 'touch' })); return true;`);
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Subject') === true`, 12000);
+    await sleep(800);
+
+    const dungeon = await shellState(session);
+    const currentRoom = await session.execute(`
+      const term = [...document.querySelectorAll('#summary dt')].find((node) => node.innerText === 'Current room');
+      return term?.nextElementSibling?.innerText ?? 'unknown';
+    `);
+    frames.push({
+      file: await session.screenshot(`${prefix}-07-touch-dungeon.png`),
+      label: 'Touch controls in the dungeon',
+      detail: `touch=${dungeon.touchVisible}; action="${dungeon.actionLabel}"; current room="${currentRoom}"; buttons=${await session.execute(`return document.querySelectorAll('#touch-controls [data-intent]').length;`)}; min target=${await session.execute(`return Math.min(...[...document.querySelectorAll('#touch-controls button')].map((b) => b.getBoundingClientRect().width));`)}px`,
+    });
+
+    // Clear the room with the same note form a tap opens.
+    await session.execute(`document.querySelector('[data-intent="action"]').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerId: 23, pointerType: 'touch' })); return true;`);
+    await session.execute(`document.querySelector('[data-intent="action"]').dispatchEvent(new PointerEvent('pointerup', { bubbles: true, cancelable: true, pointerId: 23, pointerType: 'touch' })); return true;`);
+    await waitForExpr(session, `document.querySelector('#note-panel')?.hidden === false`, 4000);
+    await session.execute(`
+      const text = document.querySelector('#note-text');
+      text.value = ${JSON.stringify(VALID_NOTE)};
+      document.querySelector('#note-confirmed').checked = true;
+      document.querySelector('#note-submit').click();
+      return true;
+    `);
+    await waitForExpr(session, `document.querySelector('#note-outcome')?.hidden === false`, 8000);
+    await session.synthDown('Escape', 'Escape');
+    await session.synthUp('Escape', 'Escape');
+    await sleep(400);
+    const cleared = await stored(session);
+
+    // Touch-only journal and review entry from the progress sheet.
+    await session.execute(`document.querySelector('#toggle-panel').click(); return true;`);
+    await sleep(350);
+    await session.execute(`document.querySelector('#open-journal').click(); return true;`);
+    const touchJournal = await waitForExpr(
+      session,
+      `document.querySelector('#journal-panel')?.hidden === false`,
+      6000,
+    );
+    frames.push({
+      file: await session.screenshot(`${prefix}-07b-touch-journal.png`),
+      label: 'Touch-only journal entry',
+      detail: `opened=${touchJournal}ms via Progress → Journal; focus=${await session.execute(`return document.activeElement?.id ?? '';`)}; title hidden=${await session.execute(`return document.querySelector('#overlay')?.hidden === true;`)}`,
+    });
+    await session.execute(`document.querySelector('#journal-close').click(); return true;`);
+    await sleep(400);
+    // Close the sheet before walking, then clear the other two rooms with the
+    // touch pad and action button.
+    await session.execute(`document.querySelector('#toggle-panel').click(); return true;`);
+    await sleep(300);
+
+    let toolsReached = false;
+    for (let attempt = 0; attempt < 3 && !toolsReached; attempt += 1) {
+      if (attempt === 0) await touchHold(session, 'right', 650);
+      else await touchHold(session, attempt % 2 === 1 ? 'left' : 'right', 400);
+      toolsReached = await touchHoldUntil(
+        session,
+        'down',
+        `document.querySelector('#summary')?.innerText.includes('Tools of the Trade') === true`,
+        9000,
+      );
+    }
+    if (!toolsReached) throw new Error('Touch controls did not descend to the lower room');
+    await touchClearRoom(session);
+
+    let mapReached = false;
+    for (let attempt = 0; attempt < 3 && !mapReached; attempt += 1) {
+      if (attempt > 0) await touchHold(session, attempt === 1 ? 'left' : 'right', 400);
+      mapReached = await touchHoldUntil(
+        session,
+        'up',
+        `document.querySelector('#summary')?.innerText.includes('The Map & Beyond') === true`,
+        20000,
+      );
+    }
+    if (!mapReached) throw new Error('Touch controls did not climb to the upper room');
+    await touchClearRoom(session);
+    const allCleared = await stored(session);
+
+    await session.execute(`document.querySelector('#toggle-panel').click(); return true;`);
+    await sleep(350);
+    await session.execute(`document.querySelector('#open-review').click(); return true;`);
+    const touchReview = await waitForExpr(
+      session,
+      `document.querySelector('#review-panel')?.hidden === false`,
+      6000,
+    );
+    if (!touchReview) throw new Error('The progress-panel Review button did not open a review');
+    frames.push({
+      file: await session.screenshot(`${prefix}-07c-touch-review.png`),
+      label: 'Touch-only review entry',
+      detail: `opened=${touchReview}ms via Progress → Review after three touch clears; cleared=${allCleared.cleared}; room="${await session.execute(`return document.querySelector('#review-panel-title')?.innerText ?? '';`)}"`,
+    });
+    await session.execute(`document.querySelector('#review-close').click(); return true;`);
+    await sleep(400);
+    await session.execute(`document.querySelector('#toggle-panel').click(); return true;`);
+    await sleep(300);
+
+    // ── Portable save: inject one attachment, export, clear, import ───────
+    await session.executeAsync(`
+      const done = arguments[arguments.length - 1];
+      const request = indexedDB.open('knowledge-dungeon-side-scroller');
+      request.onerror = () => done({ error: String(request.error) });
+      request.onsuccess = () => {
+        const database = request.result;
+        const transaction = database.transaction('engine-state', 'readwrite');
+        const store = transaction.objectStore('engine-state');
+        const get = store.get('state');
+        get.onsuccess = () => {
+          const state = get.result;
+          state.attachmentBytes['p9-evidence.txt'] = new TextEncoder().encode(
+            'P9 attachment bytes survive a JSON export and import.',
+          );
+          store.put(state, 'state');
+        };
+        transaction.oncomplete = () => done({ ok: true });
+        transaction.onerror = () => done({ error: String(transaction.error) });
+      };
+    `);
+    await wd('POST', session.session('/refresh'), {});
+    await sleep(2600);
+    await waitForExpr(session, `document.querySelector('#title-panel')?.hidden === false`, 15000);
+    await session.execute(`document.querySelector('#title-continue').click(); return true;`);
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Subject') === true`, 12000);
+    await sleep(500);
+
+    await session.execute(`
+      window.__p9Export = null;
+      const realCreate = URL.createObjectURL;
+      URL.createObjectURL = (blob) => {
+        const url = realCreate.call(URL, blob);
+        blob.text().then((text) => { window.__p9Export = text; });
+        return url;
+      };
+      const realClick = HTMLAnchorElement.prototype.click;
+      HTMLAnchorElement.prototype.click = function () {
+        if (this.download) return;
+        return realClick.call(this);
+      };
+      document.querySelector('#export-save').click();
+      return true;
+    `);
+    await waitForExpr(
+      session,
+      `typeof window.__p9Export === 'string' && window.__p9Export.length > 100`,
+      8000,
+    );
+    const exported = JSON.parse(await session.execute(`return window.__p9Export;`));
+    const beforeExport = await stored(session);
+    if (exported.bundleVersion !== 1 || exported.app !== 'knowledge-dungeon-side-scroller') {
+      throw new Error('Export did not produce a P9 bundle');
+    }
+    const exportedAttachment = exported.state.attachmentBytes['p9-evidence.txt'];
+
+    // Clear the save through the host reset, then import the captured bundle.
+    await session.execute(`window.confirm = () => true; document.querySelector('#clear-save').click(); return true;`);
+    await sleep(1400);
+    await wd('POST', session.session('/refresh'), {});
+    await sleep(2400);
+    await waitForExpr(session, `document.querySelector('#title-panel')?.hidden === false`, 15000);
+    const emptied = await stored(session);
+
+    await session.execute(`
+      document.querySelector('#title-import-toggle').click();
+      const text = document.querySelector('#title-import-text');
+      text.value = ${JSON.stringify(JSON.stringify(exported))};
+      document.querySelector('#title-import-apply').click();
+      return true;
+    `);
+    await sleep(1400);
+    await waitForExpr(session, `document.querySelector('#title-panel')?.hidden === false`, 15000);
+    await session.execute(`document.querySelector('#title-continue').click(); return true;`);
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Subject') === true`, 15000);
+    await sleep(500);
+    const restored = await stored(session);
+    if (
+      restored.cleared !== beforeExport.cleared ||
+      restored.xpTotal !== beforeExport.xpTotal ||
+      !restored.attachmentKeys.includes('p9-evidence.txt')
+    ) {
+      throw new Error(
+        `Import round trip lost state: before=${JSON.stringify(beforeExport)} after=${JSON.stringify(restored)}`,
+      );
+    }
+    frames.push({
+      file: await session.screenshot(`${prefix}-08-import-roundtrip.png`),
+      label: 'Export → clear → import',
+      detail: `bundle v${exported.bundleVersion}/${exported.app}; attachment base64=${typeof exportedAttachment === 'string' && exportedAttachment.length > 0}; cleared ${beforeExport.cleared}→${restored.cleared}; XP ${beforeExport.xpTotal}→${restored.xpTotal}; attachment bytes=${restored.attachmentSizes['p9-evidence.txt']}; emptied save had cleared=${emptied.cleared}, XP=${emptied.xpTotal}`,
+    });
+
+    // Climb the shaft with the touch pad and walk to the pond.
+    await touchHold(session, 'right', 340);
+    const climbed = await touchHoldUntil(
+      session,
+      'up',
+      `document.querySelector('#summary')?.innerText.includes('Village street') === true`,
+      25000,
+    );
+    if (!climbed) throw new Error('Touch climb did not return to the street');
+    const pondReached = await touchHoldUntil(
+      session,
+      'left',
+      `document.querySelector('#summary')?.innerText.includes('Fishing Pond') === true`,
+      25000,
+    );
+    if (!pondReached) throw new Error('Touch walk did not reach the pond');
+    await session.execute(`document.querySelector('[data-intent="action"]').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerId: 24, pointerType: 'touch' })); return true;`);
+    await session.execute(`document.querySelector('[data-intent="action"]').dispatchEvent(new PointerEvent('pointerup', { bubbles: true, cancelable: true, pointerId: 24, pointerType: 'touch' })); return true;`);
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Fishing pond') === true`, 12000);
+    await sleep(600);
+
+    const pond = await shellState(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-09-touch-pond.png`),
+      label: 'Touch controls at the pond',
+      detail: `touch=${pond.touchVisible}; action="${pond.actionLabel}"; cleared rooms=${allCleared.cleared}; world=${(await stored(session)).world}; phase hint="${(await panel(session)).status}"`,
+    });
+
+    // Hold the action button to charge, release to cast.
+    await touchDown(session, 'action', 25);
+    await sleep(650);
+    const charging = await shellState(session);
+    await touchUp(session, 'action', 25);
+    await waitForExpr(session, `document.querySelector('#status')?.innerText.includes('Waiting for a bite') === true`, 6000);
+    frames.push({
+      file: await session.screenshot(`${prefix}-10-touch-cast.png`),
+      label: 'Touch cast charged and released',
+      detail: `charging label="${charging.actionLabel}"; after release="${(await shellState(session)).actionLabel}"; status="${(await panel(session)).status}"`,
+    });
+
+    // Touch-only keep: wait for the bite, tap the action to hook, tap the recall
+    // answer. The collection must grow.
+    const biteMs = await waitForExpr(
+      session,
+      `document.querySelector('#status')?.innerText.includes('Bite!') === true`,
+      25000,
+    );
+    if (!biteMs) throw new Error('No bite arrived for the touch keep check');
+    await tapTouchAction(session, 31);
+    const recallMs = await waitForExpr(
+      session,
+      `document.querySelector('#fishing-panel')?.hidden === false`,
+      8000,
+    );
+    if (!recallMs) throw new Error('The touch hook did not open the recall dialog');
+    const fishBefore = (await stored(session)).fish;
+    await session.execute(`document.querySelector('#fishing-answered-correct').click(); return true;`);
+    const keptMs = await waitForExpr(
+      session,
+      `document.querySelector('#fishing-panel')?.hidden === true`,
+      10000,
+    );
+    await sleep(500);
+    const kept = await stored(session);
+    if (kept.fish !== fishBefore + 1) {
+      throw new Error(`Touch keep did not add a fish: ${fishBefore} → ${kept.fish}`);
+    }
+    frames.push({
+      file: await session.screenshot(`${prefix}-10b-touch-kept.png`),
+      label: 'Touch-only catch kept',
+      detail: `bite=${biteMs}ms; recall=${recallMs}ms; kept=${keptMs !== null}; fish ${fishBefore}→${kept.fish}; xp=${kept.xpTotal}; action label now="${(await shellState(session)).actionLabel}"`,
+    });
+
+    const reduced = await session.execute(`return matchMedia('(prefers-reduced-motion: reduce)').matches;`);
+    return {
+      keyboard,
+      desktop,
+      mobileTitle,
+      refused,
+      street,
+      orientation,
+      sheet,
+      dungeon,
+      pond,
+      reducedMotion: reduced,
+      touchOnly: {
+        reached,
+        climbed,
+        pondReached,
+        clearedRooms: allCleared.cleared,
+        reviewOpened: touchReview,
+        attachmentBytes: restored.attachmentSizes['p9-evidence.txt'],
+        fishKept: kept.fish,
+        world: (await stored(session)).world,
+      },
+    };
+  } finally {
+    await session.close();
+  }
+}
+
 async function main() {
   await mkdir(OUT, { recursive: true });
   const frames = [];
+
+  if (options.shell) {
+    const run = await captureShell(options.prefix, frames);
+    const manifest = {
+      capturedAt: new Date().toISOString(),
+      app: APP,
+      viewport: '1280×800 desktop title, then 390×844 portrait for the touch run',
+      prefix: options.prefix,
+      shell: true,
+      reducedMotion: options.reducedMotion,
+      result: run,
+      frames,
+    };
+    await writeFile(resolve(OUT, `${options.prefix}-manifest.json`), JSON.stringify(manifest, null, 2));
+    console.log(JSON.stringify(manifest, null, 2));
+    const date = new Date().toISOString().slice(0, 10);
+    console.log('\nMarkdown rows:\n');
+    for (const frame of frames) {
+      console.log(`| ${date} | ${frame.label} | \`${frame.file}\` | ${frame.detail} |`);
+    }
+    return;
+  }
 
   if (options.openings) {
     const run = await captureOpenings(options.prefix, frames);

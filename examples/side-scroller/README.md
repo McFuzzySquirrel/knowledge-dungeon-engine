@@ -11,7 +11,7 @@ documented root entries) leaves the engine exactly as it was. The full rule set 
 
 | Field | Value |
 | --- | --- |
-| Status | P0–P8 complete; P9–P10 planned |
+| Status | P0–P9 complete; P10 next |
 | Stack | Vanilla TypeScript + Vite + Canvas 2D |
 | Storage | IndexedDB, one `EngineState` record |
 | Package | Private, standalone (`package.json`, lockfile, `tsconfig`, Vitest config) |
@@ -26,10 +26,17 @@ npm --prefix examples/side-scroller install
 npm --prefix examples/side-scroller run dev
 ```
 
-Open the printed Vite URL (default `http://localhost:5174/`). The first run starts on
-the village street; **Start tutorial** or the Training Grounds door creates the tutorial
-subject. State persists in the `knowledge-dungeon-side-scroller` IndexedDB database —
-use **Clear saved state** in the side panel to start over.
+Open the printed Vite URL (default `http://localhost:5174/`). The first run opens a title
+card: **Continue** enters the world, **New game** clears the save after confirmation and
+seeds the three demo subjects, **Start tutorial** jumps straight to the tutorial dungeon,
+**Import save** accepts an exported bundle, and **Settings** opens the journal's settings
+section. State persists in the `knowledge-dungeon-side-scroller` IndexedDB database — use
+**Clear saved state** in the progress panel, or **New game** on the title, to start over.
+
+The canvas fills the viewport. On a narrow screen the progress panel becomes a bottom
+sheet behind the **Progress** button; on a coarse pointer the touch pad, Jump, and the
+contextual action button appear over the world. Current mobile Safari/Chrome are the
+supported phone browsers (see the P9 evidence for the tested Firefox emulation).
 
 ```sh
 npm --prefix examples/side-scroller test
@@ -59,10 +66,15 @@ discover `examples/**` (the root Vitest config excludes it).
 | Fishing | Pond entry after a clear, cast/bite/reel, recall question from a cleared room, keep/release |
 | Creator | Subject list, create form, room-tree editor (add, reparent, remove with cascade count, tags, cross-links), typed refusals; `C` or the Guild Hall opens it |
 | Demo campaign | Three synthetic subjects seed on a first boot and appear as ordinary portals; a first-run flag prevents resurrection after deletion |
+| Title | Continue/New game/archetype choice, a tutorial shortcut, and import/export/settings; a fresh save offers the engine's three archetypes and shows the resulting quest step |
+| Save bundle | `.json` export with every attachment base64-encoded; import validates version/app/state shape and every payload, writes only after a complete decode, and reloads; settings are not included |
+| Layout | Full-viewport canvas, progress overlay/sheet, safe-area insets, 44 px touch targets, no page scroll while playing, orientation resize, large-text and reduced-motion support |
+| Touch | Left/right/up/down, Jump, and one contextual action button; pointer events with cancel/blur cleanup; the same intent state and fishing machine as the keyboard |
 | Persistence | Reload keeps rooms, XP, fish, equipment, review schedule, and any saved review marker |
 
-P9–P10 add title/new/continue, save portability, touch controls, and local polish.
-Placeholder rectangles and silence are deliberate: this example ships no art or audio.
+P10 is the local ship pass: polish, performance, accessibility, docs, and a repeatable
+local gate. Placeholder rectangles and silence are deliberate: this example ships no art
+or audio.
 
 ## Controls
 
@@ -78,12 +90,15 @@ Placeholder rectangles and silence are deliberate: this example ships no art or 
 | `?` | Open the controls popup; `?` or `Escape` closes |
 | `0`–`5`, `Enter`, `S`, `D`, `Escape` | In review: rate, submit, save for later, discard, close |
 | `Escape` | Close a dialog, a service, the journal, leave a pond, or close a review |
+| Title `Tab`/`Shift+Tab`/`Enter` | Move inside the title card and activate the focused action |
+| Touch pad | Walk left/right, climb up/down; **Jump**; the action button shows Enter/Note/Fish/Cast/Release/Reel/Keep |
+| Touch in the pond | Hold the action button to charge, release to cast, tap to hook or open the catch |
 
-The full key map is in a focus-trapped **Controls (?)** popup in the side panel, also
-reachable with `?`; a short hint stays below the canvas. Everything on the critical path
-is keyboard-only. The canvas is focusable and the DOM
-side panel mirrors progress and outcomes as text; learner notes and prompts are treated
-as text nodes and never logged.
+The full key map is in a focus-trapped **Controls (?)** popup in the progress panel, also
+reachable with `?`. Everything on the critical path is keyboard-only, and the title is a
+real focus-trapped DOM card. The canvas is focusable, a permanent live region announces
+outcomes even when the progress panel is collapsed, and the DOM panel mirrors progress as
+text; learner notes and prompts are treated as text nodes and never logged.
 
 ## How it is put together
 
@@ -92,6 +107,9 @@ index.html                  canvas + DOM overlay roots
 src/main.ts                 boot, routing, input, frame loop, command dispatch
 src/engine.ts               one engine, one subscription, cached state
 src/storage.ts              IndexedDB EngineStorage adapter
+src/saveBundle.ts           portable JSON bundle codec (base64 attachments) (P9)
+src/touchControls.ts        one intent state + touch overlay (P9)
+src/ui/titlePanel.ts        title/continue/archetype/import card (P9)
 src/level/                  DungeonMap / VillageMapDef -> side-view LevelModel
 src/physics.ts              fixed-step gravity, ladders, AABB movement
 src/render/                 Canvas world and DOM HUD
@@ -129,8 +147,9 @@ node examples/side-scroller/scripts/capture-dungeon.mjs \
 ```
 
 Modes: default dungeon, `--note-loop`, `--surface`, `--fishing`, `--review`,
-`--creator`, `--services`, `--journal`, `--help`, `--openings`; add `--low-fps` or
-`--reduced-motion` for the environment variants.
+`--creator`, `--services`, `--journal`, `--help`, `--openings`, `--mobile`/`--shell`;
+add `--low-fps` or `--reduced-motion` for the environment variants. `--mobile` uses
+WebDriver BiDi viewport emulation for an exact 390×844 CSS viewport at DPR 2.
 
 ## Deleting the example
 

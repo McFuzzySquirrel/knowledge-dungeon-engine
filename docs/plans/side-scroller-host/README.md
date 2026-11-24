@@ -2,8 +2,8 @@
 
 | Field | Value |
 |---|---|
-| Plan version | 2.8 |
-| Status | In progress — P0–P8 done; P9 next (P9–P10 planned) |
+| Plan version | 2.9 |
+| Status | In progress — P0–P9 done; P10 next |
 | Created | 2026-11-23 |
 | Owner | Unassigned |
 | Phase documents | [P0](phase-0-scaffold.md) · [P1](phase-1-dungeon-level.md) · [P2](phase-2-note-loop.md) · [P3](phase-3-surface-village.md) · [P4](phase-4-fishing.md) · [P5](phase-5-review.md) · [P6](phase-6-creator.md) · [P7](phase-7-village.md) · [P8](phase-8-journal.md) · [P9](phase-9-shell-mobile.md) · [P10](phase-10-polish.md) |
@@ -54,9 +54,10 @@ P6 added the Creator, three synthetic demo subjects, and a room-tree editor. P7 
 every labelled building as a service: the Library review desk and archive, the Guild Hall
 quest board and roster, the Trophy Hall and its records, the Workshop's equipment, the
 display-only Fish Stand, and readable villagers. P8 added the journal, statistics,
-assistance, and host-local settings. P9–P10 complete the example as a game: title, save
-portability, touch controls, and a local ship pass. They remain strictly additive to the
-engine; every boundary decision is in [ENGINE-BOUNDARY.md](ENGINE-BOUNDARY.md).
+assistance, and host-local settings. P9 added the game shell — title/continue, archetype
+choice, portable save export/import, touch controls, and a full-viewport responsive
+layout. P10 is the local ship pass. Every phase remains strictly additive to the engine;
+every boundary decision is in [ENGINE-BOUNDARY.md](ENGINE-BOUNDARY.md).
 
 ## 2. Confirmed decisions
 
@@ -512,10 +513,10 @@ Rules:
 | P6 | Done — G6 passed | G6 passed 2026-11-24 | [phase-6 evidence](phase-6-creator.md#execution-evidence) |
 | P7 | Done — G7 passed | G7 passed 2026-11-24 | [phase-7 evidence](phase-7-village.md#execution-evidence) |
 | P8 | Done — G8 passed | G8 passed 2026-11-24 | [phase-8 evidence](phase-8-journal.md#execution-evidence) |
-| P9 | Not started | G9 pending | — |
+| P9 | Done — G9 passed | G9 passed 2026-11-24 | [phase-9 evidence](phase-9-shell-mobile.md#execution-evidence) |
 | P10 | Not started | G10 pending | — |
 
-Visual record: [VISUALS.md](VISUALS.md) — P1/G1, P2/G2, P3/G3 frames captured 2026-11-23; P3 layout follow-up 2026-11-24; P3 polish frames 2026-11-24; P4/G4 pond loop frames 2026-11-24 and the interaction-feedback follow-up (`g4b`); P5/G5 review frames 2026-11-24 in a normal and a reduced-motion run (`g5`, `g5rm`), plus the shared-player follow-up (`g5player`); P6/G6 Creator frames 2026-11-24 in a normal run with a keyboard-only segment (`g6`) and a reduced-motion run (`g6rm`); P7/G7 service frames 2026-11-24 in a normal and a reduced-motion run (`g7`, `g7rm`); P8/G8 journal and settings frames 2026-11-24 in a normal and a reduced-motion run (`g8`, `g8rm`). P9–P10 append their own `visuals/pN/` folders as they ship.
+Visual record: [VISUALS.md](VISUALS.md) — P1/G1, P2/G2, P3/G3 frames captured 2026-11-23; P3 layout follow-up 2026-11-24; P3 polish frames 2026-11-24; P4/G4 pond loop frames 2026-11-24 and the interaction-feedback follow-up (`g4b`); P5/G5 review frames 2026-11-24 in a normal and a reduced-motion run (`g5`, `g5rm`), plus the shared-player follow-up (`g5player`); P6/G6 Creator frames 2026-11-24 in a normal run with a keyboard-only segment (`g6`) and a reduced-motion run (`g6rm`); P7/G7 service frames 2026-11-24 in a normal and a reduced-motion run (`g7`, `g7rm`); P8/G8 journal and settings frames 2026-11-24 in a normal and a reduced-motion run (`g8`, `g8rm`). P9/G9 shell frames 2026-11-24 in a normal and a reduced-motion run (`g9`, `g9rm`): desktop and 390×844 title, archetype, rejected import, touch street/dungeon/pond, the responsive sheet, and an export → clear → import round trip. P10 appends its own `visuals/p10/` folder.
 
 ## 15. Assumptions
 
@@ -555,3 +556,4 @@ phase relies on a changed answer.
 | 2026-11-24 | 2.6 | Post-P8 controls polish: the long key paragraph moved into a focus-trapped **Controls (?)** popup opened from a top-of-panel button or `?`, with focus return and a short on-page hint; one new test file (32 / 201), `--help` capture mode and three `g8b` frames; no engine change |
 | 2026-11-24 | 2.7 | Room-opening polish: `LevelModel` carries engine door tiles and the chamber outline is cut at each doorway, with a threshold mark; level test proves every door maps to the room perimeter (32 / 202), `--openings` capture mode and two `g8c` frames; no engine change |
 | 2026-11-24 | 2.8 | Shell direction accepted after P8: P9 will make the canvas the viewport with the title, HUD, journal, services, help, and touch controls inside the world; P9-T5 now specifies a full-viewport layout instead of a 16:9 card |
+| 2026-11-24 | 2.9 | P9 executed and G9 passed; title/new/continue/archetype, portable save bundle with base64 attachments and validated import, one-intent touch layer, full-viewport responsive shell with a progress sheet, keyboard and reduced-motion re-runs, three new example suites (35 / 228), `--mobile` capture mode and `g9`/`g9rm` frames; engine count unchanged and no `src/` diff |

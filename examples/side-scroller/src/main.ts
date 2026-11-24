@@ -63,6 +63,16 @@ import { createHud } from './render/hud';
 import { createCamera, prepareCanvas, renderWorld, updateCamera } from './render/canvas';
 import { projectRoute, type Screen } from './routing';
 import { createIndexedDbStorage } from './storage';
+import { encodeSaveBundle, importSaveBundle } from './saveBundle';
+import { mountTitlePanel, projectTitle, type TitlePanel } from './ui/titlePanel';
+import {
+  createIntentState,
+  createTouchControls,
+  intentForKeyCode,
+  shouldShowTouchControls,
+  type TouchControls,
+  type TouchIntent,
+} from './touchControls';
 import { mountNotePanel, type NotePanel } from './ui/notePanel';
 import {
   interactionFailedMessage,
@@ -120,9 +130,16 @@ function describe(error: unknown): string {
 const canvas = must<HTMLCanvasElement>('#game');
 const overlay = must<HTMLDivElement>('#overlay');
 const overlayText = must<HTMLParagraphElement>('#overlay-text');
-const startButton = must<HTMLButtonElement>('#start-tutorial');
+const titlePanelHost = must<HTMLElement>('#title-panel');
+const progressPanel = must<HTMLElement>('#progress-panel');
+const togglePanelButton = must<HTMLButtonElement>('#toggle-panel');
+const touchHost = must<HTMLElement>('#touch-controls');
+const liveHost = must<HTMLElement>('#live');
 const clearButton = must<HTMLButtonElement>('#clear-save');
-const panelTitle = must<HTMLHeadingElement>('#panel-title');
+const exportButton = must<HTMLButtonElement>('#export-save');
+const journalButton = must<HTMLButtonElement>('#open-journal');
+const reviewButton = must<HTMLButtonElement>('#open-review');
+const creatorButton = must<HTMLButtonElement>('#open-creator');
 const promptHost = must<HTMLDivElement>('#prompt');
 const notePanelHost = must<HTMLElement>('#note-panel');
 const fishingPanelHost = must<HTMLElement>('#fishing-panel');
@@ -145,7 +162,14 @@ const hud = createHud({
   roomsTitle: must<HTMLElement>('#rooms-title'),
   status: must<HTMLElement>('#status'),
   error: must<HTMLElement>('#error'),
+  live: liveHost,
 });
+
+/** P9: the touch overlay; created before the first projection so labels can sync. */
+let touchControls: TouchControls | null = null;
+/** The title owns the screen and pauses the world until Continue. */
+let titleActive = true;
+let titlePanel: TitlePanel | null = null;
 setErrorReporter((message) => {
   hud.showError(message);
   showToast(message, 'error');
@@ -153,6 +177,16 @@ setErrorReporter((message) => {
 setNoticeReporter((message) => hud.announce(message));
 
 const prompts = createPrompts(promptHost, (message) => hud.announce(message));
+
+/** P9: the touch layer feeds the same intents the keyboard does. */
+touchControls = createTouchControls(touchHost, {
+  press: (intent) => touchPress(intent),
+  release: (intent) => touchRelease(intent),
+});
+touchControls.setVisible(false);
+
+const coarsePointer = window.matchMedia('(pointer: coarse)');
+coarsePointer.addEventListener?.('change', () => syncTouchVisibility());
 
 /** P8: host-local preferences, never part of `EngineState`. */
 let hostSettings: HostSettings = loadSettings();
@@ -185,11 +219,11 @@ let activeRoomId: string | null = null;
 let activeInteractable: SurfaceInteractable | null = null;
 let levelKey = '';
 let surfaceKey = '';
-let jumpQueued = false;
 let interactionPending = false;
 let returnPending = false;
 let fishingRecoveryPending = false;
-const held = new Set<string>();
+/** One input state for the keyboard and the touch overlay (P9). */
+const intents = createIntentState();
 
 /** The subject the host last entered; the pond's fallback when the engine has none. */
 let lastStudiedSubjectId: string | null = null;
@@ -351,11 +385,52 @@ function surfaceGeometryKey(structures: village.VillageStructure[]): string {
   );
 }
 
-function showOverlay(text: string, showStart: boolean): void {
+/** The pre-engine loading/error card; the title replaces it once the engine opens. */
+function showOverlay(text: string): void {
+  document.body.dataset.title = 'true';
+  titlePanelHost.hidden = true;
+  overlayText.hidden = false;
   overlayText.textContent = text;
-  startButton.hidden = !showStart;
   overlay.hidden = false;
 }
+
+function setPanelOpen(open: boolean): void {
+  progressPanel.hidden = !open;
+  togglePanelButton.setAttribute('aria-expanded', String(open));
+  togglePanelButton.textContent = open ? 'Hide progress' : 'Progress';
+}
+
+/** `auto` follows a coarse pointer; the setting can force it on or off (P8/P9). */
+function syncTouchVisibility(): void {
+  if (!touchControls) return;
+  const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
+  touchControls.setVisible(!titleActive && shouldShowTouchControls(hostSettings, coarsePointer));
+}
+
+/** Show the title and pause the world. Continue is the only exit. */
+function showTitle(): void {
+  if (!engine) return;
+  titleActive = true;
+  document.body.dataset.title = 'true';
+  overlayText.hidden = true;
+  titlePanelHost.hidden = false;
+  overlay.hidden = false;
+  titlePanel?.update(projectTitle(getState()));
+  intents.clear();
+  syncPrompt();
+  syncTouchVisibility();
+  titlePanel?.focusPrimary();
+}
+
+function hideTitle(): void {
+  titleActive = false;
+  document.body.dataset.title = 'false';
+  overlay.hidden = true;
+  syncPrompt();
+  syncTouchVisibility();
+  focusCanvas();
+}
+
 
 function showRecovery(message: string): void {
   recoveryText.textContent = message;
@@ -408,11 +483,11 @@ function resetDungeonLevel(): void {
   prompts.hide();
 }
 
-function syncPrompt(): void {
+function syncPromptInternal(): void {
   openHelpButton.disabled = Boolean(
-    composer || reviewPanel || creatorPanel || servicePanel || journalPanel || helpPanel,
+    titleActive || composer || reviewPanel || creatorPanel || servicePanel || journalPanel || helpPanel,
   );
-  if (composer || reviewPanel || creatorPanel || servicePanel || journalPanel || helpPanel) {
+  if (titleActive || composer || reviewPanel || creatorPanel || servicePanel || journalPanel || helpPanel) {
     prompts.setRoom(null, true);
     prompts.setTarget(null, true);
     return;
@@ -439,6 +514,12 @@ function syncPrompt(): void {
     return;
   }
   prompts.hide();
+}
+
+/** Every prompt change also refreshes the touch action label. */
+function syncPrompt(): void {
+  syncPromptInternal();
+  syncTouchActionLabel();
 }
 
 function interactionVerb(type: string): string {
@@ -487,8 +568,14 @@ function teardownFishing(): void {
 }
 
 function refreshFishingHud(force = false): void {
-  if (!fishing) return;
-  if (!force && fishing.lastHudPhase === fishing.machine.phase) return;
+  if (!fishing) {
+    syncTouchActionLabel();
+    return;
+  }
+  if (!force && fishing.lastHudPhase === fishing.machine.phase) {
+    syncTouchActionLabel();
+    return;
+  }
   fishing.lastHudPhase = fishing.machine.phase;
   hud.updateFishing(
     projectFishing(getState()),
@@ -496,6 +583,7 @@ function refreshFishingHud(force = false): void {
     fishingControlHint(fishing.machine.phase),
   );
   leaveFishingButton.disabled = fishing.pending;
+  syncTouchActionLabel();
 }
 
 interface SessionBeginValue {
@@ -865,9 +953,6 @@ function enterFishing(state: EngineState): void {
   hideToast();
   setCanvasMode('fishing');
   leaveFishingButton.hidden = false;
-  const overlayWasVisible = overlay.hidden === false;
-  overlay.hidden = true;
-  if (overlayWasVisible) panelTitle.focus({ preventScroll: true });
   if (previous !== 'fishing') {
     hud.announce(
       `Fishing at ${pondLabelFor(context.pondId)} in ${context.subjectName}. Hold Space to charge the cast.`,
@@ -1004,9 +1089,6 @@ function enterSurface(state: EngineState, structures: village.VillageStructure[]
   screen = 'surface';
   syncPrompt();
   setCanvasMode('surface');
-  const overlayWasVisible = overlay.hidden === false;
-  overlay.hidden = true;
-  if (overlayWasVisible) panelTitle.focus({ preventScroll: true });
   hud.updateSurface(surfaceView, null, activeNpc ? activeNpc.label : null);
 }
 
@@ -1055,9 +1137,6 @@ function enterDungeon(
   view = projectDungeon(state);
   badges = roomBadges(view);
   syncPrompt();
-  const overlayWasVisible = overlay.hidden === false;
-  overlay.hidden = true;
-  if (overlayWasVisible) panelTitle.focus({ preventScroll: true });
   hud.updateDungeon(view, activeRoomId);
   if (previous !== 'dungeon') {
     hud.announce(`Entered ${subject.dungeon.subjectName}. ${view?.totalRooms ?? 0} rooms.`);
@@ -1067,6 +1146,7 @@ function enterDungeon(
 function onState(state: EngineState): void {
   const previous = screen;
   const route = projectRoute(state);
+  if (titleActive) titlePanel?.update(projectTitle(state));
   const structures = engine ? engine.villageStructures() : [];
   refreshCreator();
   refreshService();
@@ -1128,18 +1208,167 @@ const UP = new Set(['KeyW', 'ArrowUp']);
 const DOWN = new Set(['KeyS', 'ArrowDown']);
 
 function readIntent(): MoveIntent {
-  return {
-    left: held.has('KeyA') || held.has('ArrowLeft'),
-    right: held.has('KeyD') || held.has('ArrowRight'),
-    up: held.has('KeyW') || held.has('ArrowUp'),
-    down: held.has('KeyS') || held.has('ArrowDown'),
-    jump: jumpQueued,
-  };
+  return intents.read();
 }
 
 function clearInput(): void {
-  held.clear();
-  jumpQueued = false;
+  intents.clear();
+}
+
+/** Exactly the `R` behaviour, shared by the keyboard and the progress panel. */
+function reviewAction(): void {
+  if (!engine || titleActive) return;
+  if (returnPending || interactionPending || reviewEntryPending) return;
+  if (screen === 'surface') {
+    void openReviewFromSurface();
+    return;
+  }
+  if (screen === 'dungeon') {
+    if (activeRoomId) {
+      void openReview(activeRoomId, false);
+    } else {
+      hud.announce('Move into a room to review it.');
+    }
+  }
+}
+
+/** Exactly the `C` behaviour, shared by the keyboard and the progress panel. */
+function creatorAction(): void {
+  if (!engine || titleActive) return;
+  if (returnPending || interactionPending || reviewEntryPending) return;
+  if (screen !== 'surface') {
+    hud.announce('The Creator opens from the village street.');
+    return;
+  }
+  openCreator();
+}
+
+/** Exactly the `E` behaviour, shared by the keyboard and the touch action button. */
+function primaryAction(): void {
+  if (titleActive) return;
+  if (screen === 'surface') {
+    if (activeInteractable) {
+      void useInteractable(activeInteractable);
+    } else if (activeNpc) {
+      talkToNpc(activeNpc);
+    } else {
+      const message = nothingInReachMessage();
+      hud.announce(message);
+      showToast(message);
+    }
+    return;
+  }
+  if (screen === 'dungeon') {
+    if (activeRoomId) openComposer(activeRoomId);
+    else hud.announce('Move into a room to write a note.');
+  }
+}
+
+function capitalized(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+/** The action button names what it will do in the current context. */
+function syncTouchActionLabel(): void {
+  if (!touchControls) return;
+  let label = 'Use';
+  if (screen === 'fishing' && fishing) {
+    switch (fishing.machine.phase) {
+      case 'idle':
+        label = 'Cast';
+        break;
+      case 'powering':
+        label = 'Release';
+        break;
+      case 'biting':
+        label = 'Reel';
+        break;
+      case 'caught':
+        label = 'Keep';
+        break;
+      case 'missed':
+        label = 'Try again';
+        break;
+      default:
+        label = 'Wait';
+        break;
+    }
+  } else if (screen === 'surface') {
+    label = activeInteractable
+      ? capitalized(interactionVerb(activeInteractable.type))
+      : activeNpc
+        ? 'Talk'
+        : 'Use';
+  } else if (screen === 'dungeon') {
+    label = activeRoomId ? 'Note' : 'Move';
+  }
+  touchControls.setActionLabel(label);
+}
+
+/** A touch press in the pond drives the same machine events as Space. */
+function touchPress(intent: TouchIntent): void {
+  if (titleActive) return;
+  if (screen === 'fishing' && fishing) {
+    if (intent === 'left' || intent === 'right') {
+      reduceFishingEvent({
+        type: 'move',
+        nowMs: fishing.clockMs,
+        intent: intent === 'left' ? -1 : 1,
+      });
+      return;
+    }
+    if (intent === 'action' || intent === 'cast') fishingActionDown();
+    return;
+  }
+  if (intent === 'action') {
+    primaryAction();
+    return;
+  }
+  intents.press(intent);
+}
+
+function touchRelease(intent: TouchIntent): void {
+  if (titleActive) return;
+  if (screen === 'fishing' && fishing) {
+    if (intent === 'left' || intent === 'right') {
+      reduceFishingEvent({ type: 'move', nowMs: fishing.clockMs, intent: 0 });
+      return;
+    }
+    if (intent === 'action' || intent === 'release') fishingActionUp();
+    return;
+  }
+  intents.release(intent);
+}
+
+/** Space / the touch action button in the pond: charge, hook, open the catch, retry. */
+function fishingActionDown(): void {
+  if (!fishing) return;
+  const runtime = fishing;
+  if (runtime.dialog) return;
+  switch (runtime.machine.phase) {
+    case 'idle':
+      reduceFishingEvent({ type: 'begin-power', nowMs: runtime.clockMs });
+      break;
+    case 'biting':
+      reduceFishingEvent({ type: 'hook', nowMs: runtime.clockMs });
+      break;
+    case 'caught':
+      void presentCatch();
+      break;
+    case 'missed':
+      reduceFishingEvent({ type: 'reset', nowMs: runtime.clockMs });
+      break;
+    default:
+      // `powering` casts on release; casting/waiting/reeling ignore presses.
+      break;
+  }
+}
+
+function fishingActionUp(): void {
+  if (!fishing) return;
+  if (fishing.machine.phase === 'powering') {
+    reduceFishingEvent({ type: 'release', nowMs: fishing.clockMs });
+  }
 }
 
 function focusCanvas(): void {
@@ -2128,7 +2357,8 @@ function closeJournalPanel(): void {
   dropJournalPanel();
   journalSelectedSubjectId = null;
   syncPrompt();
-  focusCanvas();
+  if (titleActive) titlePanel?.focusPrimary();
+  else focusCanvas();
   hud.announce('Journal closed.');
 }
 
@@ -2187,6 +2417,7 @@ function changeHostSettings(next: HostSettings): void {
   hostSettings = next;
   saveSettings(hostSettings);
   applySettings(hostSettings);
+  syncTouchVisibility();
   refreshJournal();
   hud.announce('Settings saved on this device.');
 }
@@ -2195,6 +2426,7 @@ function resetHostSettings(): void {
   hostSettings = resetSettings();
   saveSettings(hostSettings);
   applySettings(hostSettings);
+  syncTouchVisibility();
   refreshJournal();
   hud.announce('Settings reset to defaults. Engine state was not touched.');
 }
@@ -2329,6 +2561,8 @@ async function useInteractable(target: SurfaceInteractable): Promise<void> {
 
 function installInput(): void {
   window.addEventListener('keydown', (event) => {
+    // The title owns the keyboard until Continue; its own handler traps Tab.
+    if (titleActive) return;
     if (composer) {
       if (event.code === 'Escape') {
         event.preventDefault();
@@ -2420,53 +2654,28 @@ function installInput(): void {
 
     if (LEFT.has(event.code) || RIGHT.has(event.code) || UP.has(event.code) || DOWN.has(event.code)) {
       event.preventDefault();
-      held.add(event.code);
+      if (event.repeat) return;
+      const intent = intentForKeyCode(event.code);
+      if (intent) intents.press(intent);
       return;
     }
     if (event.code === 'Space') {
       event.preventDefault();
-      if (!event.repeat) jumpQueued = true;
+      if (!event.repeat) intents.press('jump');
       return;
     }
     if (event.code === 'KeyE' && !event.repeat) {
       event.preventDefault();
-      if (screen === 'surface') {
-        if (activeInteractable) {
-          void useInteractable(activeInteractable);
-        } else if (activeNpc) {
-          talkToNpc(activeNpc);
-        } else {
-          const message = nothingInReachMessage();
-          hud.announce(message);
-          showToast(message);
-        }
-        return;
-      }
-      if (screen === 'dungeon') {
-        if (activeRoomId) openComposer(activeRoomId);
-        else hud.announce('Move into a room to write a note.');
-      }
+      primaryAction();
     }
-    if (event.code === 'KeyC' && !event.repeat && screen === 'surface') {
+    if (event.code === 'KeyC' && !event.repeat) {
       event.preventDefault();
-      if (returnPending || interactionPending || reviewEntryPending) return;
-      openCreator();
+      creatorAction();
       return;
     }
     if (event.code === 'KeyR' && !event.repeat) {
       event.preventDefault();
-      if (returnPending || interactionPending || reviewEntryPending) return;
-      if (screen === 'surface') {
-        void openReviewFromSurface();
-        return;
-      }
-      if (screen === 'dungeon') {
-        if (activeRoomId) {
-          void openReview(activeRoomId, false);
-        } else {
-          hud.announce('Move into a room to review it.');
-        }
-      }
+      reviewAction();
     }
   });
 
@@ -2475,7 +2684,8 @@ function installInput(): void {
       handleFishingKeyUp(event);
       return;
     }
-    held.delete(event.code);
+    const intent = intentForKeyCode(event.code);
+    if (intent) intents.release(intent);
   });
 
   window.addEventListener('blur', () => {
@@ -2527,23 +2737,7 @@ function handleFishingKeyDown(event: KeyboardEvent): void {
   if (event.code === 'Space' || event.code === 'Enter') {
     event.preventDefault();
     if (event.repeat) return;
-    switch (runtime.machine.phase) {
-      case 'idle':
-        reduceFishingEvent({ type: 'begin-power', nowMs: runtime.clockMs });
-        break;
-      case 'biting':
-        reduceFishingEvent({ type: 'hook', nowMs: runtime.clockMs });
-        break;
-      case 'caught':
-        void presentCatch();
-        break;
-      case 'missed':
-        reduceFishingEvent({ type: 'reset', nowMs: runtime.clockMs });
-        break;
-      default:
-        // `powering` casts on release; casting/waiting/reeling ignore presses.
-        break;
-    }
+    fishingActionDown();
   }
 }
 
@@ -2551,9 +2745,7 @@ function handleFishingKeyUp(event: KeyboardEvent): void {
   if (!fishing) return;
   if (event.code === 'Space') {
     event.preventDefault();
-    if (fishing.machine.phase === 'powering') {
-      reduceFishingEvent({ type: 'release', nowMs: fishing.clockMs });
-    }
+    fishingActionUp();
     return;
   }
   if (LEFT.has(event.code) || RIGHT.has(event.code)) {
@@ -2678,12 +2870,12 @@ function frame(nowMs: number): void {
   }
 
   const intent = readIntent();
-  jumpQueued = false;
+  intents.clearJump();
 
   if (level && body && context) {
     // The composer, the review panel, the Creator, a village service, the
     // journal, and Controls pause the world.
-    if (!composer && !reviewPanel && !creatorPanel && !servicePanel && !journalPanel && !helpPanel) {
+    if (!titleActive && !composer && !reviewPanel && !creatorPanel && !servicePanel && !journalPanel && !helpPanel) {
       body = stepBody(body, intent, level, deltaMs);
       if (screen === 'dungeon') {
         updateRoomVisit();
@@ -2728,6 +2920,119 @@ function resizeCanvas(): void {
   if (level && body) updateCamera(camera, body, level, 100, true);
 }
 
+/** Delete the save and the demo-seed flag, then reload into a first run. */
+async function resetSave(storage: ReturnType<typeof createIndexedDbStorage>): Promise<void> {
+  await storage.clear();
+  // A reset is a first run again: drop the demo-seed flag with the save.
+  try {
+    window.localStorage.removeItem(DEMO_SEED_FLAG_KEY);
+  } catch {
+    // Storage may be unavailable; the save itself is already cleared.
+  }
+  hud.announce('Saved state cleared. Reloading.');
+  window.location.reload();
+}
+
+function exportSave(): void {
+  if (!engine) return;
+  try {
+    const bundle = encodeSaveBundle(getState(), new Date().toISOString());
+    const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `knowledge-dungeon-save-${bundle.exportedAt.slice(0, 10)}.json`;
+    link.hidden = true;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    titlePanel?.clearError();
+    hud.announce('Save exported as a JSON download.');
+  } catch (error) {
+    const message = `Could not export the save: ${describe(error)}`;
+    titlePanel?.showError(message);
+    hud.showError(message);
+  }
+}
+
+function startTutorialShortcut(): void {
+  if (!engine) return;
+  hud.clearError();
+  hideTitle();
+  hud.announce('Starting the tutorial…');
+  void engine
+    .startTutorial()
+    .then(() => hud.announce('Tutorial started. Walk to a room and press E to write a note.'))
+    .catch((error: unknown) => {
+      hud.showError(`Could not start the tutorial: ${describe(error)}`);
+      hud.announce('Tutorial did not start.');
+      showTitle();
+    });
+}
+
+/** Set once when the demo campaign seeds; shown after Continue, not under the title. */
+let titleNotice: string | null = null;
+
+function mountTitle(storage: ReturnType<typeof createIndexedDbStorage>): void {
+  titlePanel = mountTitlePanel(titlePanelHost, {
+    onContinue() {
+      hideTitle();
+      hud.announce(
+        screen === 'dungeon'
+          ? 'Continued in the dungeon. Press E in a room to write a note.'
+          : screen === 'fishing'
+            ? 'Continued at the pond. Hold Space or the action button to cast.'
+            : 'Continued on the village street. Walk to a door and press E.',
+      );
+      if (titleNotice) {
+        showToast(titleNotice);
+        titleNotice = null;
+      }
+    },
+    onNewGame() {
+      if (!window.confirm('Start a new game? This deletes the current save on this device.')) return;
+      void resetSave(storage).catch((error: unknown) => {
+        const message = `Could not clear the save: ${describe(error)}`;
+        titlePanel?.showError(message);
+        hud.showError(message);
+      });
+    },
+    onStartTutorial: startTutorialShortcut,
+    onExport: exportSave,
+    async onImport(raw) {
+      const result = await importSaveBundle(storage, raw);
+      if (!result.ok) {
+        hud.announce('Import refused. The current save is unchanged.');
+        return { ok: false, error: result.error };
+      }
+      hud.announce('Save imported. Reloading the world.');
+      window.setTimeout(() => window.location.reload(), 500);
+      return { ok: true };
+    },
+    onSettings() {
+      openJournal();
+    },
+    onArchetype(playerClass) {
+      if (!engine) return;
+      hud.clearError();
+      void engine
+        .selectArchetype(playerClass)
+        .then(() => {
+          titlePanel?.update(projectTitle(getState()));
+          hud.announce(
+            `Archetype ${playerClass} chosen. Quest step: ${getState().session.questStep.replace(/-/g, ' ')}.`,
+          );
+        })
+        .catch((error: unknown) => {
+          const message = `Could not choose that archetype: ${describe(error)}`;
+          titlePanel?.showError(message);
+          hud.showError(message);
+        });
+    },
+  });
+}
+
 function wireActions(storage: ReturnType<typeof createIndexedDbStorage>): void {
   recoveryDismiss.addEventListener('click', () => {
     hideRecovery();
@@ -2743,47 +3048,44 @@ function wireActions(storage: ReturnType<typeof createIndexedDbStorage>): void {
     openHelp(openHelpButton);
   });
 
-  startButton.addEventListener('click', () => {
-    if (!engine) return;
-    startButton.disabled = true;
-    hud.clearError();
-    void engine
-      .startTutorial()
-      .then(() => hud.announce('Tutorial started. Walk to a room and press E to write a note.'))
-      .catch((error: unknown) => {
-        hud.showError(`Could not start the tutorial: ${describe(error)}`);
-        hud.announce('Tutorial did not start.');
-      })
-      .finally(() => {
-        startButton.disabled = false;
-      });
+  togglePanelButton.addEventListener('click', () => {
+    setPanelOpen(progressPanel.hidden);
+  });
+
+  exportButton.addEventListener('click', () => {
+    exportSave();
+  });
+
+  journalButton.addEventListener('click', () => {
+    openJournal();
+  });
+
+  reviewButton.addEventListener('click', () => {
+    reviewAction();
+  });
+
+  creatorButton.addEventListener('click', () => {
+    creatorAction();
   });
 
   clearButton.addEventListener('click', () => {
     if (!window.confirm('Delete the saved engine state for this example?')) return;
     clearButton.disabled = true;
-    void storage
-      .clear()
-      .then(() => {
-        // A reset is a first run again: drop the demo-seed flag with the save.
-        try {
-          window.localStorage.removeItem(DEMO_SEED_FLAG_KEY);
-        } catch {
-          // Storage may be unavailable; the save itself is already cleared.
-        }
-        hud.announce('Saved state cleared. Reloading.');
-        window.location.reload();
-      })
-      .catch((error: unknown) => {
-        hud.showError(`Could not clear saved state: ${describe(error)}`);
-        clearButton.disabled = false;
-      });
+    void resetSave(storage).catch((error: unknown) => {
+      hud.showError(`Could not clear saved state: ${describe(error)}`);
+      titlePanel?.showError(`Could not clear saved state: ${describe(error)}`);
+      clearButton.disabled = false;
+    });
   });
 }
 
+/** Collapse the progress panel to a sheet on phone-sized viewports. */
+function initialPanelOpen(): boolean {
+  return !window.matchMedia('(max-width: 900px)').matches;
+}
+
 function boot(): void {
-  showOverlay('Loading the engine…', false);
-  startButton.disabled = true;
+  showOverlay('Loading the engine…');
   installInput();
   resizeCanvas();
   window.addEventListener('resize', resizeCanvas);
@@ -2813,27 +3115,29 @@ function boot(): void {
         hud.showError(`Could not seed the demo campaign: ${describe(error)}`);
       }
 
-      startButton.disabled = false;
+      mountTitle(storage);
       wireActions(storage);
       const bootState = getState();
       if (bootState.activeSubjectId) lastStudiedSubjectId = bootState.activeSubjectId;
       lastQuestStep = bootState.session.questStep;
       subscribeState(onState);
       // `onState` runs immediately with the current state and routes the screen.
+      setPanelOpen(initialPanelOpen());
+      showTitle();
+      titleNotice = seededNotice;
       const bootNotice = takeBootNotice();
       if (bootNotice) {
         showRecovery(bootNotice);
         hud.announce(bootNotice);
       } else if (seededNotice) {
         hud.announce(seededNotice);
-        showToast(seededNotice);
       } else if (getState().session.world === 'village') {
         hud.announce('Engine ready. Walk to a door and press E. The Training Grounds leads to the tutorial.');
       }
     })
     .catch((error: unknown) => {
       hud.showError(`Could not open the engine: ${describe(error)}`);
-      showOverlay('The engine could not start. Check the error panel.', false);
+      showOverlay('The engine could not start. Check the error panel.');
     });
 }
 

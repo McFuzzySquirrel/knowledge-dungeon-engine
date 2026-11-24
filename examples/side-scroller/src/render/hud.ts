@@ -12,6 +12,8 @@ export interface HudElements {
   roomsTitle: HTMLElement;
   status: HTMLElement;
   error: HTMLElement;
+  /** P9: always-present live region, so announcements survive a collapsed panel. */
+  live?: HTMLElement;
 }
 
 export interface Hud {
@@ -189,6 +191,7 @@ export function createHud(elements: HudElements): Hud {
 
     announce(message) {
       elements.status.textContent = message;
+      if (elements.live) elements.live.textContent = message;
     },
 
     showError(message) {

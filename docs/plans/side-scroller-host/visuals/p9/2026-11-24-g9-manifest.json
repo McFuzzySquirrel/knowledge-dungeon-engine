@@ -1,0 +1,237 @@
+{
+  "capturedAt": "2026-11-24T20:18:43.990Z",
+  "app": "http://127.0.0.1:5174/",
+  "viewport": "1280×800 desktop title, then 390×844 portrait for the touch run",
+  "prefix": "2026-11-24-g9",
+  "shell": true,
+  "reducedMotion": false,
+  "result": {
+    "keyboard": {
+      "initialFocus": "title-continue",
+      "afterTab": "title-new-game",
+      "afterShiftTab": "title-continue",
+      "continued": true,
+      "focusAfterContinue": "game",
+      "walked": true,
+      "journalOpened": true,
+      "journalClosed": true
+    },
+    "desktop": {
+      "titleVisible": true,
+      "overlayVisible": true,
+      "status": "3 subjects saved · quest: intro · archetype: not chosen",
+      "touchVisible": false,
+      "touchLayout": "off",
+      "touchPreference": "auto",
+      "actionLabel": "Use",
+      "importOpen": false,
+      "importError": "",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "panelOpen": true,
+      "panelSheet": "8px",
+      "focus": "title-continue",
+      "overflow": "hidden"
+    },
+    "mobileTitle": {
+      "titleVisible": true,
+      "overlayVisible": true,
+      "status": "3 subjects saved · quest: intro · archetype: not chosen",
+      "touchVisible": false,
+      "touchLayout": "off",
+      "touchPreference": "auto",
+      "actionLabel": "Use",
+      "importOpen": false,
+      "importError": "",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "panelOpen": true,
+      "panelSheet": "12px",
+      "focus": "title-continue",
+      "overflow": "hidden"
+    },
+    "refused": {
+      "titleVisible": true,
+      "overlayVisible": true,
+      "status": "3 subjects saved · quest: intro · archetype: scholar",
+      "touchVisible": false,
+      "touchLayout": "off",
+      "touchPreference": "auto",
+      "actionLabel": "Use",
+      "importOpen": true,
+      "importError": "Unsupported bundle version 2; expected 1.",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "panelOpen": true,
+      "panelSheet": "12px",
+      "focus": "title-import-text",
+      "overflow": "hidden"
+    },
+    "street": {
+      "titleVisible": false,
+      "overlayVisible": false,
+      "status": "3 subjects saved · quest: intro · archetype: scholar",
+      "touchVisible": true,
+      "touchLayout": "on",
+      "touchPreference": "on",
+      "actionLabel": "Enter",
+      "importOpen": false,
+      "importError": "",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "panelOpen": false,
+      "panelSheet": "12px",
+      "focus": "game",
+      "overflow": "hidden"
+    },
+    "orientation": {
+      "landscape": "844×390",
+      "portrait": "390×844",
+      "worldKept": true,
+      "touchKept": true
+    },
+    "sheet": {
+      "titleVisible": false,
+      "overlayVisible": false,
+      "status": "3 subjects saved · quest: intro · archetype: scholar",
+      "touchVisible": true,
+      "touchLayout": "on",
+      "touchPreference": "on",
+      "actionLabel": "Enter",
+      "importOpen": false,
+      "importError": "",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "panelOpen": true,
+      "panelSheet": "12px",
+      "focus": "game",
+      "overflow": "hidden"
+    },
+    "dungeon": {
+      "titleVisible": false,
+      "overlayVisible": false,
+      "status": "3 subjects saved · quest: intro · archetype: scholar",
+      "touchVisible": true,
+      "touchLayout": "on",
+      "touchPreference": "on",
+      "actionLabel": "Note",
+      "importOpen": false,
+      "importError": "",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "panelOpen": false,
+      "panelSheet": "12px",
+      "focus": "game",
+      "overflow": "hidden"
+    },
+    "pond": {
+      "titleVisible": false,
+      "overlayVisible": false,
+      "status": "4 subjects saved · quest: enter dungeon · archetype: scholar",
+      "touchVisible": true,
+      "touchLayout": "on",
+      "touchPreference": "on",
+      "actionLabel": "Cast",
+      "importOpen": false,
+      "importError": "",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "panelOpen": false,
+      "panelSheet": "12px",
+      "focus": "game",
+      "overflow": "hidden"
+    },
+    "reducedMotion": false,
+    "touchOnly": {
+      "reached": true,
+      "climbed": true,
+      "pondReached": true,
+      "clearedRooms": 3,
+      "reviewOpened": 71,
+      "attachmentBytes": 53,
+      "fishKept": 1,
+      "world": "fishing"
+    }
+  },
+  "frames": [
+    {
+      "file": "2026-11-24-g9-01-title-desktop.png",
+      "label": "Title — desktop",
+      "detail": "title=true; viewport=1280×800; focus=title-continue; touch=off; no page scroll=true; status=\"3 subjects saved · quest: intro · archetype: not chosen\""
+    },
+    {
+      "file": "2026-11-24-g9-02-title-mobile.png",
+      "label": "Title — phone viewport",
+      "detail": "title=true; viewport=390×844; no horizontal overflow=true; archetype buttons=3; status=\"3 subjects saved · quest: intro · archetype: not chosen\""
+    },
+    {
+      "file": "2026-11-24-g9-03-archetype.png",
+      "label": "Archetype chosen",
+      "detail": "offered=scholar,cartographer,archivist; chosen=scholar; engine status=\"3 subjects saved · quest: intro · archetype: scholar\"; archetype panel hidden=true"
+    },
+    {
+      "file": "2026-11-24-g9-04-import-error.png",
+      "label": "Import refused",
+      "detail": "panel=true; error=\"Unsupported bundle version 2; expected 1.\"; save unchanged=true; title still usable=true"
+    },
+    {
+      "file": "2026-11-24-g9-05-touch-street.png",
+      "label": "Touch controls on the street",
+      "detail": "touch=true; layout=on (on); action=\"Enter\"; viewport=390×844; no page scroll=true"
+    },
+    {
+      "file": "2026-11-24-g9-06-responsive-hud.png",
+      "label": "Responsive progress sheet",
+      "detail": "open=true; sheet radius=12px; summary=\"Location\nVillage street\nPhase\ncreator\nSubject portals\n3 portals\nRooms cleared (all portals)\n0 / 13\nXP (all subjects)\n0\nNearby\nTraining Grounds\nJournal\nJ — subjects, records, assistance, settings\"; touch still visible=true"
+    },
+    {
+      "file": "2026-11-24-g9-07-touch-dungeon.png",
+      "label": "Touch controls in the dungeon",
+      "detail": "touch=true; action=\"Note\"; current room=\"The Note\"; buttons=6; min target=44px"
+    },
+    {
+      "file": "2026-11-24-g9-07b-touch-journal.png",
+      "label": "Touch-only journal entry",
+      "detail": "opened=35ms via Progress → Journal; focus=journal-panel-title; title hidden=true"
+    },
+    {
+      "file": "2026-11-24-g9-07c-touch-review.png",
+      "label": "Touch-only review entry",
+      "detail": "opened=71ms via Progress → Review after three touch clears; cleared=3; room=\"Review “The Map & Beyond”\""
+    },
+    {
+      "file": "2026-11-24-g9-08-import-roundtrip.png",
+      "label": "Export → clear → import",
+      "detail": "bundle v1/knowledge-dungeon-side-scroller; attachment base64=true; cleared 3→3; XP 86→86; attachment bytes=53; emptied save had cleared=0, XP=0"
+    },
+    {
+      "file": "2026-11-24-g9-09-touch-pond.png",
+      "label": "Touch controls at the pond",
+      "detail": "touch=true; action=\"Cast\"; cleared rooms=3; world=fishing; phase hint=\"Fishing at Fishing Pond in First Dungeon (Tutorial). Hold Space to charge the cast.\""
+    },
+    {
+      "file": "2026-11-24-g9-10-touch-cast.png",
+      "label": "Touch cast charged and released",
+      "detail": "charging label=\"Release\"; after release=\"Wait\"; status=\"Waiting for a bite.\""
+    },
+    {
+      "file": "2026-11-24-g9-10b-touch-kept.png",
+      "label": "Touch-only catch kept",
+      "detail": "bite=1970ms; recall=652ms; kept=true; fish 0→1; xp=91; action label now=\"Cast\""
+    }
+  ]
+}

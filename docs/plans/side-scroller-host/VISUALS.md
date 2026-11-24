@@ -28,8 +28,11 @@ reduced motion) and shows every village service plus the Library-to-review hando
 P8 was captured on 2026-11-24 (`visuals/p8/`, two runs: normal and reduced motion) and shows
 the journal, assistance, settings, large text, entry from the journal, and a fresh-save
 zero state. A same-day follow-up (`g8b`) moved the key map behind a **Controls (?)** popup.
-P9–P10 are planned; their `visuals/p9/`–`visuals/p10/` folders will be added as each gate
-is captured.
+P9 was captured on 2026-11-24 (`visuals/p9/`, two runs: normal and reduced motion) over the
+real app with WebDriver BiDi viewport emulation: a 1280×800 desktop title and a 390×844
+DPR-2 phone viewport for the title, archetype, rejected import, touch street/dungeon/pond,
+responsive sheet, and an export → clear → import round trip. P10's `visuals/p10/` folder
+will be added when that gate is captured.
 
 The P7 run uses the tutorial fixture and the three synthetic demo subjects. The Workshop
 gear shown is from the engine's own room-clear loot; no learner subject or note appears in
@@ -809,6 +812,96 @@ Manifest: [`2026-11-24-g8b-manifest.json`](visuals/p8/2026-11-24-g8b-manifest.js
 
 Manifest: [`2026-11-24-g8c-manifest.json`](visuals/p8/2026-11-24-g8c-manifest.json).
 
+## P9 — Onboarding, save portability, and touch
+
+Captured 2026-11-24 from the real app over WebDriver. The same run first proves the
+keyboard path (focus starts on Continue, Tab/Shift+Tab stay inside the title, Enter starts
+the game, `d` walks, `j`/Escape open and close the journal), then switches to a 390×844
+DPR-2 phone viewport. It clears the save, offers the three archetypes, refuses a hostile
+bundle, enables the touch layout, walks and enters the tutorial with pointer events,
+clears a room through the note form a tap opens, injects one 53-byte attachment, exports,
+clears the save, imports the captured bundle, and confirms cleared rooms, XP, and the
+attachment survive. It clears the other two tutorial rooms with the touch pad and action button, opens the
+journal and the review through the progress sheet, then walks touch-only to the pond,
+charges a cast, hooks a bite, answers the recall, and keeps the fish. The reduced-motion run repeats the path with
+`ui.prefersReducedMotion=1`.
+
+```sh
+node examples/side-scroller/scripts/capture-dungeon.mjs \
+  --out docs/plans/side-scroller-host/visuals/p9 \
+  --prefix 2026-11-24-g9 --mobile
+```
+
+The `--mobile` mode is an alias for `--shell`. It uses WebDriver BiDi
+`browsingContext.setViewport` because headless Firefox clamps its window to 500 CSS px
+wide; the app itself gets no test hook.
+
+### Title and onboarding
+
+![Title — desktop](visuals/p9/2026-11-24-g9-01-title-desktop.png)
+
+![Title — phone viewport](visuals/p9/2026-11-24-g9-02-title-mobile.png)
+
+![Archetype chosen](visuals/p9/2026-11-24-g9-03-archetype.png)
+
+### A save file is untrusted input
+
+![Import refused](visuals/p9/2026-11-24-g9-04-import-error.png)
+
+The version-2 bundle is refused with the exact reason; the stored save is unchanged and
+the title is still usable.
+
+### Touch controls over a full-viewport world
+
+![Touch controls on the street](visuals/p9/2026-11-24-g9-05-touch-street.png)
+
+![Touch controls in the dungeon](visuals/p9/2026-11-24-g9-07-touch-dungeon.png)
+
+![Touch controls at the pond](visuals/p9/2026-11-24-g9-09-touch-pond.png)
+
+![Touch cast charged](visuals/p9/2026-11-24-g9-10-touch-cast.png)
+
+![Touch-only catch kept](visuals/p9/2026-11-24-g9-10b-touch-kept.png)
+
+Every button is at least 44 px and feeds the same `IntentState` as the keyboard. The
+action label follows the context: Enter, Note, Cast, Release, Reel, Keep.
+
+### Responsive progress sheet
+
+![Responsive progress sheet](visuals/p9/2026-11-24-g9-06-responsive-hud.png)
+
+### Touch-only journal and review
+
+![Touch-only journal](visuals/p9/2026-11-24-g9-07b-touch-journal.png)
+
+![Touch-only review](visuals/p9/2026-11-24-g9-07c-touch-review.png)
+
+The progress sheet carries Journal, Review, and Creator buttons, so the touch-only path
+does not depend on the `J`/`R`/`C` keys. The review opens after all three rooms are
+cleared with the same touch pad and action button.
+
+### Export → clear → import
+
+![Imported save restored](visuals/p9/2026-11-24-g9-08-import-roundtrip.png)
+
+The captured bundle carries a 53-byte attachment as base64. After clearing the save
+(0 cleared rooms, 0 XP), importing restores 3 cleared rooms, 86 XP, and the same bytes.
+
+### Reduced motion
+
+![Title — reduced motion](visuals/p9/2026-11-24-g9rm-01-title-desktop.png)
+
+![Touch street — reduced motion](visuals/p9/2026-11-24-g9rm-05-touch-street.png)
+
+![Touch dungeon — reduced motion](visuals/p9/2026-11-24-g9rm-07-touch-dungeon.png)
+
+Manifests: [`2026-11-24-g9-manifest.json`](visuals/p9/2026-11-24-g9-manifest.json),
+[`2026-11-24-g9rm-manifest.json`](visuals/p9/2026-11-24-g9rm-manifest.json).
+
+The manifests record the keyboard focus result, the 390×844 → 844×390 → 390×844
+orientation check, and the export/import counts. Frames were reduced to 256-colour PNGs;
+the full 26-frame set (13 per run) stays in `visuals/p9/`.
+
 ## Capturing the next phase
 
 Prerequisites: example dependencies installed, Firefox on `PATH`, and `geckodriver`
@@ -857,6 +950,12 @@ node examples/side-scroller/scripts/capture-dungeon.mjs \
   --prefix 2026-11-23-g3 \
   --surface
 ```
+
+With `--mobile` (or `--shell`), P9 captures the desktop title, a 390×844 phone viewport,
+the archetype choice, a rejected import, touch controls on the street, in a dungeon room,
+at the pond, touch-only journal/review entry, the responsive progress sheet, and an
+export → clear → import round trip.
+Add `--reduced-motion` to repeat it with the OS preference set.
 
 With `--fishing`, a separate mode captures the pond loop: dungeon entry, a cleared room,
 the walk to a pond, powering, waiting, the bite, the recall dialog, a simulated
