@@ -5,11 +5,16 @@
  * The prompt is DOM, not canvas text, so it is selectable, focus-free, and
  * mirrored into the HUD's live region by the injected announcer. It never holds
  * learner data — labels and topics come from the engine projection.
+ *
+ * P5 adds a second line for a cleared room: `R review` sits beside `E write a
+ * note`, so the two actions are distinguishable before either is pressed.
  */
 
 export interface PromptRoom {
   roomId: string;
   topic: string;
+  /** P5: show the `R review` line for a cleared room the engine will review. */
+  review?: boolean;
 }
 
 /** P3: a surface facade the player is standing near. */
@@ -22,8 +27,7 @@ export interface PromptTarget {
 
 interface ActivePrompt {
   key: string;
-  action: string;
-  label: string;
+  lines: { key: string; action: string; label: string }[];
 }
 
 export interface Prompts {
@@ -34,6 +38,17 @@ export interface Prompts {
   hide(): void;
   /** Announce a message through the host's polite live region. */
   announce(message: string): void;
+}
+
+function promptLine(keyLabel: string, action: string, label: string): HTMLElement {
+  const line = document.createElement('span');
+  line.className = 'prompt-line';
+  const key = document.createElement('kbd');
+  key.textContent = keyLabel;
+  const text = document.createElement('span');
+  text.textContent = ` ${action} — ${label}`;
+  line.append(key, text);
+  return line;
 }
 
 export function createPrompts(host: HTMLElement, announceFn: (message: string) => void): Prompts {
@@ -47,11 +62,9 @@ export function createPrompts(host: HTMLElement, announceFn: (message: string) =
       return;
     }
 
-    const key = document.createElement('kbd');
-    key.textContent = 'E';
-    const text = document.createElement('span');
-    text.textContent = ` ${current.action} — ${current.label}`;
-    host.replaceChildren(key, text);
+    host.replaceChildren(
+      ...current.lines.map((line) => promptLine(line.key, line.action, line.label)),
+    );
     host.hidden = false;
   }
 
@@ -65,13 +78,26 @@ export function createPrompts(host: HTMLElement, announceFn: (message: string) =
   return {
     setRoom(room, hidden = false) {
       set(
-        room ? { key: `room:${room.roomId}`, action: 'write a note', label: room.topic } : null,
+        room
+          ? {
+              key: `room:${room.roomId}:${room.review ? 'review' : 'note'}`,
+              lines: [
+                { key: 'E', action: 'write a note', label: room.topic },
+                ...(room.review ? [{ key: 'R', action: 'review', label: room.topic }] : []),
+              ],
+            }
+          : null,
         hidden,
       );
     },
     setTarget(target, hidden = false) {
       set(
-        target ? { key: `target:${target.id}`, action: target.action, label: target.label } : null,
+        target
+          ? {
+              key: `target:${target.id}`,
+              lines: [{ key: 'E', action: target.action, label: target.label }],
+            }
+          : null,
         hidden,
       );
     },

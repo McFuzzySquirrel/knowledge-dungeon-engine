@@ -28,8 +28,8 @@ the gate outcome and the baseline facts later gates compare against.
 | Plan written | 2026-11-23 |
 | Engine test baseline | **13 files / 280 tests at `3951737`; unchanged after P0–P4** |
 | First gate run | 2026-11-23 |
-| Latest gate passed | G4 (2026-11-24) |
-| Current phase | P0–P4 complete; P5–P10 planned, P5 next |
+| Latest gate passed | G5 (2026-11-24) |
+| Current phase | P0–P5 complete; P6–P10 planned, P6 next |
 | Open failures | None recorded; accepted P2-O1 performance exception and the P4 amendments below |
 
 ## Gate index
@@ -43,7 +43,7 @@ the gate outcome and the baseline facts later gates compare against.
 | G3 re-run | [P3 — playtest layout fix](phase-3-surface-village.md#execution-evidence) | 2026-11-24 | uncommitted (base `b44f24a`) | pass | 13 / 280 | 14 / 84 | [P3 evidence](phase-3-surface-village.md#execution-evidence) |
 | G3 polish | [P3 — street atmosphere and HUD](phase-3-surface-village.md#execution-evidence) | 2026-11-24 | uncommitted (base `1ef03cf`) | pass | 13 / 280 | 14 / 85 | [P3 evidence](phase-3-surface-village.md#execution-evidence) |
 | G4 | [P4 — fishing](phase-4-fishing.md#execution-evidence) | 2026-11-24 | uncommitted (base `203011d`) | pass | 13 / 280 | 18 / 106 | [P4 evidence](phase-4-fishing.md#execution-evidence) |
-| G5 | [P5 — review](phase-5-review.md#execution-evidence) | — | — | Planned | — | — | — |
+| G5 | [P5 — review](phase-5-review.md#execution-evidence) | 2026-11-24 | uncommitted (base `6525c22`) | pass | 13 / 280 | 22 / 135 | [P5 evidence](phase-5-review.md#execution-evidence) |
 | G6 | [P6 — creator](phase-6-creator.md#execution-evidence) | — | — | Planned | — | — | — |
 | G7 | [P7 — village services](phase-7-village.md#execution-evidence) | — | — | Planned | — | — | — |
 | G8 | [P8 — journal](phase-8-journal.md#execution-evidence) | — | — | Planned | — | — | — |
@@ -66,6 +66,7 @@ changes size, add a new baseline row and explain why.
 | 2026-11-24 | uncommitted (base `1ef03cf`) | 13 | 280 | pass | pass | 0 `examples/` paths | G3 polish re-run; example suite 14 files / 85 tests |
 | 2026-11-24 | uncommitted (base `203011d`) | 13 | 280 | pass | pass | 0 `examples/` paths | G4 checkpoint; no baseline change; example suite 18 files / 106 tests |
 | 2026-11-24 | uncommitted (base `066844b`) | 13 | 280 | pass | pass | 0 `examples/` paths | Interaction-feedback follow-up; no baseline change; example suite 19 files / 108 tests |
+| 2026-11-24 | uncommitted (base `6525c22`) | 13 | 280 | pass | pass | 0 `examples/` paths | G5 checkpoint; no baseline change; example suite 22 files / 135 tests; `src` diff empty |
 
 ## Per-task evidence links
 

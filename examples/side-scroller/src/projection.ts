@@ -1,4 +1,5 @@
 import type { EngineState, village } from '@/index';
+import { isReviewCandidateRoom, projectReview, projectReviewGate, reviewDueCount } from './review/projection';
 
 /**
  * Pure projections from engine state to the host's view models.
@@ -32,6 +33,8 @@ export interface RoomView {
   /** Engine room state, kept verbatim for debugging and later phases. */
   state: string;
   cleared: boolean;
+  /** P5: a cleared room with a note that the engine's review rule accepts. */
+  reviewable: boolean;
   /** Human label that never relies on colour. */
   statusLabel: string;
 }
@@ -49,6 +52,12 @@ export interface DungeonView {
   /** Distinct room ids visited in the active study session, in first-visit order. */
   visits: string[];
   studySessionOpen: boolean;
+  /** P5: rooms waiting for review (overdue, due today, or never reviewed). */
+  dueRooms: number;
+  /** P5: the pass number the next review belongs to, one-based. */
+  nextPassNumber: number;
+  /** P5: whether the engine's review unlock is satisfied. */
+  reviewUnlocked: boolean;
 }
 
 /** The engine's rank for zero XP, used when no progression record exists yet. */
@@ -100,8 +109,14 @@ export function projectHud(state: EngineState, subjectId: string | null): HudVie
 /**
  * Project the active subject's dungeon. Returns `null` when no subject is active,
  * which is the host's signal to show the village or the start overlay.
+ *
+ * `nowIso` only affects the P5 review facts (due count and pass number); the
+ * renderer-neutral geometry and statuses do not depend on the clock.
  */
-export function projectDungeon(state: EngineState): DungeonView | null {
+export function projectDungeon(
+  state: EngineState,
+  nowIso: string = new Date().toISOString(),
+): DungeonView | null {
   const subjectId = state.activeSubjectId;
   if (!subjectId) return null;
 
@@ -112,6 +127,8 @@ export function projectDungeon(state: EngineState): DungeonView | null {
   const activeSession = state.studySessions.find(
     (session) => session.sessionId === state.activeStudySessionId,
   );
+  const reviewView = projectReview(state, nowIso);
+  const gate = projectReviewGate(state);
 
   const rooms: RoomView[] = hud.rooms.map((room) => {
     const metadata = subject.rooms[room.roomId];
@@ -120,6 +137,7 @@ export function projectDungeon(state: EngineState): DungeonView | null {
       topic: room.topic,
       state: metadata?.state ?? 'Uncreated',
       cleared: room.cleared,
+      reviewable: metadata ? isReviewCandidateRoom(metadata) : false,
       statusLabel: room.status,
     };
   });
@@ -136,6 +154,9 @@ export function projectDungeon(state: EngineState): DungeonView | null {
     totalRooms: rooms.length,
     visits: [...(activeSession?.roomsVisited ?? [])],
     studySessionOpen: state.activeStudySessionId !== null,
+    dueRooms: reviewDueCount(reviewView),
+    nextPassNumber: reviewView?.nextPassNumber ?? 1,
+    reviewUnlocked: gate?.allowed ?? false,
   };
 }
 

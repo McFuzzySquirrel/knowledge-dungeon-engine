@@ -21,8 +21,9 @@ passed.
 
 ## Index
 
-P5–P10 are planned but not executed; their `visuals/p5/`–`visuals/p10/` folders will be
-added as each gate is captured.
+P5 was captured on 2026-11-24 (`visuals/p5/`, two runs: normal and reduced motion).
+P6–P10 are planned; their `visuals/p6/`–`visuals/p10/` folders will be added as each
+gate is captured.
 
 | Date | Gate | Commit | Frame | File | What it shows |
 |---|---|---|---|---|---|
@@ -75,6 +76,32 @@ added as each gate is captured.
 | 2026-11-24 | G4 | uncommitted | Left the pond | [`10-street.png`](visuals/p4/2026-11-24-g4-10-street.png) | Escape returns to the street beside the pond; fish 1 |
 | 2026-11-24 | G4 | uncommitted | Reload after a catch | [`11-reload.png`](visuals/p4/2026-11-24-g4-11-reload.png) | Fish 1 and XP 33 survive IndexedDB |
 | 2026-11-24 | G4 | uncommitted | Mid-cast reload recovery | [`12-mid-cast-reload.png`](visuals/p4/2026-11-24-g4-12-mid-cast-reload.png) | Persistent banner: "Session could not be resumed…"; world village |
+| 2026-11-24 | G5 | uncommitted (base `6525c22`) | Review locked | [`01-locked.png`](visuals/p5/2026-11-24-g5-01-locked.png) | shownIn=44ms; cleared=1/3; toast says locked=true; panel stayed closed=true; prompt offers R=true |
+| 2026-11-24 | G5 | uncommitted (base `6525c22`) | Cleared room prompt | [`02-due-prompt.png`](visuals/p5/2026-11-24-g5-02-due-prompt.png) | cleared=3/3; climb=3784ms; prompt shows E and R=true; HUD reviews due="3 rooms" |
+| 2026-11-24 | G5 | uncommitted (base `6525c22`) | Review panel | [`03-review-panel.png`](visuals/p5/2026-11-24-g5-03-review-panel.png) | shownIn=24ms; focus=review-rating-0; rating buttons=6; prompt shown=true; previous row="Previous rating None chosen yet"; frame avg=17.93ms p95=33.24ms max=50.56ms over16.7=305/558 |
+| 2026-11-24 | G5 | uncommitted (base `6525c22`) | Rating selected | [`04-selected.png`](visuals/p5/2026-11-24-g5-04-selected.png) | pressed=review-rating-5; submit enabled=true |
+| 2026-11-24 | G5 | uncommitted (base `6525c22`) | Rated pass | [`05-rated.png`](visuals/p5/2026-11-24-g5-05-rated.png) | shownIn=8ms; XP copy=true; pass progress=true; next review copy=true; passCount tut-map=1; reviewPasses=1; focus=review-close |
+| 2026-11-24 | G5 | uncommitted (base `6525c22`) | Saved for later | [`06-saved.png`](visuals/p5/2026-11-24-g5-06-saved.png) | shownIn=8ms; marker=tut-map; no XP promise=true; passCount unchanged=1; focus=review-rating-4 |
+| 2026-11-24 | G5 | uncommitted (base `6525c22`) | Resumed after reload | [`07-resumed.png`](visuals/p5/2026-11-24-g5-07-resumed.png) | marker after reload=tut-map; previous rating restored=true; focus=review-rating-4 |
+| 2026-11-24 | G5 | uncommitted (base `6525c22`) | Saved review discarded | [`08-discarded.png`](visuals/p5/2026-11-24-g5-08-discarded.png) | armed copy=true; shownIn=20ms; marker=null; result="Saved review discarded. Nothing was scheduled." |
+| 2026-11-24 | G5 | uncommitted (base `6525c22`) | Resumed completion is not paid twice | [`09-duplicate.png`](visuals/p5/2026-11-24-g5-09-duplicate.png) | shownIn=24ms; marker left in place disclosed=true; duplicate copy=true; xp 92→92; reviewPasses 1→1 |
+| 2026-11-24 | G5 | uncommitted (base `6525c22`) | Review save failure | [`10-not-saved.png`](visuals/p5/2026-11-24-g5-10-not-saved.png) | descend=2665ms; shownIn=10ms; error says not saved=true; panel open=true; submit enabled after failure=true; xp 92→92; passCount tut-tools 0→0 |
+| 2026-11-24 | G5 | uncommitted (base `6525c22`) | Reload after review work | [`11-reload.png`](visuals/p5/2026-11-24-g5-11-reload.png) | world=dungeon; cleared=3/3; reviewPasses=1; passCounts={"tut-note":0,"tut-tools":0,"tut-map":1}; nextReview set=true; marker=null; focus=panel-title |
+| 2026-11-24 | G5 | uncommitted (base `6525c22`) | Street review shortcut | [`12-street-shortcut.png`](visuals/p5/2026-11-24-g5-12-street-shortcut.png) | street=3784ms; panel=33ms; focus=review-rating-0; previous="Previous rating None chosen yet"; subject activated for the command=true |
+| 2026-11-24 | G5 | uncommitted (base `6525c22`) | Street review closed | [`13-street-closed.png`](visuals/p5/2026-11-24-g5-13-street-closed.png) | world=village; activeSubject=null; study session open=false; focus=game; reviews due still listed=true |
+| 2026-11-24 | G5 (reduced motion) | uncommitted (base `6525c22`) | Review locked | [`01-locked.png`](visuals/p5/2026-11-24-g5rm-01-locked.png) | Reduced-motion re-run; shownIn=15ms; cleared=1/3; toast says locked=true; panel stayed closed=true; prompt offers R=true |
+| 2026-11-24 | G5 (reduced motion) | uncommitted (base `6525c22`) | Cleared room prompt | [`02-due-prompt.png`](visuals/p5/2026-11-24-g5rm-02-due-prompt.png) | Reduced-motion re-run; cleared=3/3; climb=3718ms; prompt shows E and R=true; HUD reviews due="3 rooms" |
+| 2026-11-24 | G5 (reduced motion) | uncommitted (base `6525c22`) | Review panel | [`03-review-panel.png`](visuals/p5/2026-11-24-g5rm-03-review-panel.png) | Reduced-motion re-run; shownIn=7ms; focus=review-rating-0; rating buttons=6; prompt shown=true; previous row="Previous rating None chosen yet"; frame avg=16.64ms p95=17.18ms max=33.38ms over16.7=314/601 |
+| 2026-11-24 | G5 (reduced motion) | uncommitted (base `6525c22`) | Rating selected | [`04-selected.png`](visuals/p5/2026-11-24-g5rm-04-selected.png) | Reduced-motion re-run; pressed=review-rating-5; submit enabled=true |
+| 2026-11-24 | G5 (reduced motion) | uncommitted (base `6525c22`) | Rated pass | [`05-rated.png`](visuals/p5/2026-11-24-g5rm-05-rated.png) | Reduced-motion re-run; shownIn=6ms; XP copy=true; pass progress=true; next review copy=true; passCount tut-map=1; reviewPasses=1; focus=review-close |
+| 2026-11-24 | G5 (reduced motion) | uncommitted (base `6525c22`) | Saved for later | [`06-saved.png`](visuals/p5/2026-11-24-g5rm-06-saved.png) | Reduced-motion re-run; shownIn=19ms; marker=tut-map; no XP promise=true; passCount unchanged=1; focus=review-rating-4 |
+| 2026-11-24 | G5 (reduced motion) | uncommitted (base `6525c22`) | Resumed after reload | [`07-resumed.png`](visuals/p5/2026-11-24-g5rm-07-resumed.png) | Reduced-motion re-run; marker after reload=tut-map; previous rating restored=true; focus=review-rating-4 |
+| 2026-11-24 | G5 (reduced motion) | uncommitted (base `6525c22`) | Saved review discarded | [`08-discarded.png`](visuals/p5/2026-11-24-g5rm-08-discarded.png) | Reduced-motion re-run; armed copy=true; shownIn=17ms; marker=null; result="Saved review discarded. Nothing was scheduled." |
+| 2026-11-24 | G5 (reduced motion) | uncommitted (base `6525c22`) | Resumed completion is not paid twice | [`09-duplicate.png`](visuals/p5/2026-11-24-g5rm-09-duplicate.png) | Reduced-motion re-run; shownIn=30ms; marker left in place disclosed=true; duplicate copy=true; xp 92→92; reviewPasses 1→1 |
+| 2026-11-24 | G5 (reduced motion) | uncommitted (base `6525c22`) | Review save failure | [`10-not-saved.png`](visuals/p5/2026-11-24-g5rm-10-not-saved.png) | Reduced-motion re-run; descend=2944ms; shownIn=17ms; error says not saved=true; panel open=true; submit enabled after failure=true; xp 92→92; passCount tut-tools 0→0 |
+| 2026-11-24 | G5 (reduced motion) | uncommitted (base `6525c22`) | Reload after review work | [`11-reload.png`](visuals/p5/2026-11-24-g5rm-11-reload.png) | Reduced-motion re-run; world=dungeon; cleared=3/3; reviewPasses=1; passCounts={"tut-note":0,"tut-tools":0,"tut-map":1}; nextReview set=true; marker=null; focus=panel-title |
+| 2026-11-24 | G5 (reduced motion) | uncommitted (base `6525c22`) | Street review shortcut | [`12-street-shortcut.png`](visuals/p5/2026-11-24-g5rm-12-street-shortcut.png) | Reduced-motion re-run; street=3790ms; panel=18ms; focus=review-rating-0; previous="Previous rating None chosen yet"; subject activated for the command=true |
+| 2026-11-24 | G5 (reduced motion) | uncommitted (base `6525c22`) | Street review closed | [`13-street-closed.png`](visuals/p5/2026-11-24-g5rm-13-street-closed.png) | Reduced-motion re-run; world=village; activeSubject=null; study session open=false; focus=game; reviews due still listed=true |
 | 2026-11-24 | P4 follow-up | uncommitted (base `066844b`) | Pond before a clear | [`01a-pond-refusal.png`](visuals/p4/2026-11-24-g4b-01a-pond-refusal.png) | Canvas toast: "No dungeon subject is in focus…"; prompt still offers `E` |
 | 2026-11-24 | P4 follow-up | uncommitted | Non-portal building | [`11a-library.png`](visuals/p4/2026-11-24-g4b-11a-library.png) | Canvas toast: "Library is a facade…; only subject portals and the Training Grounds open a dungeon" |
 
@@ -338,6 +365,122 @@ same conditions under `g4b`; the two frames below show the changed feedback.
 
 Manifest for the full follow-up run:
 [`2026-11-24-g4b-manifest.json`](visuals/p4/2026-11-24-g4b-manifest.json).
+
+## P5 — Archaeologist review
+
+P5 adds the 0–5 recall review. The capture clears the three tutorial rooms, presses R before the unlock to show the engine refusal, rates a pass, saves a marker for later, reloads and resumes it, discards it, re-saves and completes the same pass to show the duplicate ledger, then breaks the IndexedDB write on a never-reviewed room. It finishes by climbing to the street and opening the queue with R, which activates the subject and must close it again. The keyboard path uses the real keys `0`–`5`, `Enter`, `S`, `D`, and `Escape`; `R` opens the panel from a room and from the street.
+
+The first run is the normal visual; the second repeats the whole path with `ui.prefersReducedMotion=1`. The 10-second frame measurement with the panel open was 558 frames, average 17.93 ms, p95 33.24 ms, max 50.56 ms in the normal run, and 601 frames, average 16.64 ms, p95 17.18 ms, max 33.38 ms in the reduced-motion run. Both sit on the headless software-compositing floor recorded as P2-O1; the panel itself adds no per-frame work.
+
+Manifests: [`2026-11-24-g5-manifest.json`](visuals/p5/2026-11-24-g5-manifest.json) and [`2026-11-24-g5rm-manifest.json`](visuals/p5/2026-11-24-g5rm-manifest.json).
+
+### Review locked
+
+Boot the tutorial, clear only the root room, and press R: the engine gate refuses because 1 of 3 encounters is cleared. The toast and the error region both say so and no panel opens.
+
+![Review locked](visuals/p5/2026-11-24-g5-01-locked.png)
+
+### Cleared room prompt
+
+All three rooms cleared; the room prompt now carries both `E write a note` and `R review`, and the HUD reports 3 rooms due and review mode unlocked.
+
+![Cleared room prompt](visuals/p5/2026-11-24-g5-02-due-prompt.png)
+
+### Review panel
+
+The panel shows the room, pass, "Previous rating: None chosen yet", the engine self-check prompt (a text node), and six engine-labelled ratings. Focus starts on the first rating; Submit is disabled until a rating is chosen.
+
+![Review panel](visuals/p5/2026-11-24-g5-03-review-panel.png)
+
+### Rating selected
+
+Pressing 5 marks the rating button pressed with a non-colour cue (`aria-pressed`) and enables Submit.
+
+![Rating selected](visuals/p5/2026-11-24-g5-04-selected.png)
+
+### Rated pass
+
+Enter records the pass: XP, pass progress, and the next due date are visible without a reload. The HUD moves to 2 rooms due and keeps review mode unlocked.
+
+![Rated pass](visuals/p5/2026-11-24-g5-05-rated.png)
+
+### Saved for later
+
+S saves the marker with rating 4 preselected; the copy names the saved timestamp, promises no XP, and the pass count does not move.
+
+![Saved for later](visuals/p5/2026-11-24-g5-06-saved.png)
+
+### Resumed after reload
+
+After a reload, walking back and pressing R restores "Previous rating: 4 · Good" and preselects it; the live region says the saved review resumed.
+
+![Resumed after reload](visuals/p5/2026-11-24-g5-07-resumed.png)
+
+### Saved review discarded
+
+D arms a confirmation, the second D discards, and the copy says nothing was scheduled; the durable marker is gone.
+
+![Saved review discarded](visuals/p5/2026-11-24-g5-08-discarded.png)
+
+### Resumed completion is not paid twice
+
+Resuming the re-saved marker and completing it hits the same (room, pass): XP and review passes stay at 92 and 1, and the copy discloses that the duplicate path left the marker in place.
+
+![Resumed completion is not paid twice](visuals/p5/2026-11-24-g5-09-duplicate.png)
+
+### Review save failure
+
+A simulated quota failure on the lower room shows "Not saved … the review is still open" in the panel and the HUD; XP stays 92 and the lower room pass count stays 0.
+
+![Review save failure](visuals/p5/2026-11-24-g5-10-not-saved.png)
+
+### Reload after review work
+
+The final reload keeps 3/3 cleared, one review pass on the upper room, a next review date, and no marker.
+
+![Reload after review work](visuals/p5/2026-11-24-g5-11-reload.png)
+
+### Street review shortcut
+
+Climbing back to the street and pressing R opens the queue for the last-studied subject: the host activates the subject for the command, the panel opens on the most urgent room, and the surface HUD stays visible.
+
+![Street review shortcut](visuals/p5/2026-11-24-g5-12-street-shortcut.png)
+
+### Street review closed
+
+Escape closes the street review, returns focus to the canvas, and the host calls `returnToVillage()`: active subject null and no study session left open (K-15).
+
+![Street review closed](visuals/p5/2026-11-24-g5-13-street-closed.png)
+
+### Reduced-motion re-run (2026-11-24)
+
+The whole path repeated with `matchMedia('(prefers-reduced-motion: reduce)')` true. Same frame names under the `g5rm` prefix; the panel itself has no transitions, and camera motion snaps.
+
+![Review locked — reduced motion](visuals/p5/2026-11-24-g5rm-01-locked.png)
+
+![Cleared room prompt — reduced motion](visuals/p5/2026-11-24-g5rm-02-due-prompt.png)
+
+![Review panel — reduced motion](visuals/p5/2026-11-24-g5rm-03-review-panel.png)
+
+![Rating selected — reduced motion](visuals/p5/2026-11-24-g5rm-04-selected.png)
+
+![Rated pass — reduced motion](visuals/p5/2026-11-24-g5rm-05-rated.png)
+
+![Saved for later — reduced motion](visuals/p5/2026-11-24-g5rm-06-saved.png)
+
+![Resumed after reload — reduced motion](visuals/p5/2026-11-24-g5rm-07-resumed.png)
+
+![Saved review discarded — reduced motion](visuals/p5/2026-11-24-g5rm-08-discarded.png)
+
+![Resumed completion is not paid twice — reduced motion](visuals/p5/2026-11-24-g5rm-09-duplicate.png)
+
+![Review save failure — reduced motion](visuals/p5/2026-11-24-g5rm-10-not-saved.png)
+
+![Reload after review work — reduced motion](visuals/p5/2026-11-24-g5rm-11-reload.png)
+
+![Street review shortcut — reduced motion](visuals/p5/2026-11-24-g5rm-12-street-shortcut.png)
+
+![Street review closed — reduced motion](visuals/p5/2026-11-24-g5rm-13-street-closed.png)
 
 ## Capturing the next phase
 

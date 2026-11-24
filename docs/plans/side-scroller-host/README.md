@@ -2,8 +2,8 @@
 
 | Field | Value |
 |---|---|
-| Plan version | 2.0 |
-| Status | In progress — P0–P4 done; P5 next (P5–P10 planned 2026-11-24) |
+| Plan version | 2.1 |
+| Status | In progress — P0–P5 done; P6 next (P6–P10 planned) |
 | Created | 2026-11-23 |
 | Owner | Unassigned |
 | Phase documents | [P0](phase-0-scaffold.md) · [P1](phase-1-dungeon-level.md) · [P2](phase-2-note-loop.md) · [P3](phase-3-surface-village.md) · [P4](phase-4-fishing.md) · [P5](phase-5-review.md) · [P6](phase-6-creator.md) · [P7](phase-7-village.md) · [P8](phase-8-journal.md) · [P9](phase-9-shell-mobile.md) · [P10](phase-10-polish.md) |
@@ -499,14 +499,14 @@ Rules:
 | P2 | Done — G2 passed | G2 passed 2026-11-23 | [phase-2 evidence](phase-2-note-loop.md#execution-evidence) |
 | P3 | Done — G3 passed | G3 passed 2026-11-23 | [phase-3 evidence](phase-3-surface-village.md#execution-evidence) |
 | P4 | Done — G4 passed | G4 passed 2026-11-24 | [phase-4 evidence](phase-4-fishing.md#execution-evidence) |
-| P5 | Not started | G5 pending | — |
+| P5 | Done — G5 passed | G5 passed 2026-11-24 | [phase-5 evidence](phase-5-review.md#execution-evidence) |
 | P6 | Not started | G6 pending | — |
 | P7 | Not started | G7 pending | — |
 | P8 | Not started | G8 pending | — |
 | P9 | Not started | G9 pending | — |
 | P10 | Not started | G10 pending | — |
 
-Visual record: [VISUALS.md](VISUALS.md) — P1/G1, P2/G2, P3/G3 frames captured 2026-11-23; P3 layout follow-up 2026-11-24; P3 polish frames 2026-11-24; P4/G4 pond loop frames 2026-11-24 and the interaction-feedback follow-up (`g4b`). P5–P10 append their own `visuals/pN/` folders as they ship.
+Visual record: [VISUALS.md](VISUALS.md) — P1/G1, P2/G2, P3/G3 frames captured 2026-11-23; P3 layout follow-up 2026-11-24; P3 polish frames 2026-11-24; P4/G4 pond loop frames 2026-11-24 and the interaction-feedback follow-up (`g4b`); P5/G5 review frames 2026-11-24 in a normal and a reduced-motion run (`g5`, `g5rm`). P6–P10 append their own `visuals/pN/` folders as they ship.
 
 ## 15. Assumptions
 
@@ -538,3 +538,4 @@ phase relies on a changed answer.
 | 2026-11-24 | 1.8 | P4 executed and G4 passed; pond entry from host-resolved active subject, cast/bite/reel scene, engine-backed recall dialog, keep/release, save-failure and mid-cast reload recovery, `--fishing` capture mode; frames under `visuals/p4/` (`2026-11-24-g4`); all phases complete |
 | 2026-11-24 | 1.9 | Interaction-feedback follow-up after playtest: pond refusals and non-portal facade messages appear as a canvas toast, plus copy tests and a `g4b` re-capture |
 | 2026-11-24 | 2.0 | Post-P4 roadmap planned: P5 review, P6 Creator + three demo subjects, P7 village services, P8 journal/settings/assistance, P9 title/save/touch, P10 local polish/docs. Placeholder art and silence remain; local-only release; strict example-only boundary plus [ENGINE-BOUNDARY.md](ENGINE-BOUNDARY.md) |
+| 2026-11-24 | 2.1 | P5 executed and G5 passed; 0–5 review panel, due queue and HUD count, `R` from a room and the street, save/resume/discard across reload, duplicate ledger proof, rejected-write path, `--review` capture mode with a reduced-motion re-run; frames under `visuals/p5/`; engine count unchanged and no `src/` diff |

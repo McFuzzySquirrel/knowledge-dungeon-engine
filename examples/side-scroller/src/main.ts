@@ -1,4 +1,10 @@
 import { fishingState, village, type EngineState, type KnowledgeDungeonEngine } from '@/index';
+import type {
+  ReviewPassCompleteOutcome,
+  ReviewSessionDiscardOutcome,
+  ReviewSessionResumeOutcome,
+  ReviewSessionSaveOutcome,
+} from '@/application/reviewCommands';
 import { getState, openExampleEngine, setErrorReporter, setNoticeReporter, subscribeState, takeBootNotice } from './engine';
 import { createFishingBridge, type RecallOutcome } from './fishing/bridge';
 import {
@@ -26,6 +32,21 @@ import {
   type DungeonView,
   type SurfaceView,
 } from './projection';
+import {
+  discardLines,
+  noReviewSubjectMessage,
+  passResultLines,
+  reviewNotSavedMessage,
+  reviewRefusalMessage,
+  roomNotClearedMessage,
+  saveLaterLines,
+} from './review/copy';
+import {
+  lastStudiedSubjectId as mostRecentStudiedSubject,
+  projectReview,
+  projectReviewGate,
+  projectReviewRoom,
+} from './review/projection';
 import { createHud } from './render/hud';
 import { createCamera, prepareCanvas, renderWorld, updateCamera } from './render/canvas';
 import { projectRoute, type Screen } from './routing';
@@ -46,6 +67,7 @@ import {
   type RecallDialog,
   type RecallQuestionView,
 } from './ui/recallDialog';
+import { mountReviewPanel, type ReviewPanel } from './ui/reviewPanel';
 
 function must<T extends Element>(selector: string): T {
   const element = document.querySelector<T>(selector);
@@ -66,6 +88,7 @@ const panelTitle = must<HTMLHeadingElement>('#panel-title');
 const promptHost = must<HTMLDivElement>('#prompt');
 const notePanelHost = must<HTMLElement>('#note-panel');
 const fishingPanelHost = must<HTMLElement>('#fishing-panel');
+const reviewPanelHost = must<HTMLElement>('#review-panel');
 const leaveFishingButton = must<HTMLButtonElement>('#leave-fishing');
 const recoveryBanner = must<HTMLDivElement>('#recovery');
 const recoveryText = must<HTMLParagraphElement>('#recovery-text');
@@ -152,6 +175,18 @@ let fishing: FishingRuntime | null = null;
 /** The open composer, or `null`. While open the world is paused and keys are modal. */
 let composer: NotePanel | null = null;
 let composerPending = false;
+
+/** The open review panel (P5), or `null`. It also pauses the world. */
+let reviewPanel: ReviewPanel | null = null;
+let reviewPending = false;
+/** True when the surface shortcut activated the subject and must close it after. */
+let reviewActivatedSubject = false;
+let reviewEntryPending = false;
+
+/** One host clock read per projection. The panel does not tick. */
+function reviewNow(): string {
+  return new Date().toISOString();
+}
 
 function surfaceMap(): village.VillageMapDef {
   // Scale the street to the dungeon's tile size so both share one world grid.
@@ -274,6 +309,7 @@ function hideToast(): void {
 }
 
 function resetDungeonLevel(): void {
+  dropReviewPanel();
   level = null;
   body = null;
   view = null;
@@ -285,7 +321,7 @@ function resetDungeonLevel(): void {
 }
 
 function syncPrompt(): void {
-  if (composer) {
+  if (composer || reviewPanel) {
     prompts.setRoom(null, true);
     prompts.setTarget(null, true);
     return;
@@ -301,7 +337,10 @@ function syncPrompt(): void {
   }
   if (screen === 'dungeon' && level && body) {
     const room = activeRoomId ? view?.rooms.find((entry) => entry.roomId === activeRoomId) : undefined;
-    prompts.setRoom(room ? { roomId: room.roomId, topic: room.topic } : null, false);
+    prompts.setRoom(
+      room ? { roomId: room.roomId, topic: room.topic, review: room.reviewable } : null,
+      false,
+    );
     return;
   }
   prompts.hide();
@@ -332,8 +371,8 @@ function setCanvasMode(mode: Screen): void {
     mode === 'fishing'
       ? 'Fishing pond. Hold Space to charge the cast and release to cast. Press Space at a bite to reel in. Use A and D or the arrow keys to walk the shore. Press Escape to leave the pond. Choose keep or release in the dialog when a fish is caught.'
       : mode === 'dungeon'
-        ? 'Side-view dungeon. Move with A and D or the arrow keys, jump with Space, climb with W and S, and press E in a room to write a note.'
-        : 'Side-view village street above a dungeon. Move with A and D or the arrow keys, jump with Space, climb with W and S, and press E at a door to enter a portal or visit a building.';
+        ? 'Side-view dungeon. Move with A and D or the arrow keys, jump with Space, climb with W and S, press E in a room to write a note, and press R in a cleared room to review it.'
+        : 'Side-view village street above a dungeon. Move with A and D or the arrow keys, jump with Space, climb with W and S, press E at a door to enter a portal or visit a building, and press R to review the last-studied dungeon.';
   canvas.setAttribute('aria-label', label);
 }
 
@@ -737,6 +776,7 @@ function enterFishing(state: EngineState): void {
 }
 
 function teardownDungeonAndSurface(): void {
+  dropReviewPanel();
   level = null;
   body = null;
   view = null;
@@ -1086,6 +1126,293 @@ function openComposer(roomId: string): void {
   hud.clearError();
 }
 
+// ── Archaeologist review (P5) ────────────────────────────────────────────────
+
+/** Detach the panel without dispatching or returning to the village. */
+function dropReviewPanel(): void {
+  if (!reviewPanel) return;
+  reviewPanel.close();
+  reviewPanel = null;
+  reviewActivatedSubject = false;
+  reviewPending = false;
+}
+
+/**
+ * Close the panel through the learner's action.
+ *
+ * A review opened from the street activated a subject so `dispatchReview` had
+ * one; closing it always returns to the village so no study session is left
+ * open (K-15).
+ */
+function closeReviewPanel(): void {
+  if (!reviewPanel) return;
+  if (reviewPending) {
+    hud.announce('A review command is still pending. Wait for it to finish.');
+    return;
+  }
+  const deactivate = reviewActivatedSubject;
+  dropReviewPanel();
+  syncPrompt();
+  focusCanvas();
+  if (deactivate && engine) {
+    void engine
+      .returnToVillage()
+      .then(() => hud.announce('Review closed. Returned to the village street.'))
+      .catch((error: unknown) => {
+        hud.showError(`Could not close the review study session: ${describe(error)}`);
+        hud.announce('Could not close the review study session.');
+      });
+    return;
+  }
+  hud.announce('Review closed. Nothing new was committed.');
+}
+
+async function completeReview(roomId: string, rating: number): Promise<void> {
+  if (!engine || reviewPending) return;
+  const panel = reviewPanel;
+  reviewPending = true;
+  panel?.setPending(true);
+  hud.clearError();
+  try {
+    const result = await engine.dispatchReview({
+      type: 'review/pass-complete',
+      payload: { roomId, qualityRating: rating as 0 | 1 | 2 | 3 | 4 | 5 },
+    });
+    if (!result.ok) {
+      const message = reviewRefusalMessage(result.error.code, result.error.message);
+      panel?.showError(message);
+      hud.announce(`Review refused: ${result.error.message}.`);
+      return;
+    }
+    const outcome = result.value as ReviewPassCompleteOutcome;
+    const lines = passResultLines(outcome);
+    const after = projectReviewRoom(getState(), roomId, reviewNow());
+    if (after) lines.push(`Next review: ${after.dueLabel}.`);
+    panel?.showResult(lines.join('\n'));
+    panel?.markCompleted();
+    hud.announce(
+      outcome.progression.duplicate
+        ? 'Review recorded. This pass was already awarded.'
+        : outcome.progression.awarded
+          ? `Review recorded. ${outcome.progression.xpGained} XP gained.`
+          : 'Review recorded without a reward.',
+    );
+  } catch (error) {
+    const message = reviewNotSavedMessage(error);
+    panel?.showError(message);
+    hud.showError(message);
+    hud.announce('The review was not saved. The panel is still open.');
+  } finally {
+    reviewPending = false;
+    panel?.setPending(false);
+  }
+}
+
+async function saveReviewForLater(roomId: string, rating: number | null): Promise<void> {
+  if (!engine || reviewPending) return;
+  const panel = reviewPanel;
+  reviewPending = true;
+  panel?.setPending(true);
+  hud.clearError();
+  try {
+    const result = await engine.dispatchReview({
+      type: 'review/session-save',
+      payload: { roomId, qualityRating: rating as 0 | 1 | 2 | 3 | 4 | 5 | null },
+    });
+    if (!result.ok) {
+      const message = reviewRefusalMessage(result.error.code, result.error.message);
+      panel?.showError(message);
+      hud.announce(`Save for later refused: ${result.error.message}.`);
+      return;
+    }
+    panel?.showResult(saveLaterLines(result.value as ReviewSessionSaveOutcome).join('\n'));
+    hud.announce('Review saved for later.');
+  } catch (error) {
+    const message = reviewNotSavedMessage(error);
+    panel?.showError(message);
+    hud.showError(message);
+    hud.announce('The review was not saved for later. The panel is still open.');
+  } finally {
+    reviewPending = false;
+    panel?.setPending(false);
+  }
+}
+
+async function discardReview(roomId: string): Promise<void> {
+  if (!engine || reviewPending) return;
+  const panel = reviewPanel;
+  reviewPending = true;
+  panel?.setPending(true);
+  hud.clearError();
+  try {
+    const result = await engine.dispatchReview({
+      type: 'review/session-discard',
+      payload: { roomId },
+    });
+    if (!result.ok) {
+      const message = reviewRefusalMessage(result.error.code, result.error.message);
+      panel?.showError(message);
+      hud.announce(`Discard refused: ${result.error.message}.`);
+      return;
+    }
+    const outcome = result.value as ReviewSessionDiscardOutcome;
+    panel?.showResult(discardLines(outcome).join('\n'));
+    hud.announce(outcome.discarded ? 'Saved review discarded.' : 'No saved review was held.');
+  } catch (error) {
+    const message = reviewNotSavedMessage(error);
+    panel?.showError(message);
+    hud.showError(message);
+    hud.announce('The saved review was not discarded. The panel is still open.');
+  } finally {
+    reviewPending = false;
+    panel?.setPending(false);
+  }
+}
+
+/**
+ * Open the panel for one room.
+ *
+ * `activatedHere` records that the surface shortcut activated the subject purely
+ * so the engine had an active one; closing then returns to the village.
+ */
+async function openReview(roomId: string, activatedHere: boolean): Promise<boolean> {
+  if (!engine || reviewPanel) return false;
+  if (composer) {
+    hud.announce('Close the note composer before reviewing a room.');
+    return false;
+  }
+  if (fishing?.dialog) {
+    hud.announce('Finish the fish choice before reviewing a room.');
+    return false;
+  }
+
+  const state = getState();
+  const now = reviewNow();
+  const dungeonView = projectDungeon(state, now);
+  const room = dungeonView?.rooms.find((entry) => entry.roomId === roomId);
+  if (!dungeonView || !room) {
+    hud.announce('Move into a room to review it.');
+    return false;
+  }
+  if (!room.reviewable) {
+    const message = roomNotClearedMessage();
+    hud.showError(message);
+    showToast(message, 'error');
+    hud.announce(message);
+    return false;
+  }
+
+  const gate = projectReviewGate(state);
+  if (gate && !gate.allowed) {
+    hud.showError(gate.message);
+    showToast(gate.message, 'error');
+    hud.announce(gate.message);
+    return false;
+  }
+
+  // `review/session-resume` is read-only and safe on boot: it writes nothing and
+  // reports the marker the engine holds. A failure only means "start fresh".
+  let resumed: ReviewSessionResumeOutcome['session'] = null;
+  try {
+    const result = await engine.dispatchReview({
+      type: 'review/session-resume',
+      payload: { roomId },
+    });
+    if (result.ok) resumed = (result.value as ReviewSessionResumeOutcome).session;
+  } catch {
+    resumed = null;
+  }
+
+  const roomView = projectReviewRoom(getState(), roomId, reviewNow());
+  if (!roomView) {
+    hud.announce('That room cannot be reviewed right now.');
+    return false;
+  }
+
+  clearInput();
+  reviewActivatedSubject = activatedHere;
+  reviewPanel = mountReviewPanel(
+    reviewPanelHost,
+    {
+      room: { roomId, topic: roomView.topic },
+      prompt: roomView.prompt,
+      passNumber: resumed?.passNumber ?? roomView.passNumber,
+      existingRating: resumed?.qualityRating ?? roomView.existingRating,
+    },
+    {
+      onPassComplete: (rating) => completeReview(roomId, rating),
+      onSaveForLater: (rating) => saveReviewForLater(roomId, rating),
+      onDiscard: () => discardReview(roomId),
+      onClose: () => closeReviewPanel(),
+    },
+  );
+  syncPrompt();
+  hud.clearError();
+  hud.announce(
+    resumed
+      ? `Saved review resumed for pass ${resumed.passNumber}. Rate your recall from 0 to 5.`
+      : 'Review open. Rate your recall from 0 to 5, then press Enter.',
+  );
+  return true;
+}
+
+/**
+ * `R` on the street: open the most urgent room in the last-studied subject's
+ * queue, activating the subject only for the duration of the review.
+ */
+async function openReviewFromSurface(): Promise<void> {
+  if (!engine || reviewPanel || reviewEntryPending || interactionPending || returnPending) return;
+  const state = getState();
+  const subjectId = mostRecentStudiedSubject(state) ?? lastStudiedSubjectId;
+  if (!subjectId || !state.subjects[subjectId]) {
+    const message = noReviewSubjectMessage();
+    hud.showError(message);
+    showToast(message, 'error');
+    hud.announce(message);
+    return;
+  }
+
+  reviewEntryPending = true;
+  const alreadyActive = state.activeSubjectId === subjectId;
+  try {
+    if (!alreadyActive) await engine.activateSubject(subjectId);
+    const fresh = getState();
+    const subjectName = fresh.subjects[subjectId]?.dungeon.subjectName ?? 'that subject';
+
+    const gate = projectReviewGate(fresh);
+    if (gate && !gate.allowed) {
+      hud.showError(gate.message);
+      showToast(gate.message, 'error');
+      hud.announce(gate.message);
+      if (!alreadyActive) await engine.returnToVillage();
+      return;
+    }
+
+    const queue = projectReview(fresh, reviewNow());
+    if (!queue || queue.candidates.length === 0) {
+      const message = `No cleared rooms to review in ${subjectName}.`;
+      hud.showError(message);
+      showToast(message, 'error');
+      hud.announce(message);
+      if (!alreadyActive) await engine.returnToVillage();
+      return;
+    }
+
+    lastStudiedSubjectId = subjectId;
+    const opened = await openReview(queue.candidates[0].roomId, !alreadyActive);
+    if (!opened && !alreadyActive) await engine.returnToVillage();
+  } catch (error) {
+    const message = `Could not open the review queue: ${describe(error)}`;
+    hud.showError(message);
+    hud.announce('The review queue could not be opened.');
+    if (!alreadyActive && getState().activeSubjectId === subjectId) {
+      await engine.returnToVillage().catch(() => undefined);
+    }
+  } finally {
+    reviewEntryPending = false;
+  }
+}
+
 async function useInteractable(target: SurfaceInteractable): Promise<void> {
   if (!engine || interactionPending) return;
   interactionPending = true;
@@ -1131,6 +1458,15 @@ function installInput(): void {
       return;
     }
 
+    // The review panel handles 0–5, Enter, S, D, Escape, and Tab itself.
+    if (reviewPanel) {
+      if (event.code === 'Escape') {
+        event.preventDefault();
+        closeReviewPanel();
+      }
+      return;
+    }
+
     if (isTypingTarget(event.target)) return;
 
     if (screen === 'fishing' && fishing) {
@@ -1163,6 +1499,21 @@ function installInput(): void {
       if (screen === 'dungeon') {
         if (activeRoomId) openComposer(activeRoomId);
         else hud.announce('Move into a room to write a note.');
+      }
+    }
+    if (event.code === 'KeyR' && !event.repeat) {
+      event.preventDefault();
+      if (returnPending || interactionPending || reviewEntryPending) return;
+      if (screen === 'surface') {
+        void openReviewFromSurface();
+        return;
+      }
+      if (screen === 'dungeon') {
+        if (activeRoomId) {
+          void openReview(activeRoomId, false);
+        } else {
+          hud.announce('Move into a room to review it.');
+        }
       }
     }
   });
@@ -1270,7 +1621,10 @@ function updateRoomVisit(): void {
     syncPrompt();
     if (room) {
       const status = view?.rooms.find((entry) => entry.roomId === room.roomId)?.statusLabel ?? room.status;
-      hud.announce(`Entered ${room.topic}. ${status}. Press E to write a note.`);
+      const reviewable = view?.rooms.find((entry) => entry.roomId === room.roomId)?.reviewable ?? false;
+      hud.announce(
+        `Entered ${room.topic}. ${status}. Press E to write a note.${reviewable ? ' Press R to review it.' : ''}`,
+      );
     }
   }
 
@@ -1361,8 +1715,8 @@ function frame(nowMs: number): void {
   jumpQueued = false;
 
   if (level && body && context) {
-    // The composer pauses the world: no movement, no visits while a modal is open.
-    if (!composer) {
+    // The composer and the review panel pause the world: no movement, no visits.
+    if (!composer && !reviewPanel) {
       body = stepBody(body, intent, level, deltaMs);
       if (screen === 'dungeon') {
         updateRoomVisit();

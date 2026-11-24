@@ -89,6 +89,12 @@ export function createHud(elements: HudElements): Hud {
         ['Current room', current ? current.topic : 'Between rooms'],
         ['Study session', view.studySessionOpen ? 'active' : 'closed'],
         ['Visited this session', String(view.visits.length)],
+        ['Reviews due', view.dueRooms === 1 ? '1 room' : `${view.dueRooms} rooms`],
+        ['Review pass', String(view.nextPassNumber)],
+        [
+          'Review mode',
+          view.reviewUnlocked ? 'unlocked' : 'locked — clear every room encounter',
+        ],
       ];
       elements.summary.replaceChildren(...rows.flatMap(([term, value]) => row(term, value)));
 

@@ -1,0 +1,591 @@
+{
+  "capturedAt": "2026-11-24T08:27:13.552Z",
+  "app": "http://localhost:5174/",
+  "viewport": "default headless Firefox (captured window)",
+  "prefix": "2026-11-24-g5",
+  "review": true,
+  "reducedMotion": false,
+  "result": {
+    "reduced": false,
+    "frameStats": {
+      "frames": 558,
+      "avgMs": 17.93,
+      "p95Ms": 33.24,
+      "maxMs": 50.56,
+      "over16_7": 305
+    },
+    "rootCleared": {
+      "activeSubjectId": "tutorial-first-walkthrough",
+      "activeStudy": true,
+      "subjects": 1,
+      "world": "dungeon",
+      "rooms": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "visited": [
+        "tut-note"
+      ],
+      "sessions": 1,
+      "xp": 28,
+      "xpTotal": 28,
+      "fish": 0,
+      "cleared": 1,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassCounts": {
+        "tut-note": 0,
+        "tut-tools": 0,
+        "tut-map": 0
+      },
+      "nextReview": {
+        "tut-note": null,
+        "tut-tools": null,
+        "tut-map": null
+      },
+      "marker": null
+    },
+    "locked": {
+      "toast": "Reviews are locked: 1 of 3 rooms cleared. Clear every room encounter to unlock full review mode.",
+      "error": "Reviews are locked: 1 of 3 rooms cleared. Clear every room encounter to unlock full review mode.",
+      "prompt": "E write a note — The Note\nR review — The Note",
+      "panelHidden": true
+    },
+    "allCleared": {
+      "activeSubjectId": "tutorial-first-walkthrough",
+      "activeStudy": true,
+      "subjects": 1,
+      "world": "dungeon",
+      "rooms": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "visited": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "sessions": 1,
+      "xp": 86,
+      "xpTotal": 86,
+      "fish": 0,
+      "cleared": 3,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassCounts": {
+        "tut-note": 0,
+        "tut-tools": 0,
+        "tut-map": 0
+      },
+      "nextReview": {
+        "tut-note": null,
+        "tut-tools": null,
+        "tut-map": null
+      },
+      "marker": null
+    },
+    "opened": {
+      "text": "Review “The Map & Beyond”\nRoom\nThe Map & Beyond\nPass\n1\nPrevious rating\nNone chosen yet\nSelf-check prompt\nIn one minute, explain how The Map & Beyond fits into First Dungeon (Tutorial).\n\nAnswer it to yourself, then rate how the recall felt. This is self-assessment, not a grade.\n\nRate your recall (0–5)\n0 · Forgot\n1 · Barely\n2 · Shaky\n3 · Solid\n4 · Good\n5 · Perfect\n\nKeys: 0–5 choose a rating · Enter submits · S saves for later · D discards · Escape closes.\n\nSubmit rating\nSave for later\nDiscard saved review\nClose without writing",
+      "focus": "review-rating-0",
+      "hidden": false,
+      "ratingButtons": 6,
+      "pressed": [],
+      "submitEnabled": false,
+      "promptShown": true,
+      "previousRow": "Room\nThe Map & Beyond\nPass\n1\nPrevious rating\nNone chosen yet",
+      "result": "",
+      "error": ""
+    },
+    "selected": {
+      "text": "Review “The Map & Beyond”\nRoom\nThe Map & Beyond\nPass\n1\nPrevious rating\nNone chosen yet\nSelf-check prompt\nIn one minute, explain how The Map & Beyond fits into First Dungeon (Tutorial).\n\nAnswer it to yourself, then rate how the recall felt. This is self-assessment, not a grade.\n\nRate your recall (0–5)\n0 · Forgot\n1 · Barely\n2 · Shaky\n3 · Solid\n4 · Good\n5 · Perfect\n\nKeys: 0–5 choose a rating · Enter submits · S saves for later · D discards · Escape closes.\n\nSubmit rating\nSave for later\nDiscard saved review\nClose without writing",
+      "focus": "review-rating-0",
+      "hidden": false,
+      "ratingButtons": 6,
+      "pressed": [
+        "review-rating-5"
+      ],
+      "submitEnabled": true,
+      "promptShown": true,
+      "previousRow": "Room\nThe Map & Beyond\nPass\n1\nPrevious rating\nNone chosen yet",
+      "result": "",
+      "error": ""
+    },
+    "rated": {
+      "state": {
+        "activeSubjectId": "tutorial-first-walkthrough",
+        "activeStudy": true,
+        "subjects": 1,
+        "world": "dungeon",
+        "rooms": [
+          "tut-note",
+          "tut-tools",
+          "tut-map"
+        ],
+        "visited": [
+          "tut-note",
+          "tut-tools",
+          "tut-map"
+        ],
+        "sessions": 1,
+        "xp": 92,
+        "xpTotal": 92,
+        "fish": 0,
+        "cleared": 3,
+        "artifacts": 0,
+        "reviewPasses": 1,
+        "reviewPassCounts": {
+          "tut-note": 0,
+          "tut-tools": 0,
+          "tut-map": 1
+        },
+        "nextReview": {
+          "tut-note": null,
+          "tut-tools": null,
+          "tut-map": "2026-11-25T08:26:34.431Z"
+        },
+        "marker": null
+      },
+      "result": "Result\n\nReview recorded.\nXP gained: 6.\nPass progress: 1 room of 3 toward pass 1.\nNext review: Due in 1 day."
+    },
+    "saved": {
+      "state": {
+        "activeSubjectId": "tutorial-first-walkthrough",
+        "activeStudy": true,
+        "subjects": 1,
+        "world": "dungeon",
+        "rooms": [
+          "tut-note",
+          "tut-tools",
+          "tut-map"
+        ],
+        "visited": [
+          "tut-note",
+          "tut-tools",
+          "tut-map"
+        ],
+        "sessions": 1,
+        "xp": 92,
+        "xpTotal": 92,
+        "fish": 0,
+        "cleared": 3,
+        "artifacts": 0,
+        "reviewPasses": 1,
+        "reviewPassCounts": {
+          "tut-note": 0,
+          "tut-tools": 0,
+          "tut-map": 1
+        },
+        "nextReview": {
+          "tut-note": null,
+          "tut-tools": null,
+          "tut-map": "2026-11-25T08:26:34.431Z"
+        },
+        "marker": "tut-map"
+      },
+      "result": "Result\n\nSaved for later at 2026-11-24T08:26:35.716Z (rating 4 preselected).\nNo XP was awarded and the schedule did not move. Complete the review or discard it later."
+    },
+    "reloaded": {
+      "activeSubjectId": "tutorial-first-walkthrough",
+      "activeStudy": true,
+      "subjects": 1,
+      "world": "dungeon",
+      "rooms": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "visited": [
+        "tut-note"
+      ],
+      "sessions": 2,
+      "xp": 92,
+      "xpTotal": 92,
+      "fish": 0,
+      "cleared": 3,
+      "artifacts": 0,
+      "reviewPasses": 1,
+      "reviewPassCounts": {
+        "tut-note": 0,
+        "tut-tools": 0,
+        "tut-map": 1
+      },
+      "nextReview": {
+        "tut-note": null,
+        "tut-tools": null,
+        "tut-map": "2026-11-25T08:26:34.431Z"
+      },
+      "marker": "tut-map"
+    },
+    "resumed": {
+      "state": "tut-map",
+      "previousRow": "Room\nThe Map & Beyond\nPass\n1\nPrevious rating\n4 · Good"
+    },
+    "discarded": {
+      "activeSubjectId": "tutorial-first-walkthrough",
+      "activeStudy": true,
+      "subjects": 1,
+      "world": "dungeon",
+      "rooms": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "visited": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "sessions": 2,
+      "xp": 92,
+      "xpTotal": 92,
+      "fish": 0,
+      "cleared": 3,
+      "artifacts": 0,
+      "reviewPasses": 1,
+      "reviewPassCounts": {
+        "tut-note": 0,
+        "tut-tools": 0,
+        "tut-map": 1
+      },
+      "nextReview": {
+        "tut-note": null,
+        "tut-tools": null,
+        "tut-map": "2026-11-25T08:26:34.431Z"
+      },
+      "marker": null
+    },
+    "beforeComplete": {
+      "activeSubjectId": "tutorial-first-walkthrough",
+      "activeStudy": true,
+      "subjects": 1,
+      "world": "dungeon",
+      "rooms": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "visited": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "sessions": 3,
+      "xp": 92,
+      "xpTotal": 92,
+      "fish": 0,
+      "cleared": 3,
+      "artifacts": 0,
+      "reviewPasses": 1,
+      "reviewPassCounts": {
+        "tut-note": 0,
+        "tut-tools": 0,
+        "tut-map": 1
+      },
+      "nextReview": {
+        "tut-note": null,
+        "tut-tools": null,
+        "tut-map": "2026-11-25T08:26:34.431Z"
+      },
+      "marker": "tut-map"
+    },
+    "afterComplete": {
+      "activeSubjectId": "tutorial-first-walkthrough",
+      "activeStudy": true,
+      "subjects": 1,
+      "world": "dungeon",
+      "rooms": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "visited": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "sessions": 3,
+      "xp": 92,
+      "xpTotal": 92,
+      "fish": 0,
+      "cleared": 3,
+      "artifacts": 0,
+      "reviewPasses": 1,
+      "reviewPassCounts": {
+        "tut-note": 0,
+        "tut-tools": 0,
+        "tut-map": 1
+      },
+      "nextReview": {
+        "tut-note": null,
+        "tut-tools": null,
+        "tut-map": "2026-11-25T08:26:34.431Z"
+      },
+      "marker": "tut-map"
+    },
+    "afterDuplicateDiscard": {
+      "activeSubjectId": "tutorial-first-walkthrough",
+      "activeStudy": true,
+      "subjects": 1,
+      "world": "dungeon",
+      "rooms": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "visited": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "sessions": 3,
+      "xp": 92,
+      "xpTotal": 92,
+      "fish": 0,
+      "cleared": 3,
+      "artifacts": 0,
+      "reviewPasses": 1,
+      "reviewPassCounts": {
+        "tut-note": 0,
+        "tut-tools": 0,
+        "tut-map": 1
+      },
+      "nextReview": {
+        "tut-note": null,
+        "tut-tools": null,
+        "tut-map": "2026-11-25T08:26:34.431Z"
+      },
+      "marker": null
+    },
+    "beforeFailure": {
+      "activeSubjectId": "tutorial-first-walkthrough",
+      "activeStudy": true,
+      "subjects": 1,
+      "world": "dungeon",
+      "rooms": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "visited": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "sessions": 3,
+      "xp": 92,
+      "xpTotal": 92,
+      "fish": 0,
+      "cleared": 3,
+      "artifacts": 0,
+      "reviewPasses": 1,
+      "reviewPassCounts": {
+        "tut-note": 0,
+        "tut-tools": 0,
+        "tut-map": 1
+      },
+      "nextReview": {
+        "tut-note": null,
+        "tut-tools": null,
+        "tut-map": "2026-11-25T08:26:34.431Z"
+      },
+      "marker": null
+    },
+    "afterFailure": {
+      "activeSubjectId": "tutorial-first-walkthrough",
+      "activeStudy": true,
+      "subjects": 1,
+      "world": "dungeon",
+      "rooms": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "visited": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "sessions": 3,
+      "xp": 92,
+      "xpTotal": 92,
+      "fish": 0,
+      "cleared": 3,
+      "artifacts": 0,
+      "reviewPasses": 1,
+      "reviewPassCounts": {
+        "tut-note": 0,
+        "tut-tools": 0,
+        "tut-map": 1
+      },
+      "nextReview": {
+        "tut-note": null,
+        "tut-tools": null,
+        "tut-map": "2026-11-25T08:26:34.431Z"
+      },
+      "marker": null
+    },
+    "failureError": "Not saved: simulated quota failure. Nothing was committed; the review is still open. Try again.",
+    "finalState": {
+      "activeSubjectId": "tutorial-first-walkthrough",
+      "activeStudy": true,
+      "subjects": 1,
+      "world": "dungeon",
+      "rooms": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "visited": [
+        "tut-note"
+      ],
+      "sessions": 4,
+      "xp": 92,
+      "xpTotal": 92,
+      "fish": 0,
+      "cleared": 3,
+      "artifacts": 0,
+      "reviewPasses": 1,
+      "reviewPassCounts": {
+        "tut-note": 0,
+        "tut-tools": 0,
+        "tut-map": 1
+      },
+      "nextReview": {
+        "tut-note": null,
+        "tut-tools": null,
+        "tut-map": "2026-11-25T08:26:34.431Z"
+      },
+      "marker": null
+    },
+    "streetReview": {
+      "text": "Review “The Note”\nRoom\nThe Note\nPass\n1\nPrevious rating\nNone chosen yet\nSelf-check prompt\nIn one minute, explain how The Note fits into First Dungeon (Tutorial).\n\nAnswer it to yourself, then rate how the recall felt. This is self-assessment, not a grade.\n\nRate your recall (0–5)\n0 · Forgot\n1 · Barely\n2 · Shaky\n3 · Solid\n4 · Good\n5 · Perfect\n\nKeys: 0–5 choose a rating · Enter submits · S saves for later · D discards · Escape closes.\n\nSubmit rating\nSave for later\nDiscard saved review\nClose without writing",
+      "focus": "review-rating-0",
+      "hidden": false,
+      "ratingButtons": 6,
+      "pressed": [],
+      "submitEnabled": false,
+      "promptShown": true,
+      "previousRow": "Room\nThe Note\nPass\n1\nPrevious rating\nNone chosen yet",
+      "result": "",
+      "error": ""
+    },
+    "streetState": {
+      "activeSubjectId": "tutorial-first-walkthrough",
+      "activeStudy": true,
+      "subjects": 1,
+      "world": "village",
+      "rooms": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "visited": [],
+      "sessions": 5,
+      "xp": 92,
+      "xpTotal": 92,
+      "fish": 0,
+      "cleared": 3,
+      "artifacts": 0,
+      "reviewPasses": 1,
+      "reviewPassCounts": {
+        "tut-note": 0,
+        "tut-tools": 0,
+        "tut-map": 1
+      },
+      "nextReview": {
+        "tut-note": null,
+        "tut-tools": null,
+        "tut-map": "2026-11-25T08:26:34.431Z"
+      },
+      "marker": null
+    },
+    "streetClosed": {
+      "activeSubjectId": null,
+      "activeStudy": false,
+      "subjects": 1,
+      "world": "village",
+      "rooms": [],
+      "visited": [],
+      "sessions": 5,
+      "xp": null,
+      "xpTotal": 92,
+      "fish": 0,
+      "cleared": 0,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassCounts": {},
+      "nextReview": {},
+      "marker": null
+    },
+    "error": ""
+  },
+  "frames": [
+    {
+      "file": "2026-11-24-g5-01-locked.png",
+      "label": "Review locked",
+      "detail": "shownIn=44ms; cleared=1/3; toast says locked=true; panel stayed closed=true; prompt offers R=true"
+    },
+    {
+      "file": "2026-11-24-g5-02-due-prompt.png",
+      "label": "Cleared room prompt",
+      "detail": "cleared=3/3; climb=3784ms; prompt shows E and R=true; HUD reviews due=\"3 rooms\""
+    },
+    {
+      "file": "2026-11-24-g5-03-review-panel.png",
+      "label": "Review panel",
+      "detail": "shownIn=24ms; focus=review-rating-0; rating buttons=6; prompt shown=true; previous row=\"Previous rating None chosen yet\"; frame avg=17.93ms p95=33.24ms max=50.56ms over16.7=305/558"
+    },
+    {
+      "file": "2026-11-24-g5-04-selected.png",
+      "label": "Rating selected",
+      "detail": "pressed=review-rating-5; submit enabled=true"
+    },
+    {
+      "file": "2026-11-24-g5-05-rated.png",
+      "label": "Rated pass",
+      "detail": "shownIn=8ms; XP copy=true; pass progress=true; next review copy=true; passCount tut-map=1; reviewPasses=1; focus=review-close"
+    },
+    {
+      "file": "2026-11-24-g5-06-saved.png",
+      "label": "Saved for later",
+      "detail": "shownIn=8ms; marker=tut-map; no XP promise=true; passCount unchanged=1; focus=review-rating-4"
+    },
+    {
+      "file": "2026-11-24-g5-07-resumed.png",
+      "label": "Resumed after reload",
+      "detail": "marker after reload=tut-map; previous rating restored=true; focus=review-rating-4"
+    },
+    {
+      "file": "2026-11-24-g5-08-discarded.png",
+      "label": "Saved review discarded",
+      "detail": "armed copy=true; shownIn=20ms; marker=null; result=\"Saved review discarded. Nothing was scheduled.\""
+    },
+    {
+      "file": "2026-11-24-g5-09-duplicate.png",
+      "label": "Resumed completion is not paid twice",
+      "detail": "shownIn=24ms; marker left in place disclosed=true; duplicate copy=true; xp 92→92; reviewPasses 1→1"
+    },
+    {
+      "file": "2026-11-24-g5-10-not-saved.png",
+      "label": "Review save failure",
+      "detail": "descend=2665ms; shownIn=10ms; error says not saved=true; panel open=true; submit enabled after failure=true; xp 92→92; passCount tut-tools 0→0"
+    },
+    {
+      "file": "2026-11-24-g5-11-reload.png",
+      "label": "Reload after review work",
+      "detail": "world=dungeon; cleared=3/3; reviewPasses=1; passCounts={\"tut-note\":0,\"tut-tools\":0,\"tut-map\":1}; nextReview set=true; marker=null; focus=panel-title"
+    },
+    {
+      "file": "2026-11-24-g5-12-street-shortcut.png",
+      "label": "Street review shortcut",
+      "detail": "street=3784ms; panel=33ms; focus=review-rating-0; previous=\"Previous rating None chosen yet\"; subject activated for the command=true"
+    },
+    {
+      "file": "2026-11-24-g5-13-street-closed.png",
+      "label": "Street review closed",
+      "detail": "world=village; activeSubject=null; study session open=false; focus=game; reviews due still listed=true"
+    }
+  ]
+}

@@ -19,6 +19,10 @@
  * clearing a room, the shaft return, and reloads on both screens.
  * P4 adds `--fishing`, which captures the pond entry, cast, bite, recall,
  * keep, a rejected save, release, and mid-cast reload recovery.
+ * P5 adds `--review`, which clears the three tutorial rooms, captures the locked
+ * refusal and the `R review` prompt, rates a pass, saves for later across a
+ * reload, resumes, discards, shows the duplicate award, and simulates a rejected
+ * review save.
  *
  * The script drives the real app over WebDriver, writes PNGs to `--out`, and
  * writes `<prefix>-manifest.json` plus Markdown table rows for VISUALS.md.
@@ -38,6 +42,7 @@ function parseArgs(argv) {
     noteLoop: false,
     surface: false,
     fishing: false,
+    review: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -50,6 +55,7 @@ function parseArgs(argv) {
     else if (arg === '--note-loop') options.noteLoop = true;
     else if (arg === '--surface') options.surface = true;
     else if (arg === '--fishing') options.fishing = true;
+    else if (arg === '--review') options.review = true;
     else throw new Error(`Unknown argument: ${arg}`);
   }
   return options;
@@ -177,6 +183,17 @@ async function stored(session) {
           cleared: Object.values(state.subjects[state.activeSubjectId]?.rooms ?? {})
             .filter((room) => room.validationState.finalPass).length,
           artifacts: state.progression[state.activeSubjectId]?.collectedNotes?.length ?? 0,
+          reviewPasses: state.progression[state.activeSubjectId]?.reviewPasses ?? 0,
+          reviewPassCounts: Object.fromEntries(
+            Object.entries(state.subjects[state.activeSubjectId]?.rooms ?? {})
+              .map(([id, room]) => [id, room.reviewPassCount ?? 0]),
+          ),
+          nextReview: Object.fromEntries(
+            Object.entries(state.subjects[state.activeSubjectId]?.rooms ?? {})
+              .map(([id, room]) => [id, room.sm2NextReviewDate ?? null]),
+          ),
+          marker:
+            state.progression[state.activeSubjectId]?.extraFields?.interruptedReviewSession?.roomId ?? null,
         });
       };
     };
@@ -969,6 +986,410 @@ async function captureFishing(prefix, frames) {
   }
 }
 
+// ── P5 review ───────────────────────────────────────────────────────────────
+
+/** Open the composer with `E`, submit the valid fixture, and close it again. */
+async function clearCurrentRoom(session) {
+  await session.synthDown('KeyE', 'e');
+  await session.synthUp('KeyE', 'e');
+  const opened = await waitForExpr(session, `document.querySelector('#note-panel')?.hidden === false`);
+  if (!opened) throw new Error('The note composer did not open');
+  await session.execute(`
+    const text = document.querySelector('#note-text');
+    text.value = ${JSON.stringify(VALID_NOTE)};
+    document.querySelector('#note-confirmed').checked = true;
+    document.querySelector('#note-submit').click();
+    return true;
+  `);
+  const cleared = await waitForExpr(session, `document.querySelector('#note-outcome')?.hidden === false`);
+  if (!cleared) throw new Error('The note did not clear the room');
+  await session.synthDown('Escape', 'Escape');
+  await session.synthUp('Escape', 'Escape');
+  await sleep(400);
+}
+
+/** Hold a direction until the HUD names a room, then release. */
+async function holdUntilRoom(session, code, key, needle, timeoutMs) {
+  await session.synthDown(code, key);
+  const ms = await waitForRoom(session, needle, timeoutMs);
+  await session.synthUp(code, key);
+  await sleep(500);
+  return ms;
+}
+
+/**
+ * Step into the entrance shaft and ride the ladder into the lower room.
+ *
+ * Returns the time the HUD took to name the room, or null. Retries nudge the
+ * player toward the shaft, because a shaft bottom can be left at either side.
+ */
+async function descendToToolsRoom(session) {
+  await session.hold('d', 650);
+  await sleep(300);
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const ms = await holdUntilRoom(session, 'KeyS', 's', 'Tools of the Trade', 7000);
+    if (ms !== null) return ms;
+    await session.hold(attempt % 2 === 0 ? 'a' : 'd', 400);
+    await sleep(300);
+  }
+  return null;
+}
+
+/** Climb the shaft until the HUD names the upper room, retrying a missed ladder. */
+async function climbToMapRoom(session) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const ms = await holdUntilRoom(session, 'KeyW', 'w', 'The Map & Beyond', 15000);
+    if (ms !== null) return ms;
+    await session.hold(attempt === 0 ? 'a' : 'd', 400);
+    await sleep(300);
+  }
+  return null;
+}
+
+/** Descend from the upper room back to the lower one. */
+async function descendToToolsFromMap(session) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const ms = await holdUntilRoom(session, 'KeyS', 's', 'Tools of the Trade', 12000);
+    if (ms !== null) return ms;
+    await session.hold(attempt === 0 ? 'a' : 'd', 400);
+    await sleep(300);
+  }
+  return null;
+}
+
+/** Press `R` and wait for the panel. */
+async function openReviewWithR(session) {
+  await session.synthDown('KeyR', 'r');
+  await session.synthUp('KeyR', 'r');
+  return waitForExpr(session, `document.querySelector('#review-panel')?.hidden === false`);
+}
+
+async function reviewPanelState(session) {
+  return session.execute(`
+    return {
+      text: document.querySelector('#review-panel')?.innerText ?? '',
+      focus: document.activeElement?.id ?? '',
+      hidden: document.querySelector('#review-panel')?.hidden ?? null,
+      ratingButtons: document.querySelectorAll('#review-panel [id^="review-rating-"]').length,
+      pressed: [...document.querySelectorAll('#review-panel [id^="review-rating-"]')]
+        .filter((node) => node.getAttribute('aria-pressed') === 'true')
+        .map((node) => node.id),
+      submitEnabled: document.querySelector('#review-submit')?.disabled === false,
+      promptShown: (document.querySelector('#review-prompt blockquote')?.innerText ?? '').length > 0,
+      previousRow: (document.querySelector('#review-summary')?.innerText ?? ''),
+      result: document.querySelector('#review-result')?.hidden === false
+        ? (document.querySelector('#review-result')?.innerText ?? '')
+        : '',
+      error: document.querySelector('#review-error')?.hidden
+        ? ''
+        : (document.querySelector('#review-error')?.innerText ?? ''),
+    };
+  `);
+}
+
+/**
+ * P5 review run: clear the three tutorial rooms, capture the locked refusal, the
+ * due prompt, a rated pass, save-for-later across a reload, resume, discard, a
+ * duplicate completion, and a rejected review save.
+ *
+ * Every panel key is sent through WebDriver to the focused element, so the run is
+ * keyboard-only in the same way a learner's is.
+ */
+async function captureReview(prefix, frames) {
+  const session = await openSession(options.reducedMotion ? { 'ui.prefersReducedMotion': 1 } : {});
+  try {
+    await wd('POST', session.session('/url'), { url: APP });
+    await sleep(1800);
+
+    await session.execute(`window.confirm = () => true; document.querySelector('#clear-save')?.click(); return true;`);
+    await sleep(1500);
+    await wd('POST', session.session('/refresh'), {});
+    await sleep(2200);
+    await startTutorial(session);
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Subject') === true`);
+    const reduced = await session.execute(`return matchMedia('(prefers-reduced-motion: reduce)').matches;`);
+
+    // Clear the root room only; review is still locked by the engine's unlock.
+    await clearCurrentRoom(session);
+    const rootCleared = await stored(session);
+    await session.synthDown('KeyR', 'r');
+    await session.synthUp('KeyR', 'r');
+    const lockedMs = await waitForExpr(session, `document.querySelector('#toast')?.hidden === false`);
+    const locked = await session.execute(`
+      return {
+        toast: document.querySelector('#toast')?.innerText ?? '',
+        error: document.querySelector('#error')?.hidden ? '' : (document.querySelector('#error')?.innerText ?? ''),
+        prompt: document.querySelector('#prompt')?.innerText ?? '',
+        panelHidden: document.querySelector('#review-panel')?.hidden ?? null,
+      };
+    `);
+    frames.push({
+      file: await session.screenshot(`${prefix}-01-locked.png`),
+      label: 'Review locked',
+      detail: `shownIn=${lockedMs ?? 'timeout'}ms; cleared=${rootCleared.cleared}/3; toast says locked=${/locked/i.test(locked.toast)}; panel stayed closed=${locked.panelHidden === true}; prompt offers R=${/R/.test(locked.prompt) && /review/i.test(locked.prompt)}`,
+    });
+    await session.execute(`document.querySelector('#toast').hidden = true; return true;`);
+
+    // Finish the other two rooms so the engine unlocks review.
+    await descendToToolsRoom(session);
+    await clearCurrentRoom(session);
+    const climbMs = await climbToMapRoom(session);
+    if (climbMs === null) throw new Error('Could not climb to the upper room');
+    await clearCurrentRoom(session);
+    const allCleared = await stored(session);
+    if (allCleared.cleared !== 3) {
+      throw new Error(`Expected 3 cleared rooms before review, got ${allCleared.cleared}`);
+    }
+    const duePanel = await panel(session);
+    const promptText = await session.execute(`return document.querySelector('#prompt')?.innerText ?? '';`);
+    frames.push({
+      file: await session.screenshot(`${prefix}-02-due-prompt.png`),
+      label: 'Cleared room prompt',
+      detail: `cleared=${allCleared.cleared}/3; climb=${climbMs ?? 'timeout'}ms; prompt shows E and R=${/E/.test(promptText) && /R/.test(promptText)}; HUD reviews due="${(duePanel.summary.match(/Reviews due\n(.+)/) ?? [])[1] ?? 'missing'}"`,
+    });
+
+    // Open the panel, measure a 10-second frame window, then capture it unrated.
+    const openMs = await openReviewWithR(session);
+    const opened = await reviewPanelState(session);
+    const frameStats = await session.executeAsync(`
+      const done = arguments[arguments.length - 1];
+      const deltas = [];
+      const started = performance.now();
+      let last = started;
+      function tick(now) {
+        deltas.push(now - last);
+        last = now;
+        if (now - started < 10000) requestAnimationFrame(tick);
+        else {
+          const sorted = [...deltas].sort((a, b) => a - b);
+          done({
+            frames: deltas.length,
+            avgMs: Math.round((deltas.reduce((a, b) => a + b, 0) / deltas.length) * 100) / 100,
+            p95Ms: Math.round(sorted[Math.floor(sorted.length * 0.95)] * 100) / 100,
+            maxMs: Math.round(Math.max(...deltas) * 100) / 100,
+            over16_7: deltas.filter((value) => value > 16.7).length,
+          });
+        }
+      }
+      requestAnimationFrame(tick);
+    `);
+    frames.push({
+      file: await session.screenshot(`${prefix}-03-review-panel.png`),
+      label: 'Review panel',
+      detail: `shownIn=${openMs ?? 'timeout'}ms; focus=${opened.focus}; rating buttons=${opened.ratingButtons}; prompt shown=${opened.promptShown}; previous row="${opened.previousRow.split('\n').slice(-2).join(' ')}"; frame avg=${frameStats.avgMs}ms p95=${frameStats.p95Ms}ms max=${frameStats.maxMs}ms over16.7=${frameStats.over16_7}/${frameStats.frames}`,
+    });
+
+    await session.hold('5', 60);
+    await sleep(250);
+    const selected = await reviewPanelState(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-04-selected.png`),
+      label: 'Rating selected',
+      detail: `pressed=${selected.pressed.join(',')}; submit enabled=${selected.submitEnabled}`,
+    });
+
+    await session.hold('\uE007', 60);
+    const ratedMs = await waitForExpr(session, `document.querySelector('#review-result')?.hidden === false`);
+    await sleep(300);
+    const rated = await reviewPanelState(session);
+    const ratedState = await stored(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-05-rated.png`),
+      label: 'Rated pass',
+      detail: `shownIn=${ratedMs ?? 'timeout'}ms; XP copy=${/XP gained/.test(rated.result)}; pass progress=${/Pass progress/.test(rated.result)}; next review copy=${/Next review/.test(rated.result)}; passCount tut-map=${ratedState.reviewPassCounts['tut-map']}; reviewPasses=${ratedState.reviewPasses}; focus=${rated.focus}`,
+    });
+
+    // Save for later from a fresh panel, with a different preselected rating.
+    await session.hold('\uE00C', 60);
+    await sleep(400);
+    await openReviewWithR(session);
+    await session.hold('4', 60);
+    await session.hold('s', 60);
+    const savedMs = await waitForExpr(session, `document.querySelector('#review-result')?.innerText.includes('Saved for later') === true`);
+    await sleep(300);
+    const saved = await reviewPanelState(session);
+    const savedState = await stored(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-06-saved.png`),
+      label: 'Saved for later',
+      detail: `shownIn=${savedMs ?? 'timeout'}ms; marker=${savedState.marker}; no XP promise=${/No XP was awarded/.test(saved.result)}; passCount unchanged=${savedState.reviewPassCounts['tut-map']}; focus=${saved.focus}`,
+    });
+    await session.hold('\uE00C', 60);
+
+    // Reload: the marker survives. Walk back to the same room and resume.
+    await wd('POST', session.session('/refresh'), {});
+    await sleep(2800);
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Subject') === true`);
+    const reloaded = await stored(session);
+    if ((await descendToToolsRoom(session)) === null) {
+      throw new Error('Could not descend to the lower room after reload');
+    }
+    if ((await climbToMapRoom(session)) === null) {
+      throw new Error('Could not climb to the upper room after reload');
+    }
+    await openReviewWithR(session);
+    const resumed = await reviewPanelState(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-07-resumed.png`),
+      label: 'Resumed after reload',
+      detail: `marker after reload=${reloaded.marker}; previous rating restored=${/4 · Good/.test(resumed.previousRow)}; focus=${resumed.focus}`,
+    });
+
+    // D twice: arm then confirm.
+    await session.hold('d', 60);
+    const armed = await reviewPanelState(session);
+    await session.hold('d', 60);
+    const discardedMs = await waitForExpr(session, `document.querySelector('#review-result')?.innerText.includes('discarded') === true`);
+    await sleep(300);
+    const discarded = await reviewPanelState(session);
+    const discardedState = await stored(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-08-discarded.png`),
+      label: 'Saved review discarded',
+      detail: `armed copy=${/Confirm discard/.test(armed.text)}; shownIn=${discardedMs ?? 'timeout'}ms; marker=${discardedState.marker}; result="${discarded.result.split('\n').slice(-1)[0]}"`,
+    });
+    await session.hold('\uE00C', 60);
+
+    // Save again, reload, resume, and complete: the same pass is not paid twice.
+    await openReviewWithR(session);
+    await session.hold('4', 60);
+    await session.hold('s', 60);
+    await waitForExpr(session, `document.querySelector('#review-result')?.innerText.includes('Saved for later') === true`);
+    await session.hold('\uE00C', 60);
+    await wd('POST', session.session('/refresh'), {});
+    await sleep(2800);
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Subject') === true`);
+    if ((await descendToToolsRoom(session)) === null) {
+      throw new Error('Could not descend to the lower room after reload');
+    }
+    if ((await climbToMapRoom(session)) === null) {
+      throw new Error('Could not climb to the upper room after reload');
+    }
+    await openReviewWithR(session);
+    const beforeComplete = await stored(session);
+    await session.hold('\uE007', 60);
+    const completeMs = await waitForExpr(session, `document.querySelector('#review-result')?.hidden === false`);
+    await sleep(300);
+    const completed = await reviewPanelState(session);
+    const afterComplete = await stored(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-09-duplicate.png`),
+      label: 'Resumed completion is not paid twice',
+      detail: `shownIn=${completeMs ?? 'timeout'}ms; marker left in place disclosed=${/saved marker was left in place/.test(completed.result)}; duplicate copy=${/already awarded/.test(completed.result)}; xp ${beforeComplete.xpTotal}→${afterComplete.xpTotal}; reviewPasses ${beforeComplete.reviewPasses}→${afterComplete.reviewPasses}`,
+    });
+    await session.hold('\uE00C', 60);
+
+    // A duplicate pass leaves the marker in place (the engine's award path is the
+    // one that clears it). Re-open and discard it so the run ends with no marker.
+    await openReviewWithR(session);
+    await session.hold('d', 60);
+    await session.hold('d', 60);
+    await waitForExpr(session, `document.querySelector('#review-result')?.innerText.includes('discarded') === true`);
+    const afterDuplicateDiscard = await stored(session);
+    await session.hold('\uE00C', 60);
+
+    // Descend to the lower room, which has never been reviewed, and break the save.
+    const descendMs = await descendToToolsFromMap(session);
+    if (descendMs === null) throw new Error('Could not descend to the lower room');
+    await openReviewWithR(session);
+    await session.hold('5', 60);
+    const beforeFailure = await stored(session);
+    await session.execute(`
+      window.__originalPut = IDBObjectStore.prototype.put;
+      IDBObjectStore.prototype.put = function () {
+        throw new DOMException('simulated quota failure', 'QuotaExceededError');
+      };
+      return true;
+    `);
+    await session.hold('\uE007', 60);
+    const notSavedMs = await waitForExpr(session, `document.querySelector('#review-error')?.hidden === false`);
+    await sleep(300);
+    const failed = await reviewPanelState(session);
+    const afterFailure = await stored(session);
+    await session.execute(`IDBObjectStore.prototype.put = window.__originalPut; delete window.__originalPut; return true;`);
+    frames.push({
+      file: await session.screenshot(`${prefix}-10-not-saved.png`),
+      label: 'Review save failure',
+      detail: `descend=${descendMs ?? 'timeout'}ms; shownIn=${notSavedMs ?? 'timeout'}ms; error says not saved=${/not saved/i.test(failed.error)}; panel open=${failed.hidden === false}; submit enabled after failure=${failed.submitEnabled}; xp ${beforeFailure.xpTotal}→${afterFailure.xpTotal}; passCount tut-tools ${beforeFailure.reviewPassCounts['tut-tools']}→${afterFailure.reviewPassCounts['tut-tools']}`,
+    });
+    await session.hold('\uE00C', 60);
+
+    // Final reload: review state is durable and no marker is left behind.
+    await wd('POST', session.session('/refresh'), {});
+    await sleep(2800);
+    const finalState = await stored(session);
+    const finalPanel = await panel(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-11-reload.png`),
+      label: 'Reload after review work',
+      detail: `world=${finalState.world}; cleared=${finalState.cleared}/3; reviewPasses=${finalState.reviewPasses}; passCounts=${JSON.stringify(finalState.reviewPassCounts)}; nextReview set=${Object.values(finalState.nextReview).some(Boolean)}; marker=${finalState.marker}; focus=${finalPanel.focus}`,
+    });
+
+    // Climb the entrance shaft to the street, then open the queue with R. The
+    // host activates the last-studied subject for the command and must close it.
+    await session.hold('d', 320);
+    await session.synthDown('KeyW', 'w');
+    const streetMs = await waitForExpr(
+      session,
+      `document.querySelector('#summary')?.innerText.includes('Village street') === true`,
+      25000,
+    );
+    await session.synthUp('KeyW', 'w');
+    await sleep(700);
+    await session.synthDown('KeyR', 'r');
+    await session.synthUp('KeyR', 'r');
+    const streetReviewMs = await waitForExpr(
+      session,
+      `document.querySelector('#review-panel')?.hidden === false`,
+      8000,
+    );
+    const streetReview = await reviewPanelState(session);
+    const streetState = await stored(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-12-street-shortcut.png`),
+      label: 'Street review shortcut',
+      detail: `street=${streetMs ?? 'timeout'}ms; panel=${streetReviewMs ?? 'timeout'}ms; focus=${streetReview.focus}; previous="${streetReview.previousRow.split('\n').slice(-2).join(' ')}"; subject activated for the command=${streetState.activeStudy}`,
+    });
+    await session.hold('\uE00C', 60);
+    await sleep(1400);
+    const streetClosed = await stored(session);
+    const streetClosedPanel = await panel(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-13-street-closed.png`),
+      label: 'Street review closed',
+      detail: `world=${streetClosed.world}; activeSubject=${streetClosed.activeSubjectId}; study session open=${streetClosed.activeStudy}; focus=${streetClosedPanel.focus}; reviews due still listed=${streetClosedPanel.rooms.includes('rooms cleared')}`,
+    });
+
+    return {
+      reduced,
+      frameStats,
+      rootCleared,
+      locked,
+      allCleared,
+      opened,
+      selected,
+      rated: { state: ratedState, result: rated.result },
+      saved: { state: savedState, result: saved.result },
+      reloaded,
+      resumed: { state: reloaded.marker, previousRow: resumed.previousRow },
+      discarded: discardedState,
+      beforeComplete,
+      afterComplete,
+      afterDuplicateDiscard,
+      beforeFailure,
+      afterFailure,
+      failureError: failed.error,
+      finalState,
+      streetReview,
+      streetState,
+      streetClosed,
+      error: finalPanel.error,
+    };
+  } finally {
+    await session.close();
+  }
+}
+
 async function main() {
   await mkdir(OUT, { recursive: true });
   const frames = [];
@@ -981,6 +1402,28 @@ async function main() {
       viewport: 'default headless Firefox (captured window)',
       prefix: options.prefix,
       fishing: true,
+      result: run,
+      frames,
+    };
+    await writeFile(resolve(OUT, `${options.prefix}-manifest.json`), JSON.stringify(manifest, null, 2));
+    console.log(JSON.stringify(manifest, null, 2));
+    const date = new Date().toISOString().slice(0, 10);
+    console.log('\nMarkdown rows:\n');
+    for (const frame of frames) {
+      console.log(`| ${date} | ${frame.label} | \`${frame.file}\` | ${frame.detail} |`);
+    }
+    return;
+  }
+
+  if (options.review) {
+    const run = await captureReview(options.prefix, frames);
+    const manifest = {
+      capturedAt: new Date().toISOString(),
+      app: APP,
+      viewport: 'default headless Firefox (captured window)',
+      prefix: options.prefix,
+      review: true,
+      reducedMotion: options.reducedMotion,
       result: run,
       frames,
     };

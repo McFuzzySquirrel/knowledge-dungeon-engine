@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Knowledge Dungeon — Side-Scroller (P4)</title>
+    <title>Knowledge Dungeon — Side-Scroller (P5)</title>
     <style>
       :root {
         color-scheme: dark;
@@ -113,7 +113,7 @@
       }
       #recovery[hidden] { display: none; }
       #recovery p { margin: 0; flex: 1; color: var(--ink); }
-      #note-panel, #fishing-panel {
+      #note-panel, #fishing-panel, #review-panel {
         position: absolute;
         inset: 0;
         z-index: 3;
@@ -122,7 +122,7 @@
         border-radius: 0.5rem;
         background: rgb(11 13 19 / 92%);
       }
-      #note-panel[hidden], #fishing-panel[hidden] { display: none; }
+      #note-panel[hidden], #fishing-panel[hidden], #review-panel[hidden] { display: none; }
       .note-form {
         max-width: 44rem;
         margin: 0 auto;
@@ -170,14 +170,33 @@
         color: var(--ink);
         font: 0.85rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
       }
-      #note-error, #fishing-error {
+      #note-error, #fishing-error, #review-error {
         padding: 0.5rem 0.75rem;
         border: 1px solid #7a3535;
         border-radius: 0.35rem;
         background: #2a1518;
         color: var(--danger);
       }
-      #note-error[hidden], #fishing-error[hidden] { display: none; }
+      #note-error[hidden], #fishing-error[hidden], #review-error[hidden] { display: none; }
+      #prompt .prompt-line { display: block; }
+      .review-ratings {
+        margin: 0.5rem 0;
+        padding: 0.6rem 0.75rem;
+        border: 1px solid #2b3550;
+        border-radius: 0.35rem;
+      }
+      .review-ratings legend { color: var(--ink); padding: 0 0.3rem; }
+      .review-rating-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.4rem 0; }
+      .review-rating-row button[aria-pressed="true"] {
+        background: #2f6b5d;
+        border-color: var(--accent);
+      }
+      .review-result {
+        margin-top: 0.75rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid #2b3550;
+      }
+      .review-result p { color: var(--ink); white-space: pre-line; }
       .fishing-prompt {
         margin: 0.25rem 0 0.5rem;
         padding: 0.6rem 0.8rem;
@@ -260,7 +279,7 @@
   <body>
     <main>
       <h1>Knowledge Dungeon — Side-Scroller</h1>
-      <p>Phase P4: walk the village street, enter a portal, write notes, return to a pond, and fish with a recall check.</p>
+      <p>Phase P5: walk the village street, enter a portal, write notes, review cleared rooms on a 0–5 schedule, and fish with a recall check.</p>
 
       <div class="stage">
         <canvas
@@ -268,7 +287,7 @@
           width="960"
           height="540"
           tabindex="0"
-          aria-label="Side-view village street above a dungeon. Move with A and D or the arrow keys, jump with Space, climb with W and S, and press E at a door to enter a portal or visit a building. In a dungeon room, press E to write a note."
+          aria-label="Side-view village street above a dungeon. Move with A and D or the arrow keys, jump with Space, climb with W and S, press E at a door to enter a portal or visit a building, and press R to review the last-studied dungeon. In a dungeon room, press E to write a note and R to review a cleared room."
           aria-describedby="game-help"
         ></canvas>
         <div id="prompt" hidden></div>
@@ -295,11 +314,21 @@
           aria-labelledby="fishing-panel-title"
           hidden
         ></section>
+        <section
+          id="review-panel"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="review-panel-title"
+          hidden
+        ></section>
       </div>
       <p id="game-help" class="controls">
         <kbd>A</kbd>/<kbd>←</kbd> left · <kbd>D</kbd>/<kbd>→</kbd> right · <kbd>Space</kbd> jump ·
         <kbd>W</kbd>/<kbd>↑</kbd> climb up · <kbd>S</kbd>/<kbd>↓</kbd> climb down ·
-        <kbd>E</kbd> enter a door or write a note · <kbd>Esc</kbd> close the composer.
+        <kbd>E</kbd> enter a door or write a note · <kbd>R</kbd> review a cleared room or the
+        street queue · <kbd>Esc</kbd> close the composer or review.
+        In a review, <kbd>0</kbd>–<kbd>5</kbd> rate recall, <kbd>Enter</kbd> submits,
+        <kbd>S</kbd> saves for later, <kbd>D</kbd> discards.
         At a pond, hold and release <kbd>Space</kbd> to cast, press <kbd>Space</kbd> at a bite,
         and <kbd>Esc</kbd> to leave.
         The street and the dungeon share one world; climb the entrance shaft to return.
