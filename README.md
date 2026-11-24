@@ -23,6 +23,7 @@ The host drives movement and fishing state-machine ticks and presents results.
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
 - [Project Structure](#project-structure)
+- [Reference Host](#reference-host)
 - [Getting Started](#getting-started)
 - [Configuration](#configuration)
 - [Security](#security)
@@ -121,7 +122,29 @@ src/
 tests/                         Unit and phase tests for commands, rules, and world
 scripts/                       Local Markdown index and MCP documentation-search tooling
 docs/                          User guide, host UI guide, administrator guide, ADRs, release notes
+examples/side-scroller/        Reference side-view host (own package, tests, and plan)
 ```
+
+## Reference Host
+
+[`examples/side-scroller/`](examples/side-scroller/README.md) is a complete, playable
+host built on the engine: a side-view village street above a generated dungeon, Canvas
+2D rendering, IndexedDB persistence, and the Creator/Scribe/Archaeologist loop. It is
+standalone (its own `package.json`, lockfile, TypeScript config, and Vitest suite) and
+strictly additive — it changes no engine source, export, schema, or runtime dependency.
+
+```sh
+npm --prefix examples/side-scroller install
+npm --prefix examples/side-scroller run dev
+```
+
+Use it to see how the commands in the [host UI guide](docs/host-ui-guide.md) fit
+together in a real screen flow. Its
+[boundary rules](docs/plans/side-scroller-host/ENGINE-BOUNDARY.md) record what stays in
+the engine, and the [implementation plan](docs/plans/side-scroller-host/README.md) and
+[visual record](docs/plans/side-scroller-host/VISUALS.md) document each phase. It is a
+reference, not a published package: the root test suite remains engine-only and does
+not discover `examples/**`.
 
 ## Getting Started
 
@@ -296,7 +319,9 @@ These are known gaps and candidate work, **not shipped behavior**:
 - An npm release (the package is currently private and installed from Git).
 - A repository CI workflow; validation is currently local.
 - Dedicated test coverage for the statistics and assistance modules.
-- Higher-level host packages or examples for common UI stacks.
+- Additional reference hosts for other UI stacks. The
+  [side-scroller example](examples/side-scroller/README.md) covers vanilla TypeScript,
+  Vite, and Canvas 2D; there is no packaged host kit yet.
 - Optional movement models beyond the grid, if a host needs platformer physics.
 
 No timeline or commitment is implied. Check the issue tracker for current work.

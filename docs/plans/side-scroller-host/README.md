@@ -26,8 +26,10 @@ The engine is headless and renderer-neutral
 [ADR-0001](../../adr/0001-headless-renderer-neutral-engine.md)). It deliberately
 ships no screen, camera, assets, or save backend
 ([host guide](../../host-ui-guide.md#what-the-engine-gives-you)). The repository's
-own gap list names "higher-level host packages or examples for common UI stacks" as
-unshipped ([README](../../../README.md#whats-next)).
+own gap list names additional host packages or examples as unshipped
+([README](../../../README.md#whats-next)). This plan ships the first one — the root
+README's [Reference Host](../../../README.md#reference-host) section points at it — and
+keeps it additive so it can be deleted without touching the engine.
 
 This plan builds one such example to answer a product question: **does the engine's
 learning loop feel good when presented as a side-view dungeon?**

@@ -4,6 +4,15 @@ This guide is for developers turning **Knowledge Dungeon Engine** into a playabl
 
 It does not replace the [user guide](user-guide.md), which documents commands and results, or the [administrator guide](admin-guide.md), which covers packaging and storage operations. The engine is framework-neutral; examples here are plain TypeScript sketches, not a recommendation of React, Pixi, Phaser, or any other stack.
 
+> **Worked example.** [`examples/side-scroller/`](../examples/side-scroller/README.md)
+> is a complete reference host: a side-view village above a generated dungeon, Canvas
+> 2D, IndexedDB, keyboard controls (touch from P9), and the full learning loop. It
+> consumes only the public surface; its
+> [boundary rules](plans/side-scroller-host/ENGINE-BOUNDARY.md),
+> [implementation plan](plans/side-scroller-host/README.md), and
+> [visual record](plans/side-scroller-host/VISUALS.md) show every host/engine decision.
+> Read it alongside this guide, but treat it as a reference rather than a dependency.
+
 ## What the Engine Gives You
 
 | Engine provides | Host provides |
