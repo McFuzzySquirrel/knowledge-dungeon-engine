@@ -23,6 +23,7 @@ The host drives movement and fishing state-machine ticks and presents results.
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
 - [Project Structure](#project-structure)
+- [Reference Host](#reference-host)
 - [Getting Started](#getting-started)
 - [Configuration](#configuration)
 - [Security](#security)
@@ -122,6 +123,23 @@ tests/                         Unit and phase tests for commands, rules, and wor
 scripts/                       Local Markdown index and MCP documentation-search tooling
 docs/                          User guide, host UI guide, administrator guide, ADRs, release notes
 ```
+
+## Reference Host
+
+A complete reference host lives on the
+[`examples/side-scroller`](https://github.com/McFuzzySquirrel/knowledge-dungeon-engine/tree/examples/side-scroller/examples/side-scroller)
+branch: a playable side-view game with a village street above a generated dungeon,
+Canvas 2D rendering, IndexedDB persistence, and the Creator/Scribe/Archaeologist loop.
+It is a standalone package with its own lockfile, TypeScript config, and Vitest suite.
+
+The branch is deliberately separate from `main` so more example hosts can land without
+coupling them to the engine package. The example is strictly additive: it changes no
+engine source, export, schema, or runtime dependency, and deleting it leaves the engine
+exactly as it was. Its
+[implementation plan](https://github.com/McFuzzySquirrel/knowledge-dungeon-engine/blob/examples/side-scroller/docs/plans/side-scroller-host/README.md),
+[boundary rules](https://github.com/McFuzzySquirrel/knowledge-dungeon-engine/blob/examples/side-scroller/docs/plans/side-scroller-host/ENGINE-BOUNDARY.md),
+and [visual record](https://github.com/McFuzzySquirrel/knowledge-dungeon-engine/blob/examples/side-scroller/docs/plans/side-scroller-host/VISUALS.md)
+are on the same branch.
 
 ## Getting Started
 
@@ -296,7 +314,10 @@ These are known gaps and candidate work, **not shipped behavior**:
 - An npm release (the package is currently private and installed from Git).
 - A repository CI workflow; validation is currently local.
 - Dedicated test coverage for the statistics and assistance modules.
-- Higher-level host packages or examples for common UI stacks.
+- Additional reference hosts for other UI stacks; the first (vanilla TypeScript,
+  Vite, and Canvas 2D) lives on the
+  [`examples/side-scroller`](https://github.com/McFuzzySquirrel/knowledge-dungeon-engine/tree/examples/side-scroller/examples/side-scroller)
+  branch.
 - Optional movement models beyond the grid, if a host needs platformer physics.
 
 No timeline or commitment is implied. Check the issue tracker for current work.
