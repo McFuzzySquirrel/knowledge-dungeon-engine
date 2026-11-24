@@ -212,6 +212,28 @@ async function waitForExpr(session, expression, timeoutMs = 8000, stepMs = 200) 
   return null;
 }
 
+/** Hold a direction until the HUD's Nearby row names the target. */
+async function walkToNearby(session, code, key, needle, timeoutMs = 15000) {
+  await session.synthDown(code, key);
+  const start = Date.now();
+  let found = false;
+  let nearby = '';
+  while (Date.now() - start < timeoutMs) {
+    await sleep(100);
+    const summary = (await panel(session)).summary;
+    const lines = summary.split('\n');
+    const at = lines.indexOf('Nearby');
+    nearby = at >= 0 ? lines[at + 1] : '';
+    if (nearby.includes(needle)) {
+      found = true;
+      break;
+    }
+  }
+  await session.synthUp(code, key);
+  await sleep(250);
+  return { found, nearby };
+}
+
 const VALID_NOTE = [
   'Summary',
   'The note records what the learner understood in this room and why it matters.',
@@ -642,6 +664,20 @@ async function captureFishing(prefix, frames) {
     await sleep(2200);
     await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Village street') === true`);
 
+    // Before any clear, the pond must explain why E cannot open it — on the
+    // canvas, not only in the side panel.
+    const freshPond = await walkToNearby(session, 'KeyA', 'a', 'Fishing Pond');
+    await session.synthDown('KeyE', 'e');
+    await session.synthUp('KeyE', 'e');
+    const refusalMs = await waitForExpr(session, `document.querySelector('#toast')?.hidden === false`, 3000);
+    const refusalText = await session.execute(`return document.querySelector('#toast')?.innerText ?? '';`);
+    frames.push({
+      file: await session.screenshot(`${prefix}-01a-pond-refusal.png`),
+      label: 'Pond before a clear',
+      detail: `nearby=${freshPond.nearby}; shownIn=${refusalMs ?? 'timeout'}ms; canvas message="${refusalText}"`,
+    });
+    await walkToNearby(session, 'KeyD', 'd', 'Training Grounds');
+
     // The spawn is in front of the Training Grounds door; E opens the tutorial.
     await session.synthDown('KeyE', 'e');
     await session.synthUp('KeyE', 'e');
@@ -868,6 +904,19 @@ async function captureFishing(prefix, frames) {
       file: await session.screenshot(`${prefix}-11-reload.png`),
       label: 'Reload after a catch',
       detail: `fish=${reloaded.fish}; xp=${reloaded.xpTotal}; world=${reloaded.world}`,
+    });
+
+    // A non-portal facade explains itself on the canvas rather than silently
+    // advancing the side-panel quest text.
+    const library = await walkToNearby(session, 'KeyD', 'd', 'Library', 25000);
+    await session.synthDown('KeyE', 'e');
+    await session.synthUp('KeyE', 'e');
+    await sleep(400);
+    const facadeText = await session.execute(`return document.querySelector('#toast')?.innerText ?? '';`);
+    frames.push({
+      file: await session.screenshot(`${prefix}-11a-library.png`),
+      label: 'Non-portal building',
+      detail: `nearby=${library.nearby}; canvas message="${facadeText}"`,
     });
 
     // K-12: reloading mid-cast returns to the street with a visible notice.

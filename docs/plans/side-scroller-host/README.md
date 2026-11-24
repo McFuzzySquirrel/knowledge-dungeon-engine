@@ -2,8 +2,8 @@
 
 | Field | Value |
 |---|---|
-| Plan version | 1.8 |
-| Status | Done — P0–P4 complete (G4 passed 2026-11-24) |
+| Plan version | 1.9 |
+| Status | Done — P0–P4 complete (G4 passed 2026-11-24; interaction-feedback follow-up 2026-11-24) |
 | Created | 2026-11-23 |
 | Owner | Unassigned |
 | Phase documents | [P0](phase-0-scaffold.md) · [P1](phase-1-dungeon-level.md) · [P2](phase-2-note-loop.md) · [P3](phase-3-surface-village.md) · [P4](phase-4-fishing.md) |
@@ -381,7 +381,7 @@ Rules:
 | P3 | Done — G3 passed | G3 passed 2026-11-23 | [phase-3 evidence](phase-3-surface-village.md#execution-evidence) |
 | P4 | Done — G4 passed | G4 passed 2026-11-24 | [phase-4 evidence](phase-4-fishing.md#execution-evidence) |
 
-Visual record: [VISUALS.md](VISUALS.md) — P1/G1, P2/G2, P3/G3 frames captured 2026-11-23; P3 layout follow-up 2026-11-24; P3 polish frames 2026-11-24; P4/G4 pond loop frames 2026-11-24.
+Visual record: [VISUALS.md](VISUALS.md) — P1/G1, P2/G2, P3/G3 frames captured 2026-11-23; P3 layout follow-up 2026-11-24; P3 polish frames 2026-11-24; P4/G4 pond loop frames 2026-11-24 and the interaction-feedback follow-up (`g4b`).
 
 ## 15. Assumptions to confirm at the G0 gate
 
@@ -409,3 +409,4 @@ update this section before P1.
 | 2026-11-24 | 1.6 | P3 playtest fix and G3 re-run; facades are background-only, buildings are spaced 1.6× with a 3-tile minimum gap, spawn/entrance/return follow the Training Grounds door; new frames under `visuals/p3/` (`2026-11-24-g3`) |
 | 2026-11-24 | 1.7 | P3 polish pass; skyline/moon, facade lights and shadows, paving, shaft chevron, readable portal signs, deduped surface HUD with pond locations, and a “No door in reach” announcement; frames under `visuals/p3/` (`2026-11-24-g3p`) |
 | 2026-11-24 | 1.8 | P4 executed and G4 passed; pond entry from host-resolved active subject, cast/bite/reel scene, engine-backed recall dialog, keep/release, save-failure and mid-cast reload recovery, `--fishing` capture mode; frames under `visuals/p4/` (`2026-11-24-g4`); all phases complete |
+| 2026-11-24 | 1.9 | Interaction-feedback follow-up after playtest: pond refusals and non-portal facade messages appear as a canvas toast, plus copy tests and a `g4b` re-capture |

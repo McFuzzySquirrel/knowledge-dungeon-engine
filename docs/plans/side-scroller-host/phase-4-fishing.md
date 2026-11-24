@@ -233,6 +233,11 @@ tagged commands. It does not own the machine, rendering, or timing.
 7. **`--fishing` capture mode.** The WebDriver script drives the real app through street
    → pond → cast → bite → recall → keep → release → reload → mid-cast recovery, including
    a simulated IndexedDB failure. It adds no page hooks.
+8. **Interaction outcomes are shown on the canvas.** Playtest found that a pond refusal
+   and a non-portal facade message only appeared in the side panel, which is easy to miss
+   (and below the canvas on narrow windows). A six-second canvas toast now mirrors those
+   outcomes, including "No dungeon subject is in focus…" and "…is a facade in this
+   example." The side panel keeps the same text and the live region still announces it.
 
 ## Exit gate G4
 
@@ -308,3 +313,4 @@ already stored remain valid engine state.
 | 2026-11-24 | P4-T8 — full §9 smoke re-run | uncommitted | `capture-dungeon.mjs` default, `--note-loop`, and `--surface` modes into `/tmp/opencode/p4-smoke` | pass | Three-room traversal visits 1→2→3; composer draft/clear/reload/save failure; street/portal/return/reload. Scratch artifacts are host-only and not committed |
 | 2026-11-24 | G4 — exit gate | uncommitted (base `203011d`) | full gate commands below | pass | Engine 13 files / 280 tests; example 18 files / 106 tests; engine typecheck/build green; example typecheck/build green; isolation probe 0 `examples/` paths; `git status --short src` empty |
 | 2026-11-24 | G4 — performance and accessibility | uncommitted | 10 s rAF capture in the pond; `matchMedia` reduced-motion true; keyboard-only capture | pass with P2-O1 exception | frames 596; avg 16.79 ms; p95 17.16 ms; max 33.74 ms; 319 frames just over 16.7 ms in headless software compositing (P2-O1). No audio (S-04); Tab order inside the recall dialog is `answered-incorrect → release → later → answered-correct` (wraps) and focus returns to `#game` |
+| 2026-11-24 | P4 follow-up — interaction feedback | uncommitted (base `066844b`) | `tests/outcomes.test.ts`; `--fishing` re-capture `2026-11-24-g4b` | pass | Pond refusal and non-portal facade limits now appear as a canvas toast; 19 files / 108 tests; full pond path unchanged; frames [`01a`](visuals/p4/2026-11-24-g4b-01a-pond-refusal.png) and [`11a`](visuals/p4/2026-11-24-g4b-11a-library.png) |

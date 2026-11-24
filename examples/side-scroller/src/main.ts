@@ -32,9 +32,11 @@ import { projectRoute, type Screen } from './routing';
 import { createIndexedDbStorage } from './storage';
 import { mountNotePanel, type NotePanel } from './ui/notePanel';
 import {
+  buildingInteractionMessage,
   interactionFailedMessage,
   notCollectedMessage,
   notSavedMessage,
+  nothingInReachMessage,
   refusalMessage,
   returnFailedMessage,
 } from './ui/outcomes';
@@ -68,6 +70,7 @@ const leaveFishingButton = must<HTMLButtonElement>('#leave-fishing');
 const recoveryBanner = must<HTMLDivElement>('#recovery');
 const recoveryText = must<HTMLParagraphElement>('#recovery-text');
 const recoveryDismiss = must<HTMLButtonElement>('#recovery-dismiss');
+const toastHost = must<HTMLDivElement>('#toast');
 
 const hud = createHud({
   summary: must<HTMLElement>('#summary'),
@@ -76,7 +79,10 @@ const hud = createHud({
   status: must<HTMLElement>('#status'),
   error: must<HTMLElement>('#error'),
 });
-setErrorReporter((message) => hud.showError(message));
+setErrorReporter((message) => {
+  hud.showError(message);
+  showToast(message, 'error');
+});
 setNoticeReporter((message) => hud.announce(message));
 
 const prompts = createPrompts(promptHost, (message) => hud.announce(message));
@@ -238,6 +244,33 @@ function showRecovery(message: string): void {
 function hideRecovery(): void {
   recoveryBanner.hidden = true;
   recoveryText.textContent = '';
+}
+
+let toastTimer: number | null = null;
+
+/**
+ * Show an interaction outcome over the canvas.
+ *
+ * The side panel holds the same text, but on narrow windows it sits below the
+ * canvas, so a refusal that only went there looked like no response at all.
+ */
+function showToast(message: string, tone: 'info' | 'error' = 'info'): void {
+  toastHost.textContent = message;
+  toastHost.className = tone === 'error' ? 'error' : '';
+  toastHost.hidden = false;
+  if (toastTimer !== null) window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => {
+    toastHost.hidden = true;
+    toastHost.textContent = '';
+    toastTimer = null;
+  }, 6000);
+}
+
+function hideToast(): void {
+  if (toastTimer !== null) window.clearTimeout(toastTimer);
+  toastTimer = null;
+  toastHost.hidden = true;
+  toastHost.textContent = '';
 }
 
 function resetDungeonLevel(): void {
@@ -689,6 +722,7 @@ function enterFishing(state: EngineState): void {
   lastPondId = context.pondId;
   prompts.hide();
   hideRecovery();
+  hideToast();
   setCanvasMode('fishing');
   leaveFishingButton.hidden = false;
   const overlayWasVisible = overlay.hidden === false;
@@ -735,8 +769,10 @@ async function beginFishing(target: SurfaceInteractable): Promise<void> {
   const subject = resolveFishingSubject(state, lastStudiedSubjectId);
   const refusal = fishingEntryRefusal(subject);
   if (refusal !== null || !subject) {
-    hud.showError(refusal ?? 'No dungeon subject is in focus.');
-    hud.announce(refusal ?? 'No dungeon subject is in focus.');
+    const message = refusal ?? 'No dungeon subject is in focus.';
+    hud.showError(message);
+    showToast(message, 'error');
+    hud.announce(message);
     return;
   }
 
@@ -753,6 +789,7 @@ async function beginFishing(target: SurfaceInteractable): Promise<void> {
     if (!result.ok) {
       const message = refusalMessage(result.error.code, result.error.message);
       hud.showError(message);
+      showToast(message, 'error');
       hud.announce(`The pond refused the session: ${result.error.message}.`);
       return;
     }
@@ -760,12 +797,14 @@ async function beginFishing(target: SurfaceInteractable): Promise<void> {
     if (!value.eligible) {
       const message = `Clear a room before fishing. ${subject.subjectName} has ${value.clearedRoomCount} cleared rooms.`;
       hud.showError(message);
+      showToast(message, 'error');
       hud.announce(message);
     }
     // Success routes through the state subscription, which sees world === 'fishing'.
   } catch (error) {
     const message = notSavedMessage(error);
     hud.showError(message);
+    showToast(message, 'error');
     hud.announce('The fishing session was not saved.');
   }
 }
@@ -859,6 +898,7 @@ function enterDungeon(
   lastStudiedSubjectId = subjectId;
   teardownFishing();
   hideRecovery();
+  hideToast();
   setCanvasMode('dungeon');
   surfaceView = projectSurface(state, structures);
   view = projectDungeon(state);
@@ -1063,10 +1103,17 @@ async function useInteractable(target: SurfaceInteractable): Promise<void> {
       // The state subscription routes and announces the dungeon transition.
       return;
     }
-    hud.announce(`${structure.label}. Quest step: ${getState().session.questStep}.`);
+    const message = buildingInteractionMessage(
+      structure.type,
+      structure.label,
+      getState().session.questStep,
+    );
+    hud.announce(message);
+    showToast(message);
   } catch (error) {
     const message = interactionFailedMessage(target.label, error);
     hud.showError(message);
+    showToast(message, 'error');
     hud.announce(`Could not use ${target.label}. You stayed on the street.`);
   } finally {
     interactionPending = false;
@@ -1104,8 +1151,13 @@ function installInput(): void {
     if (event.code === 'KeyE' && !event.repeat) {
       event.preventDefault();
       if (screen === 'surface') {
-        if (activeInteractable) void useInteractable(activeInteractable);
-        else hud.announce('Move to a door and press E.');
+        if (activeInteractable) {
+          void useInteractable(activeInteractable);
+        } else {
+          const message = nothingInReachMessage();
+          hud.announce(message);
+          showToast(message);
+        }
         return;
       }
       if (screen === 'dungeon') {

@@ -72,13 +72,16 @@ passed.
 | 2026-11-24 | G4 | uncommitted | Left the pond | [`10-street.png`](visuals/p4/2026-11-24-g4-10-street.png) | Escape returns to the street beside the pond; fish 1 |
 | 2026-11-24 | G4 | uncommitted | Reload after a catch | [`11-reload.png`](visuals/p4/2026-11-24-g4-11-reload.png) | Fish 1 and XP 33 survive IndexedDB |
 | 2026-11-24 | G4 | uncommitted | Mid-cast reload recovery | [`12-mid-cast-reload.png`](visuals/p4/2026-11-24-g4-12-mid-cast-reload.png) | Persistent banner: "Session could not be resumed…"; world village |
+| 2026-11-24 | P4 follow-up | uncommitted (base `066844b`) | Pond before a clear | [`01a-pond-refusal.png`](visuals/p4/2026-11-24-g4b-01a-pond-refusal.png) | Canvas toast: "No dungeon subject is in focus…"; prompt still offers `E` |
+| 2026-11-24 | P4 follow-up | uncommitted | Non-portal building | [`11a-library.png`](visuals/p4/2026-11-24-g4b-11a-library.png) | Canvas toast: "Library is a facade…; only subject portals and the Training Grounds open a dungeon" |
 
 Manifests: [`2026-11-23-g1-manifest.json`](visuals/p1/2026-11-23-g1-manifest.json),
 [`2026-11-23-g2-manifest.json`](visuals/p2/2026-11-23-g2-manifest.json),
 [`2026-11-23-g3-manifest.json`](visuals/p3/2026-11-23-g3-manifest.json),
 [`2026-11-24-g3-manifest.json`](visuals/p3/2026-11-24-g3-manifest.json),
 [`2026-11-24-g3p-manifest.json`](visuals/p3/2026-11-24-g3p-manifest.json),
-[`2026-11-24-g4-manifest.json`](visuals/p4/2026-11-24-g4-manifest.json).
+[`2026-11-24-g4-manifest.json`](visuals/p4/2026-11-24-g4-manifest.json),
+[`2026-11-24-g4b-manifest.json`](visuals/p4/2026-11-24-g4b-manifest.json).
 
 P0 predates this record: it proved boot and storage with a debug panel and captured no
 frames. The record starts at P1.
@@ -313,6 +316,25 @@ answered-correct` (wrapping inside the modal).
 ![Mid-cast reload recovery](visuals/p4/2026-11-24-g4-12-mid-cast-reload.png)
 
 Manifest: [`2026-11-24-g4-manifest.json`](visuals/p4/2026-11-24-g4-manifest.json).
+
+### Follow-up: on-canvas interaction feedback (2026-11-24)
+
+Playtest feedback: on a fresh save, pressing `E` at a pond appeared to do nothing,
+and non-portal buildings also appeared inert. Both outcomes were only written to the
+side panel, which sits below the canvas on narrow windows. The follow-up adds a canvas
+toast for refusals and facade interactions. The full pond path was re-captured with the
+same conditions under `g4b`; the two frames below show the changed feedback.
+
+#### Pond before a clear: the refusal is on the canvas
+
+![Pond before a clear](visuals/p4/2026-11-24-g4b-01a-pond-refusal.png)
+
+#### Non-portal building: says it has no interior
+
+![Non-portal building](visuals/p4/2026-11-24-g4b-11a-library.png)
+
+Manifest for the full follow-up run:
+[`2026-11-24-g4b-manifest.json`](visuals/p4/2026-11-24-g4b-manifest.json).
 
 ## Capturing the next phase
 

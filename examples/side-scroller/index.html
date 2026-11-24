@@ -80,6 +80,21 @@
         font: inherit;
         font-size: 0.85rem;
       }
+      #toast {
+        position: absolute;
+        top: 0.75rem;
+        right: 0.75rem;
+        z-index: 2;
+        max-width: min(26rem, calc(100% - 1.5rem));
+        padding: 0.45rem 0.7rem;
+        border: 1px solid #3a4a6d;
+        border-radius: 0.35rem;
+        background: rgb(20 26 40 / 96%);
+        color: var(--ink);
+        font-size: 0.95rem;
+      }
+      #toast.error { border-color: #7a3535; background: rgb(42 21 24 / 96%); color: var(--danger); }
+      #toast[hidden] { display: none; }
       #recovery {
         position: absolute;
         left: 0.75rem;
@@ -257,6 +272,7 @@
           aria-describedby="game-help"
         ></canvas>
         <div id="prompt" hidden></div>
+        <div id="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
         <div id="recovery" role="status" aria-live="polite" hidden>
           <p id="recovery-text"></p>
           <button id="recovery-dismiss" type="button">Dismiss</button>

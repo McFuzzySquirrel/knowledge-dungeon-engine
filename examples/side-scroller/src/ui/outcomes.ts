@@ -32,6 +32,26 @@ export function interactionFailedMessage(label: string, error: unknown): string 
   return `Could not use ${label}: ${detail(error)}. Nothing was committed; you stayed on the street.`;
 }
 
+/**
+ * What a non-portal facade does when the learner presses `E`.
+ *
+ * The example has one dungeon screen per subject. Only a subject portal or the
+ * Training Grounds opens one; the other buildings are presentation and, for the
+ * guild hall, the engine's quest-step advance. The message says so instead of
+ * leaving the learner waiting for a screen that will never open.
+ */
+export function buildingInteractionMessage(type: string, label: string, questStep: string): string {
+  if (type === 'guild-hall') {
+    return `${label}. Quest step: ${questStep}.`;
+  }
+  return `${label} is a facade in this example. Only subject portals and the Training Grounds open a dungeon.`;
+}
+
+/** Shown when `E` is pressed with no structure in reach. */
+export function nothingInReachMessage(): string {
+  return 'Nothing in reach. Walk closer to a door and press E.';
+}
+
 /** P3: the village-gate return was rejected; the dungeon session remains open. */
 export function returnFailedMessage(error: unknown): string {
   return `Could not return to the village: ${detail(error)}. Nothing was committed; the study session is still open.`;

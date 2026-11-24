@@ -24,12 +24,12 @@ the gate outcome and the baseline facts later gates compare against.
 
 | Field | Value |
 |---|---|
-| Plan version | 1.8 |
+| Plan version | 1.9 |
 | Plan written | 2026-11-23 |
 | Engine test baseline | **13 files / 280 tests at `3951737`; unchanged after P0–P4** |
 | First gate run | 2026-11-23 |
 | Latest gate passed | G4 (2026-11-24) |
-| Current phase | P4 complete — all phases done |
+| Current phase | P4 complete — all phases done; interaction-feedback follow-up |
 | Open failures | None recorded; accepted P2-O1 performance exception and the P4 amendments below |
 
 ## Gate index
@@ -59,6 +59,7 @@ changes size, add a new baseline row and explain why.
 | 2026-11-24 | uncommitted (base `b44f24a`) | 13 | 280 | pass | pass | 0 `examples/` paths | G3 re-run after street layout/movement fix; example suite 14 files / 84 tests |
 | 2026-11-24 | uncommitted (base `1ef03cf`) | 13 | 280 | pass | pass | 0 `examples/` paths | G3 polish re-run; example suite 14 files / 85 tests |
 | 2026-11-24 | uncommitted (base `203011d`) | 13 | 280 | pass | pass | 0 `examples/` paths | G4 checkpoint; no baseline change; example suite 18 files / 106 tests |
+| 2026-11-24 | uncommitted (base `066844b`) | 13 | 280 | pass | pass | 0 `examples/` paths | Interaction-feedback follow-up; no baseline change; example suite 19 files / 108 tests |
 
 ## Per-task evidence links
 
