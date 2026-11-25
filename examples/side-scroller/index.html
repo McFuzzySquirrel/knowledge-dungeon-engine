@@ -1,0 +1,792 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231a2030'/%3E%3Cpath d='M8 22V10h4l4 6 4-6h4v12h-4v-6l-4 6-4-6v6z' fill='%237fd1b9'/%3E%3C/svg%3E"
+    />
+    <title>Knowledge Dungeon — Side-Scroller</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #10131a;
+        --panel: #1a2030;
+        --ink: #e8ecf6;
+        --muted: #a8b3c9;
+        --accent: #7fd1b9;
+        --danger: #ff9a9a;
+        font-size: 16px;
+
+        /* One overlay scale. Higher layers paint over lower ones; notices never
+           share a layer with a dialog. */
+        --z-world: 0;
+        --z-touch: 1;
+        --z-notices: 2;
+        --z-hud: 3;
+        --z-title: 4;
+        --z-modal: 5;
+      }
+      html[data-text-scale="large"] { font-size: 20px; }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--ink);
+        font: 1rem/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      h1 { font-size: 1.25rem; margin: 0 0 0.25rem; }
+      h2 { font-size: 1rem; margin: 1.25rem 0 0.5rem; color: var(--accent); }
+      h2:first-of-type { margin-top: 0; }
+      p { margin: 0.25rem 0; color: var(--muted); }
+
+      /* The canvas is the viewport. Everything else floats over it. */
+      main.stage {
+        position: fixed;
+        inset: 0;
+        height: 100dvh;
+        overflow: hidden;
+        background: #0b0d13;
+      }
+      #game {
+        display: block;
+        width: 100%;
+        height: 100%;
+        background: #0b0d13;
+        touch-action: none;
+      }
+      #game:focus-visible {
+        outline: 3px solid var(--accent);
+        outline-offset: -3px;
+      }
+
+      /* One top row: the notice column and the progress toggle share flex space,
+         so a long prompt or large text can never sit under the button. */
+      #top-bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: var(--z-notices);
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: calc(env(safe-area-inset-top) + 0.75rem) calc(env(safe-area-inset-right) + 0.75rem)
+          0 calc(env(safe-area-inset-left) + 0.75rem);
+        pointer-events: none;
+      }
+      #top-bar > * { pointer-events: auto; }
+      #notice-stack {
+        flex: 1 1 auto;
+        min-width: 0;
+        max-width: min(32rem, 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+        pointer-events: none;
+      }
+      #notice-stack > * { max-width: 100%; pointer-events: auto; }
+      @media (min-width: 901px) {
+        /* The open desktop panel owns the right edge; shorten the notice column. */
+        body[data-progress="true"] #notice-stack { max-width: calc(100% - 26rem); }
+      }
+      #prompt {
+        padding: 0.35rem 0.6rem;
+        border: 1px solid #3a4a6d;
+        border-radius: 0.35rem;
+        background: rgb(20 26 40 / 92%);
+        color: var(--ink);
+        font-size: 0.95rem;
+      }
+      #prompt[hidden] { display: none; }
+      #prompt kbd {
+        display: inline-block;
+        padding: 0 0.3rem;
+        border: 1px solid #3a4a6d;
+        border-radius: 0.25rem;
+        background: #141a28;
+        font: inherit;
+        font-size: 0.85rem;
+      }
+      #prompt .prompt-line { display: block; }
+
+      #toast {
+        padding: 0.45rem 0.7rem;
+        border: 1px solid #3a4a6d;
+        border-radius: 0.35rem;
+        background: rgb(20 26 40 / 96%);
+        color: var(--ink);
+        font-size: 0.95rem;
+      }
+      #toast.error { border-color: #7a3535; background: rgb(42 21 24 / 96%); color: var(--danger); }
+      #toast[hidden] { display: none; }
+
+      #recovery {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #7a6a35;
+        border-radius: 0.35rem;
+        background: rgb(42 37 21 / 97%);
+        color: var(--ink);
+        font-size: 0.95rem;
+      }
+      #recovery[hidden] { display: none; }
+      #recovery p { margin: 0; flex: 1; color: var(--ink); }
+
+      /* ── Title and onboarding ─────────────────────────────────────────── */
+      #overlay {
+        position: absolute;
+        inset: 0;
+        z-index: var(--z-title);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 0.75rem;
+        padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right))
+          max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+        text-align: center;
+        background: rgb(11 13 19 / 92%);
+        overflow: auto;
+      }
+      #overlay[hidden] { display: none; }
+      #overlay > #overlay-text { color: var(--ink); max-width: 28rem; }
+      #title-panel[hidden] { display: none; }
+      #title-panel { width: 100%; display: flex; justify-content: center; }
+      /* The title owns the screen: no prompt, toast, panel, or touch layer leaks through. */
+      body[data-title="true"] #top-bar,
+      body[data-title="true"] #prompt,
+      body[data-title="true"] #toast,
+      body[data-title="true"] #recovery,
+      body[data-title="true"] #npc-dialogue,
+      body[data-title="true"] #touch-controls,
+      body[data-title="true"] #toggle-panel,
+      body[data-title="true"] #progress-panel { display: none; }
+      .title-card {
+        width: min(46rem, 100%);
+        text-align: left;
+        padding: 1.25rem;
+        border: 1px solid #2b3550;
+        border-radius: 0.75rem;
+        background: rgb(26 32 48 / 96%);
+        max-height: calc(100dvh - 2rem);
+        overflow: auto;
+      }
+      .title-card h1 { font-size: 1.6rem; margin-bottom: 0.15rem; }
+      .title-subtitle { color: var(--accent); }
+      .title-status { color: var(--ink); margin: 0.5rem 0 0.75rem; }
+      .title-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.5rem 0; }
+      .title-actions button { min-height: 44px; }
+      .title-primary { background: #2f6b5d; border-color: var(--accent); font-weight: 600; }
+      .title-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+      .title-archetypes {
+        margin: 0.75rem 0;
+        padding: 0.6rem 0.75rem;
+        border: 1px solid #2b3550;
+        border-radius: 0.35rem;
+      }
+      .title-archetypes[hidden] { display: none; }
+      .title-archetype-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.5rem; }
+      .title-archetype {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        text-align: left;
+        min-height: 44px;
+      }
+      .title-archetype strong { color: var(--ink); }
+      .title-archetype span { color: var(--muted); font-size: 0.9rem; }
+      .title-archetype[aria-pressed="true"] { background: #2f6b5d; border-color: var(--accent); }
+      .title-import {
+        margin: 0.75rem 0;
+        padding: 0.6rem 0.75rem;
+        border: 1px solid #2b3550;
+        border-radius: 0.35rem;
+      }
+      .title-import[hidden] { display: none; }
+      .title-import label { display: block; color: var(--ink); margin-top: 0.4rem; }
+      .title-import-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+      .title-import input[type="file"],
+      .title-import textarea {
+        width: 100%;
+        font: 0.9rem/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+        color: var(--ink);
+        background: #101725;
+        border: 1px solid #3a4a6d;
+        border-radius: 0.35rem;
+        padding: 0.4rem 0.5rem;
+      }
+      .title-hint { margin-top: 0.75rem; font-size: 0.9rem; }
+      #title-error, #note-error, #fishing-error, #review-error, #creator-error, #service-error, #journal-error {
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #7a3535;
+        border-radius: 0.35rem;
+        background: #2a1518;
+        color: var(--danger);
+      }
+      #title-error { margin: 0.5rem 0 0; }
+      #title-error[hidden],
+      #note-error[hidden],
+      #fishing-error[hidden],
+      #review-error[hidden],
+      #creator-error[hidden],
+      #service-error[hidden],
+      #journal-error[hidden] { display: none; }
+
+      /* ── Modals over the world ────────────────────────────────────────── */
+      #note-panel, #fishing-panel, #review-panel, #creator-panel, #service-panel, #journal-panel, #help-panel {
+        position: absolute;
+        inset: 0;
+        z-index: var(--z-modal);
+        overflow: auto;
+        padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right))
+          max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+        background: rgb(11 13 19 / 92%);
+      }
+      #note-panel[hidden], #fishing-panel[hidden], #review-panel[hidden], #creator-panel[hidden], #service-panel[hidden], #journal-panel[hidden], #help-panel[hidden] { display: none; }
+
+      /* ── Touch controls ───────────────────────────────────────────────── */
+      #touch-controls {
+        position: absolute;
+        inset: auto 0 0 0;
+        z-index: var(--z-touch);
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        padding: 0 max(0.75rem, env(safe-area-inset-right))
+          max(0.75rem, env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
+        pointer-events: none;
+      }
+      #touch-controls[hidden] { display: none; }
+      .touch-pad {
+        display: grid;
+        grid-template-columns: repeat(3, 3.25rem);
+        grid-template-rows: repeat(2, 3.25rem);
+        gap: 0.35rem;
+      }
+      .touch-actions { display: flex; align-items: flex-end; gap: 0.5rem; }
+      .touch-button {
+        pointer-events: auto;
+        min-width: 44px;
+        min-height: 44px;
+        padding: 0.2rem;
+        font-size: 0.9rem;
+        background: rgb(36 48 74 / 92%);
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      .touch-pad .touch-button { width: 100%; height: 100%; }
+      .touch-actions .touch-button { width: auto; height: auto; }
+      .touch-button:active, .touch-button[data-pressed="true"] { background: #2f6b5d; border-color: var(--accent); }
+      .touch-up { grid-column: 2; grid-row: 1; }
+      .touch-left { grid-column: 1; grid-row: 2; }
+      .touch-down { grid-column: 2; grid-row: 2; }
+      .touch-right { grid-column: 3; grid-row: 2; }
+      .touch-jump { width: 3.5rem; height: 3.5rem; border-radius: 50%; flex: none; }
+      .touch-action { min-width: 5.5rem; min-height: 3.5rem; font-weight: 600; flex: none; }
+
+      /* ── Progress overlay / sheet ─────────────────────────────────────── */
+      #toggle-panel {
+        flex: none;
+        min-height: 44px;
+      }
+      #progress-panel {
+        position: absolute;
+        top: calc(env(safe-area-inset-top) + 3.75rem);
+        right: calc(env(safe-area-inset-right) + 0.75rem);
+        width: min(24rem, calc(100% - 1.5rem));
+        max-height: calc(100% - 5rem);
+        overflow: auto;
+        z-index: var(--z-hud);
+        padding: 1rem;
+        border: 1px solid #2b3550;
+        border-radius: 0.5rem;
+        background: var(--panel);
+      }
+      #progress-panel[hidden] { display: none; }
+      #progress-panel .panel-heading h2 { color: var(--accent); }
+      dl { display: grid; grid-template-columns: 10rem 1fr; gap: 0.25rem 0.75rem; margin: 0; }
+      dt { color: var(--muted); }
+      dd { margin: 0; overflow-wrap: anywhere; }
+      ul { margin: 0; padding: 0; list-style: none; }
+      li.room { display: flex; gap: 0.5rem; align-items: baseline; margin: 0.2rem 0; }
+      li.room .marker { color: var(--accent); width: 1ch; flex: none; }
+      li.room.current { font-weight: 600; }
+      li.room.current .marker { color: var(--ink); }
+      #error {
+        margin-top: 0.75rem;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #7a3535;
+        border-radius: 0.35rem;
+        background: #2a1518;
+        color: var(--danger);
+      }
+      #error[hidden] { display: none; }
+      #status { margin-top: 0.75rem; color: var(--accent); min-height: 2.5em; }
+
+      /* ── Shared controls ──────────────────────────────────────────────── */
+      button {
+        font: inherit;
+        color: var(--ink);
+        background: #24304a;
+        border: 1px solid #3a4a6d;
+        border-radius: 0.35rem;
+        padding: 0.4rem 0.7rem;
+        min-height: 2.75rem;
+        cursor: pointer;
+      }
+      input:not([type="checkbox"]):not([type="radio"]), select {
+        min-height: 2.75rem;
+      }
+      button:hover { background: #2d3b59; }
+      button:disabled { opacity: 0.55; cursor: not-allowed; }
+      button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+        outline: 3px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      /* Short, meaningful arrivals. The reduced-motion rules below remove all
+         of this, so no motion is forced. */
+      @keyframes overlay-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes panel-in {
+        from { opacity: 0; transform: translateY(0.35rem); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      #overlay:not([hidden]) { animation: overlay-in 140ms ease-out; }
+      #progress-panel:not([hidden]),
+      #note-panel:not([hidden]),
+      #fishing-panel:not([hidden]),
+      #review-panel:not([hidden]),
+      #creator-panel:not([hidden]),
+      #service-panel:not([hidden]),
+      #journal-panel:not([hidden]),
+      #help-panel:not([hidden]) {
+        animation: panel-in 140ms ease-out;
+      }
+      #prompt:not([hidden]), #toast:not([hidden]), #recovery:not([hidden]), #npc-dialogue:not([hidden]) {
+        animation: overlay-in 120ms ease-out;
+      }
+      .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
+      .panel-heading { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: baseline; justify-content: space-between; }
+      .panel-heading h2 { margin: 0; }
+      .panel-heading button { padding: 0.25rem 0.5rem; font-size: 0.9rem; min-height: 2.75rem; }
+      .controls { margin-top: 0.75rem; font-size: 0.9rem; color: var(--muted); }
+      .controls kbd, #help-panel kbd {
+        display: inline-block;
+        padding: 0 0.3rem;
+        border: 1px solid #3a4a6d;
+        border-radius: 0.25rem;
+        background: #141a28;
+        color: var(--ink);
+        font: inherit;
+        font-size: 0.85rem;
+      }
+
+      /* ── Existing panel internals ─────────────────────────────────────── */
+      .note-form {
+        max-width: 44rem;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .note-form h2 { color: var(--ink); margin: 0; font-size: 1.15rem; }
+      .note-form h3 { color: var(--accent); margin: 0.75rem 0 0.25rem; font-size: 1rem; }
+      .note-hint { font-size: 0.9rem; }
+      .note-form label { color: var(--ink); font-size: 0.95rem; }
+      .note-form textarea {
+        width: 100%;
+        resize: vertical;
+        min-height: 12rem;
+        font: 0.95rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+        color: var(--ink);
+        background: #101725;
+        border: 1px solid #3a4a6d;
+        border-radius: 0.35rem;
+        padding: 0.6rem;
+      }
+      .note-form textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+      .note-confirm {
+        display: flex;
+        gap: 0.5rem;
+        align-items: flex-start;
+        color: var(--ink);
+      }
+      .note-confirm input { margin-top: 0.25rem; }
+      .note-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+      .note-lines { list-style: disc; padding-left: 1.2rem; color: var(--ink); }
+      .note-lines li { margin: 0.15rem 0; }
+      .note-outcome dl { margin: 0.25rem 0; }
+      .note-outcome pre {
+        margin: 0.25rem 0 0.5rem;
+        padding: 0.75rem;
+        max-height: 18rem;
+        overflow: auto;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        background: #0b0d13;
+        border: 1px solid #2b3550;
+        border-radius: 0.35rem;
+        color: var(--ink);
+        font: 0.85rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      .review-ratings {
+        margin: 0.5rem 0;
+        padding: 0.6rem 0.75rem;
+        border: 1px solid #2b3550;
+        border-radius: 0.35rem;
+      }
+      .review-ratings legend { color: var(--ink); padding: 0 0.3rem; }
+      .review-rating-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.4rem 0; }
+      .review-rating-row button[aria-pressed="true"] {
+        background: #2f6b5d;
+        border-color: var(--accent);
+      }
+      .review-result {
+        margin-top: 0.75rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid #2b3550;
+      }
+      .review-result p { color: var(--ink); white-space: pre-line; }
+      .fishing-prompt {
+        margin: 0.25rem 0 0.5rem;
+        padding: 0.6rem 0.8rem;
+        border-left: 3px solid var(--accent);
+        background: #101725;
+        color: var(--ink);
+        font-size: 1rem;
+      }
+      .creator-section, .creator-create, .creator-add, .creator-actions, .creator-links {
+        margin: 0.75rem 0;
+        padding: 0.6rem 0.75rem;
+        border: 1px solid #2b3550;
+        border-radius: 0.35rem;
+      }
+      .creator-section h3 { margin-top: 0; }
+      .creator-create legend, .creator-add legend, .creator-actions legend, .creator-links legend {
+        color: var(--ink);
+        padding: 0 0.3rem;
+      }
+      .creator-subjects { padding-left: 0; }
+      .creator-subject {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+        margin: 0.3rem 0;
+      }
+      .creator-subject span { flex: 1 1 14rem; color: var(--ink); }
+      .creator-subject.current span { color: var(--accent); font-weight: 600; }
+      .creator-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+      .creator-row input, .creator-row select { flex: 1 1 12rem; }
+      .creator-form input, .creator-form select, .creator-form textarea {
+        font: inherit;
+        color: var(--ink);
+        background: #101725;
+        border: 1px solid #3a4a6d;
+        border-radius: 0.35rem;
+        padding: 0.4rem 0.5rem;
+      }
+      .creator-form textarea { flex: 1 1 100%; resize: vertical; }
+      .creator-tree { padding-left: 0; }
+      .creator-room { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: baseline; margin: 0.2rem 0; }
+      .creator-room-select {
+        text-align: left;
+        white-space: pre;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      .creator-room-select[aria-pressed="true"] {
+        background: #2f6b5d;
+        border-color: var(--accent);
+      }
+      .creator-edge-list { padding-left: 1.2rem; list-style: disc; color: var(--ink); }
+      .creator-result {
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #2f6b5d;
+        border-radius: 0.35rem;
+        background: #12241f;
+        color: var(--ink);
+        white-space: pre-line;
+      }
+      .creator-result[hidden] { display: none; }
+      .service-form { max-width: 48rem; }
+      .service-header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 1rem;
+        align-items: baseline;
+        border-bottom: 1px solid #2b3550;
+        padding-bottom: 0.5rem;
+      }
+      .service-header h2 { margin: 0; color: var(--ink); }
+      .service-header p { flex: 1 1 16rem; margin: 0; }
+      .service-section {
+        margin: 0.75rem 0;
+        padding: 0.6rem 0.75rem;
+        border: 1px solid #2b3550;
+        border-radius: 0.35rem;
+      }
+      .service-section h3 { margin-top: 0; }
+      .service-list { padding-left: 0; }
+      .service-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: baseline;
+        margin: 0.3rem 0;
+        color: var(--ink);
+      }
+      .service-row span:first-child { flex: 1 1 16rem; }
+      .service-row.current span:first-child { color: var(--accent); font-weight: 600; }
+      .service-records { grid-template-columns: 14rem 1fr; margin: 0.5rem 0; }
+      .service-artifact {
+        margin: 0.25rem 0 0.5rem;
+        padding: 0.75rem;
+        max-height: 18rem;
+        overflow: auto;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        background: #0b0d13;
+        border: 1px solid #2b3550;
+        border-radius: 0.35rem;
+        color: var(--ink);
+        font: 0.85rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      .service-artifact[hidden] { display: none; }
+      .service-notice {
+        border-left: 3px solid var(--accent);
+        padding: 0.4rem 0.6rem;
+        background: #101725;
+        color: var(--ink);
+      }
+      .journal-form {
+        max-width: 52rem;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .journal-header h2 { margin: 0; color: var(--ink); }
+      .journal-body { display: flex; flex-direction: column; }
+      .journal-subject button:first-child {
+        flex: 1 1 20rem;
+        text-align: left;
+      }
+      .journal-subject button[aria-pressed="true"] {
+        background: #2f6b5d;
+        border-color: var(--accent);
+      }
+      .journal-settings-form { display: flex; flex-direction: column; gap: 0.5rem; }
+      .journal-setting {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+        color: var(--ink);
+      }
+      .journal-setting span { flex: 1 1 12rem; }
+      .journal-setting select {
+        flex: 0 1 14rem;
+        font: inherit;
+        color: var(--ink);
+        background: #101725;
+        border: 1px solid #3a4a6d;
+        border-radius: 0.35rem;
+        padding: 0.35rem 0.5rem;
+      }
+      .journal-setting select:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+      .journal-suggestion { display: block; line-height: 1.45; }
+      #npc-dialogue {
+        position: absolute;
+        left: 50%;
+        bottom: max(0.75rem, env(safe-area-inset-bottom));
+        transform: translateX(-50%);
+        z-index: var(--z-hud);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem 0.75rem;
+        align-items: baseline;
+        max-width: min(30rem, calc(100% - 1.5rem));
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #3a4a6d;
+        border-radius: 0.5rem;
+        background: rgb(20 26 40 / 96%);
+        color: var(--ink);
+      }
+      #npc-dialogue[hidden] { display: none; }
+      #npc-dialogue strong { color: var(--accent); flex: 1 1 100%; }
+      .npc-dialogue-body { margin: 0; flex: 1 1 16rem; color: var(--ink); }
+      .help-form { max-width: 44rem; margin: 0 auto; }
+      .help-header h2 { margin: 0; color: var(--ink); }
+      .help-body { display: grid; gap: 0.25rem; }
+      .help-section { margin: 0.75rem 0; }
+      .help-keys { color: var(--ink); }
+      .help-records { grid-template-columns: 16rem 1fr; }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      @media (max-width: 900px) {
+        #progress-panel {
+          top: auto;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          width: 100%;
+          max-height: 70dvh;
+          border-radius: 0.75rem 0.75rem 0 0;
+          padding-bottom: max(1rem, env(safe-area-inset-bottom));
+        }
+        #npc-dialogue { bottom: calc(env(safe-area-inset-bottom) + 9rem); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { animation: none !important; transition: none !important; }
+      }
+      html[data-reduced-motion="reduce"] *,
+      html[data-reduced-motion="reduce"] *::before,
+      html[data-reduced-motion="reduce"] *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+    </style>
+    <script type="module" crossorigin src="/knowledge-dungeon-engine/examples/side-scroller/assets/index-h4wn0DID.js"></script>
+  </head>
+  <body data-title="true">
+    <main class="stage">
+      <canvas
+        id="game"
+        width="960"
+        height="540"
+        tabindex="0"
+        aria-label="Side-view village street above a dungeon. Move with A and D or the arrow keys, jump with Space, climb with W and S, press E at a door to enter a portal or open a village service, press E beside a person to talk, press C to open the Creator, press R to review the last-studied dungeon, and press J to open the journal. In a dungeon room, press E to write a note and R to review a cleared room."
+        aria-describedby="game-help"
+      ></canvas>
+
+      <div id="top-bar">
+        <div id="notice-stack" role="group" aria-label="Game notices">
+          <div id="prompt" hidden></div>
+          <div id="recovery" role="status" aria-live="polite" hidden>
+            <p id="recovery-text"></p>
+            <button id="recovery-dismiss" type="button">Dismiss</button>
+          </div>
+          <div id="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+        </div>
+        <button id="toggle-panel" type="button" aria-controls="progress-panel" aria-expanded="false">
+          Progress
+        </button>
+      </div>
+      <div id="npc-dialogue" role="group" aria-labelledby="npc-dialogue-label" hidden></div>
+      <div id="touch-controls" hidden></div>
+      <aside id="progress-panel" aria-labelledby="panel-title" hidden>
+        <div class="panel-heading">
+          <h2 id="panel-title" tabindex="-1">Progress</h2>
+          <button id="open-help" type="button">Controls (?)</button>
+        </div>
+        <dl id="summary"></dl>
+
+        <h2 id="rooms-title">Rooms</h2>
+        <ul id="rooms"></ul>
+
+        <div class="actions">
+          <button id="open-journal" type="button">Journal (J)</button>
+          <button id="open-review" type="button">Review (R)</button>
+          <button id="open-creator" type="button">Creator (C)</button>
+          <button id="export-save" type="button">Export save</button>
+          <button id="clear-save" type="button">Clear saved state</button>
+          <button id="leave-fishing" type="button" hidden>Leave pond</button>
+        </div>
+
+        <div id="error" role="alert" hidden></div>
+        <div id="status"></div>
+        <p class="controls">
+          State persists in IndexedDB. Press <kbd>?</kbd> for the full keyboard map.
+        </p>
+      </aside>
+
+      <div id="overlay">
+        <p id="overlay-text">Loading the engine…</p>
+        <div id="title-panel" role="dialog" aria-modal="true" aria-labelledby="title-heading" hidden></div>
+      </div>
+
+      <section
+        id="note-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="note-panel-title"
+        hidden
+      ></section>
+      <section
+        id="fishing-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="fishing-panel-title"
+        hidden
+      ></section>
+      <section
+        id="review-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="review-panel-title"
+        hidden
+      ></section>
+      <section
+        id="creator-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="creator-panel-title"
+        hidden
+      ></section>
+      <section
+        id="service-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="service-panel-title"
+        aria-describedby="service-panel-subtitle"
+        hidden
+      ></section>
+      <section
+        id="journal-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="journal-panel-title"
+        aria-describedby="journal-panel-subtitle"
+        hidden
+      ></section>
+      <section
+        id="help-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="help-panel-title"
+        aria-describedby="help-panel-subtitle"
+        hidden
+      ></section>
+    </main>
+
+    <p id="game-help" class="sr-only">
+      Press question mark or choose Controls in the progress panel for the full keyboard map,
+      review keys, and pond commands.
+    </p>
+    <div id="live" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  </body>
+</html>
