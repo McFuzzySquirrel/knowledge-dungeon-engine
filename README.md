@@ -132,6 +132,12 @@ branch: a playable side-view game with a village street above a generated dungeo
 Canvas 2D rendering, IndexedDB persistence, and the Creator/Scribe/Archaeologist loop.
 It is a standalone package with its own lockfile, TypeScript config, and Vitest suite.
 
+**Play it live:** [mcfuzzysquirrel.github.io/knowledge-dungeon-engine](https://mcfuzzysquirrel.github.io/knowledge-dungeon-engine/)
+is the example index; the side-scroller is at
+[`/examples/side-scroller/`](https://mcfuzzysquirrel.github.io/knowledge-dungeon-engine/examples/side-scroller/).
+Each `examples/*` branch publishes its built `dist` under its own path; saves stay in the
+browser.
+
 The branch is deliberately separate from `main` so more example hosts can land without
 coupling them to the engine package. The example is strictly additive: it changes no
 engine source, export, schema, or runtime dependency, and deleting it leaves the engine
@@ -312,7 +318,8 @@ These are known gaps and candidate work, **not shipped behavior**:
 - Durable `EngineStorage` adapters for browsers and Node.
 - A migration path from existing Knowledge Dungeon saves and backups.
 - An npm release (the package is currently private and installed from Git).
-- A repository CI workflow; validation is currently local.
+- A repository-wide CI workflow; the Pages deploy workflow validates reference examples,
+  while the engine suite remains local.
 - Dedicated test coverage for the statistics and assistance modules.
 - Additional reference hosts for other UI stacks; the first (vanilla TypeScript,
   Vite, and Canvas 2D) lives on the
