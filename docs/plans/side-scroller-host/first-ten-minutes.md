@@ -6,6 +6,12 @@ never record learner note text, topics, or subject names in the result.
 
 ## Setup
 
+Hosted copy:
+[`mcfuzzysquirrel.github.io/knowledge-dungeon-engine/examples/side-scroller/`](https://mcfuzzysquirrel.github.io/knowledge-dungeon-engine/examples/side-scroller/).
+It runs the same build; saves stay in that browser.
+
+For local development:
+
 ```sh
 npm --prefix examples/side-scroller install
 npm --prefix examples/side-scroller run dev

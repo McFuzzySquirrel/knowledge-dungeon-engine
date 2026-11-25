@@ -128,6 +128,13 @@ with slashes become directory paths (`examples/side-scroller` → `/examples/sid
 - Good, because each example gets its own site and origin.
 - Bad, because it duplicates the engine and makes the additive boundary harder to audit.
 
+## Verification record
+
+- **2026-11-25:** `gh-pages` built successfully; the landing page and
+  `/examples/side-scroller/` returned 200; a production smoke run against the live URL
+  reported the title, a 1280×800 canvas, zero failed resources, and zero console errors.
+- The deploy workflow ran the example test, typecheck, and build before publishing.
+
 ## Links
 
 - [Pages workflow](../../.github/workflows/deploy-example.yml)
