@@ -1,0 +1,340 @@
+{
+  "capturedAt": "2026-11-24T22:55:41.377Z",
+  "app": "http://localhost:5174/",
+  "viewport": "default headless Firefox (captured window)",
+  "prefix": "2026-11-25-g10creator",
+  "creator": true,
+  "reducedMotion": false,
+  "result": {
+    "seeded": {
+      "activeSubjectId": null,
+      "activeStudy": false,
+      "subjects": 3,
+      "world": "village",
+      "rooms": [],
+      "visited": [],
+      "sessions": 3,
+      "xp": null,
+      "inventory": 0,
+      "equipped": 0,
+      "xpTotal": 0,
+      "fish": 0,
+      "cleared": 0,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassesTotal": 0,
+      "reviewPassCounts": {},
+      "nextReview": {},
+      "marker": null,
+      "attachmentKeys": [],
+      "attachmentSizes": {}
+    },
+    "opened": {
+      "hidden": false,
+      "focusKey": "creator-panel-title",
+      "focusTag": "H2",
+      "subjects": [
+        "Rivers & Bridges — 4 rooms, 0 cleared\nEdit\nEnter dungeon",
+        "Sky & Weather — 5 rooms, 0 cleared\nEdit\nEnter dungeon",
+        "Kitchen Chemistry — 4 rooms, 0 cleared\nEdit\nEnter dungeon"
+      ],
+      "rooms": [],
+      "edges": [],
+      "tags": "",
+      "createName": "",
+      "createRoot": "",
+      "result": "",
+      "error": "",
+      "resultHidden": true,
+      "errorHidden": true
+    },
+    "created": {
+      "hidden": false,
+      "focusKey": "creator-panel-title",
+      "focusTag": "H2",
+      "subjects": [
+        "Rivers & Bridges — 4 rooms, 0 cleared\nEdit\nEnter dungeon",
+        "Sky & Weather — 5 rooms, 0 cleared\nEdit\nEnter dungeon",
+        "Kitchen Chemistry — 4 rooms, 0 cleared\nEdit\nEnter dungeon",
+        "Tide Pools — 1 rooms, 0 cleared\nEditing\nEnter dungeon"
+      ],
+      "rooms": [
+        "◆ root Rock Pool Ecology"
+      ],
+      "edges": [],
+      "tags": "",
+      "createName": "",
+      "createRoot": "",
+      "result": "Created “Tide Pools”. Add rooms below, or close to see its portal on the street.",
+      "error": "",
+      "resultHidden": false,
+      "errorHidden": true
+    },
+    "tree": {
+      "hidden": false,
+      "focusKey": "creator-panel-title",
+      "focusTag": "H2",
+      "subjects": [
+        "Rivers & Bridges — 4 rooms, 0 cleared\nEdit\nEnter dungeon",
+        "Sky & Weather — 5 rooms, 0 cleared\nEdit\nEnter dungeon",
+        "Kitchen Chemistry — 4 rooms, 0 cleared\nEdit\nEnter dungeon",
+        "Tide Pools — 4 rooms, 0 cleared\nEditing\nEnter dungeon"
+      ],
+      "rooms": [
+        "◆ root Rock Pool Ecology",
+        "↳ Tide Zones",
+        "↳ Pool Life",
+        "↳ Salinity"
+      ],
+      "edges": [],
+      "tags": "",
+      "createName": "",
+      "createRoot": "",
+      "result": "Added 3 rooms.",
+      "error": "",
+      "resultHidden": false,
+      "errorHidden": true
+    },
+    "confirmLabel": "Confirm remove: 3 rooms",
+    "tagged": {
+      "hidden": false,
+      "focusKey": "creator-panel-title",
+      "focusTag": "H2",
+      "subjects": [
+        "Rivers & Bridges — 4 rooms, 0 cleared\nEdit\nEnter dungeon",
+        "Sky & Weather — 5 rooms, 0 cleared\nEdit\nEnter dungeon",
+        "Kitchen Chemistry — 4 rooms, 0 cleared\nEdit\nEnter dungeon",
+        "Tide Pools — 3 rooms, 0 cleared\nEditing\nEnter dungeon"
+      ],
+      "rooms": [
+        "◆ root Rock Pool Ecology",
+        "↳ Pool Life [water, observation]",
+        "↳ Salinity"
+      ],
+      "edges": [
+        "Pool Life → Salinity (related)"
+      ],
+      "tags": "water, observation",
+      "createName": "",
+      "createRoot": "",
+      "result": "Cross-link added. It is drawn below the room tree.",
+      "error": "",
+      "resultHidden": false,
+      "errorHidden": true
+    },
+    "tabbed": {
+      "hidden": false,
+      "focusKey": "subject-edit-demo-rivers",
+      "focusTag": "BUTTON",
+      "subjects": [
+        "Rivers & Bridges — 4 rooms, 0 cleared\nEdit\nEnter dungeon",
+        "Sky & Weather — 5 rooms, 0 cleared\nEdit\nEnter dungeon",
+        "Kitchen Chemistry — 4 rooms, 0 cleared\nEdit\nEnter dungeon",
+        "Tide Pools — 3 rooms, 0 cleared\nEditing\nEnter dungeon"
+      ],
+      "rooms": [
+        "◆ root Rock Pool Ecology",
+        "↳ Pool Life [water, observation]",
+        "↳ Salinity"
+      ],
+      "edges": [
+        "Pool Life → Salinity (related)"
+      ],
+      "tags": "water, observation",
+      "createName": "",
+      "createRoot": "",
+      "result": "Cross-link added. It is drawn below the room tree.",
+      "error": "",
+      "resultHidden": false,
+      "errorHidden": true
+    },
+    "refusal": {
+      "hidden": false,
+      "focusKey": "creator-panel-title",
+      "focusTag": "H2",
+      "subjects": [
+        "Rivers & Bridges — 4 rooms, 0 cleared\nEdit\nEnter dungeon",
+        "Sky & Weather — 5 rooms, 0 cleared\nEdit\nEnter dungeon",
+        "Kitchen Chemistry — 4 rooms, 0 cleared\nEdit\nEnter dungeon",
+        "Tide Pools — 3 rooms, 0 cleared\nEdit\nEnter dungeon"
+      ],
+      "rooms": [],
+      "edges": [],
+      "tags": "",
+      "createName": "Tide Pools",
+      "createRoot": "Another Root",
+      "result": "",
+      "error": "Refused: a subject named “Tide Pools” already exists.",
+      "resultHidden": true,
+      "errorHidden": false
+    },
+    "failed": {
+      "hidden": false,
+      "focusKey": "creator-panel-title",
+      "focusTag": "H2",
+      "subjects": [
+        "Rivers & Bridges — 4 rooms, 0 cleared\nEdit\nEnter dungeon",
+        "Sky & Weather — 5 rooms, 0 cleared\nEdit\nEnter dungeon",
+        "Kitchen Chemistry — 4 rooms, 0 cleared\nEdit\nEnter dungeon",
+        "Tide Pools — 3 rooms, 0 cleared\nEditing\nEnter dungeon"
+      ],
+      "rooms": [
+        "◆ root Rock Pool Ecology",
+        "↳ Pool Life [water, observation]",
+        "↳ Salinity"
+      ],
+      "edges": [
+        "Pool Life → Salinity (related)"
+      ],
+      "tags": "quota-test",
+      "createName": "Tide Pools",
+      "createRoot": "Another Root",
+      "result": "",
+      "error": "Not saved: simulated quota failure. Nothing was committed. Try again.",
+      "resultHidden": true,
+      "errorHidden": false
+    },
+    "afterFailure": {
+      "activeSubjectId": "subject-87bfe8c0-d6e5-4968-b6ba-90b48240915b",
+      "activeStudy": true,
+      "subjects": 4,
+      "world": "village",
+      "rooms": [
+        "room-44ce0c0e-fe74-4934-9dc4-119af7576612",
+        "a8e186a0-17ac-44c9-a093-5ee61e652fe2",
+        "05b09442-f720-4e1e-8a42-84fc73efaa01"
+      ],
+      "visited": [],
+      "sessions": 5,
+      "xp": 0,
+      "inventory": 0,
+      "equipped": 0,
+      "xpTotal": 0,
+      "fish": 0,
+      "cleared": 0,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassesTotal": 0,
+      "reviewPassCounts": {
+        "room-44ce0c0e-fe74-4934-9dc4-119af7576612": 0,
+        "a8e186a0-17ac-44c9-a093-5ee61e652fe2": 0,
+        "05b09442-f720-4e1e-8a42-84fc73efaa01": 0
+      },
+      "nextReview": {
+        "room-44ce0c0e-fe74-4934-9dc4-119af7576612": null,
+        "a8e186a0-17ac-44c9-a093-5ee61e652fe2": null,
+        "05b09442-f720-4e1e-8a42-84fc73efaa01": null
+      },
+      "marker": null,
+      "attachmentKeys": [],
+      "attachmentSizes": {}
+    },
+    "afterClose": {
+      "activeSubjectId": null,
+      "activeStudy": false,
+      "subjects": 4,
+      "world": "village",
+      "rooms": [],
+      "visited": [],
+      "sessions": 4,
+      "xp": null,
+      "inventory": 0,
+      "equipped": 0,
+      "xpTotal": 0,
+      "fish": 0,
+      "cleared": 0,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassesTotal": 0,
+      "reviewPassCounts": {},
+      "nextReview": {},
+      "marker": null,
+      "attachmentKeys": [],
+      "attachmentSizes": {}
+    },
+    "street": "Location\nVillage street\nPhase\ncreator\nSubject portals\n4 portals\nRooms cleared (all portals)\n0 / 16\nXP (all subjects)\n0\nNearby\nTide Pools\nJournal\nJ — subjects, records, assistance, settings",
+    "keyboard": {
+      "openedMs": 5,
+      "nameTabs": 9,
+      "createFocus": "create-submit",
+      "createdMs": 5,
+      "topicsTabs": 3,
+      "submitTabs": 1,
+      "treeMs": 4,
+      "closedMs": 29,
+      "walked": {
+        "found": true,
+        "nearby": "keyboard subject"
+      },
+      "enteredMs": 19,
+      "summary": "Subject\nkeyboard subject\nWorld\ndungeon · scribe\nXP\n0\nRank\nNovice\nRooms cleared\n0 / 3\nCurrent room\nkeyboard root\nStudy session\nactive\nVisited this session\n1\nReviews due\n0 rooms\nReview pass\n1\nReview mode\nlocked — clear every room encounter\nJournal\nJ — subjects, records, assistance, settings"
+    }
+  },
+  "frames": [
+    {
+      "file": "2026-11-25-g10creator-01-subject-list.png",
+      "label": "Creator subject list",
+      "detail": "seededIn=61ms; openIn=133ms; subjects=3; portals row=\"3 portals\"; listed=3; focus=H2"
+    },
+    {
+      "file": "2026-11-25-g10creator-02-create-form.png",
+      "label": "Creator create form",
+      "detail": "name=\"Tide Pools\"; root=\"Rock Pool Ecology\"; subjects before create=3"
+    },
+    {
+      "file": "2026-11-25-g10creator-03-created.png",
+      "label": "Created subject",
+      "detail": "shownIn=50ms; subjects 3→4; rooms=1; active study=true; result=true"
+    },
+    {
+      "file": "2026-11-25-g10creator-04-tree.png",
+      "label": "Room tree",
+      "detail": "addedIn=40ms; rooms=4; order=◆ root Rock Pool Ecology > ↳ Tide Zones > ↳ Pool Life > ↳ Salinity"
+    },
+    {
+      "file": "2026-11-25-g10creator-05-cascade-confirm.png",
+      "label": "Cascade confirmation",
+      "detail": "rooms=6; confirm=\"Confirm remove: 3 rooms\"; names cascade=true; no write yet=true"
+    },
+    {
+      "file": "2026-11-25-g10creator-06-cascade-removed.png",
+      "label": "Cascade removed",
+      "detail": "removedIn=23ms; rooms=3; result=true"
+    },
+    {
+      "file": "2026-11-25-g10creator-07-tree-tags.png",
+      "label": "Tree with tags",
+      "detail": "tagsIn=33ms; tags=\"water, observation\"; rooms=3"
+    },
+    {
+      "file": "2026-11-25-g10creator-08-cross-link.png",
+      "label": "Cross-link edge",
+      "detail": "linkIn=39ms; edges=[\"Pool Life → Salinity (related)\"]"
+    },
+    {
+      "file": "2026-11-25-g10creator-09-street-portal.png",
+      "label": "New portal on the street",
+      "detail": "closedIn=50ms; focus returned to #game=true; tab reached=subject-edit-demo-rivers; subjects=4; portals row=\"4 portals\"; walk found Tide Pools=true; nearby=\"Tide Pools\"; activeStudy=false"
+    },
+    {
+      "file": "2026-11-25-g10creator-10-refusal.png",
+      "label": "Duplicate-name refusal",
+      "detail": "shownIn=22ms; refusal=true; subjects still=4; error=\"Refused: a subject named “Tide Pools” already exists.\""
+    },
+    {
+      "file": "2026-11-25-g10creator-11-not-saved.png",
+      "label": "Rejected graph write",
+      "detail": "shownIn=8ms; not saved=true; tree intact=true; tags still \"quota-test\"; subjects 4→4"
+    },
+    {
+      "file": "2026-11-25-g10creator-12-keyboard-create.png",
+      "label": "Keyboard-only Creator",
+      "detail": "openIn=5ms; tabs to name=9; create focus=create-submit; createdIn=5ms; subjects 4→5; tabs to topics=3, to add=1; treeIn=4ms; rooms=3"
+    },
+    {
+      "file": "2026-11-25-g10creator-13-keyboard-enter.png",
+      "label": "Keyboard-only portal entry",
+      "detail": "escape focus returned=true; walk found=true; enteredIn=19ms; summary subject row=true; world=dungeon · scribe"
+    }
+  ]
+}

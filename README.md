@@ -144,7 +144,9 @@ together in a real screen flow. Its
 the engine, and the [implementation plan](docs/plans/side-scroller-host/README.md) and
 [visual record](docs/plans/side-scroller-host/VISUALS.md) document each phase. It is a
 reference, not a published package: the root test suite remains engine-only and does
-not discover `examples/**`.
+not discover `examples/**`. The example is complete through P10 and ships a local gate
+(`node examples/side-scroller/scripts/gate.mjs`); CI and hosted deployment remain
+deferred.
 
 ## Getting Started
 
@@ -317,11 +319,12 @@ These are known gaps and candidate work, **not shipped behavior**:
 - Durable `EngineStorage` adapters for browsers and Node.
 - A migration path from existing Knowledge Dungeon saves and backups.
 - An npm release (the package is currently private and installed from Git).
-- A repository CI workflow; validation is currently local.
+- A repository CI workflow; validation is currently local, including the side-scroller's P10 gate.
 - Dedicated test coverage for the statistics and assistance modules.
-- Additional reference hosts for other UI stacks. The
+- Additional reference hosts for other UI stacks. The completed
   [side-scroller example](examples/side-scroller/README.md) covers vanilla TypeScript,
-  Vite, and Canvas 2D; there is no packaged host kit yet.
+  Vite, and Canvas 2D, including keyboard, touch, reduced motion, large text, and a
+  local gate; there is no packaged host kit yet.
 - Optional movement models beyond the grid, if a host needs platformer physics.
 
 No timeline or commitment is implied. Check the issue tracker for current work.

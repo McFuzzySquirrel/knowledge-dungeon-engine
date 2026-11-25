@@ -11,11 +11,12 @@ documented root entries) leaves the engine exactly as it was. The full rule set 
 
 | Field | Value |
 | --- | --- |
-| Status | P0–P9 complete; P10 next |
+| Status | Complete — P0–P10, G10 passed |
 | Stack | Vanilla TypeScript + Vite + Canvas 2D |
 | Storage | IndexedDB, one `EngineState` record |
 | Package | Private, standalone (`package.json`, lockfile, `tsconfig`, Vitest config) |
 | Plan | [Side-Scroller Host plan](../../docs/plans/side-scroller-host/README.md) |
+| Playtest | [First ten minutes](../../docs/plans/side-scroller-host/first-ten-minutes.md) |
 | Visual record | [VISUALS.md](../../docs/plans/side-scroller-host/VISUALS.md) |
 | Evidence | [EVIDENCE.md](../../docs/plans/side-scroller-host/EVIDENCE.md) |
 
@@ -44,8 +45,22 @@ npm --prefix examples/side-scroller run typecheck
 npm --prefix examples/side-scroller run build
 ```
 
-These are the example's own gate. Root `npm test` stays engine-only and must not
+These are the example's own checks. Root `npm test` stays engine-only and must not
 discover `examples/**` (the root Vitest config excludes it).
+
+One command runs both suites and the boundary checks from the repository root:
+
+```sh
+node examples/side-scroller/scripts/gate.mjs
+# or
+npm --prefix examples/side-scroller run gate
+```
+
+It runs root test/typecheck/build, example test/typecheck/build, the Vitest isolation
+probe, and both empty-`src` checks, then prints a pass/fail summary with the engine and
+example test counts. It exits non-zero on any failure and never swallows output. There is
+no root package script and no CI workflow by decision (D-13); this local gate is the
+repeatable substitute.
 
 ## What works
 
@@ -68,13 +83,16 @@ discover `examples/**` (the root Vitest config excludes it).
 | Demo campaign | Three synthetic subjects seed on a first boot and appear as ordinary portals; a first-run flag prevents resurrection after deletion |
 | Title | Continue/New game/archetype choice, a tutorial shortcut, and import/export/settings; a fresh save offers the engine's three archetypes and shows the resulting quest step |
 | Save bundle | `.json` export with every attachment base64-encoded; import validates version/app/state shape and every payload, writes only after a complete decode, and reloads; settings are not included |
-| Layout | Full-viewport canvas, progress overlay/sheet, safe-area insets, 44 px touch targets, no page scroll while playing, orientation resize, large-text and reduced-motion support |
+| Layout | Full-viewport canvas, one top-left notice rail (prompt, recovery, toast), progress overlay/sheet, safe-area insets, 44 px targets, no page scroll while playing, orientation resize, large-text and reduced-motion support |
+| Polish | Short reduced-motion-safe panel arrivals, visible focus on every control, touch pad hidden under a sheet or modal, world repaint paused under an covering modal |
 | Touch | Left/right/up/down, Jump, and one contextual action button; pointer events with cancel/blur cleanup; the same intent state and fishing machine as the keyboard |
 | Persistence | Reload keeps rooms, XP, fish, equipment, review schedule, and any saved review marker |
 
-P10 is the local ship pass: polish, performance, accessibility, docs, and a repeatable
-local gate. Placeholder rectangles and silence are deliberate: this example ships no art
-or audio.
+P10 completed the local ship pass: the notice rail and modal layers no longer overlap,
+the sheet hides the touch pad, focus and 44 px targets are checked, the world stops
+repainting under an covering modal, and a repeatable gate now covers both suites and the
+engine boundary. Placeholder rectangles and silence remain deliberate: this example ships
+no art or audio.
 
 ## Controls
 
@@ -124,7 +142,8 @@ src/ui/helpPanel.ts         controls popup behind the ? key (P8 follow-up)
 src/fishing/                pond bridge, machine session, scene (P4)
 src/projection.ts           EngineState -> view models, pure
 tests/                      one suite per phase, isolated from the root suite
-scripts/capture-dungeon.mjs WebDriver visual-record capture
+scripts/capture-dungeon.mjs WebDriver visual-record capture (P10 adds --p10 and --perf)
+scripts/gate.mjs           local gate: both suites, builds, isolation, src diff
 ```
 
 Engine imports go through the `@` alias to `src/index.ts`, so the example typechecks
@@ -134,6 +153,23 @@ candidate engine export (K-14), and no value may reach around the barrel.
 
 Movement, camera, physics, and in-progress casts are host-local. Every durable change
 goes through an engine command; the frame loop never calls `snapshot()`.
+
+## Known limits
+
+- **No art, audio, music, or voice.** Placeholder shapes and silence are product
+  decisions (D-11), not unfinished assets.
+- **Local only.** There is no CI workflow, hosted deployment, service worker, or PWA
+  install. The [gate script](#run-it) is the repeatable check.
+- **One browser save.** IndexedDB holds one engine state; there are no accounts, cloud
+  sync, multiple slots, or anti-cheat.
+- **No fish trading or NPC state.** The Fish Stand is a collection display and villagers
+  are read-only; both say so on screen.
+- **Headless software compositing is slower than a GPU browser.** The P10 trace records
+  the `about:blank` baseline with the app frames; the world frame is the accepted
+  exception ([P2-O1](../../docs/plans/side-scroller-host/EVIDENCE.md#open-issues-and-exceptions)).
+- **Physical phone browsers were not available in this environment.** P9/P10 used
+  Firefox with a 390×844 DPR-2 viewport through WebDriver BiDi; current mobile
+  Safari/Chrome remain the target (S-01).
 
 ## Visual record
 
@@ -147,9 +183,14 @@ node examples/side-scroller/scripts/capture-dungeon.mjs \
 ```
 
 Modes: default dungeon, `--note-loop`, `--surface`, `--fishing`, `--review`,
-`--creator`, `--services`, `--journal`, `--help`, `--openings`, `--mobile`/`--shell`;
+`--creator`, `--services`, `--journal`, `--help`, `--openings`, `--mobile`/`--shell`,
+`--p10` (the first-ten-minutes path plus layout, focus, large-text, phone, and import
+checks), `--perf` (a 10-second trace per surface plus an `about:blank` baseline), and
+`--smoke` (a production-build boot check with failed-resource and console checks);
 add `--low-fps` or `--reduced-motion` for the environment variants. `--mobile` uses
-WebDriver BiDi viewport emulation for an exact 390×844 CSS viewport at DPR 2.
+WebDriver BiDi viewport emulation for an exact 390×844 CSS viewport at DPR 2. The P10
+modes also subscribe to the browser log and record console errors and warnings in the
+manifest.
 
 ## Deleting the example
 

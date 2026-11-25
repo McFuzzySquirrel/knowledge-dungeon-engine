@@ -1,0 +1,103 @@
+{
+  "capturedAt": "2026-11-24T22:37:03.383Z",
+  "app": "http://localhost:5174/",
+  "viewport": "1280×800 desktop",
+  "prefix": "2026-11-25-g10perf",
+  "perf": true,
+  "result": {
+    "subscribed": true,
+    "baseline": {
+      "frames": 576,
+      "avgMs": 17.37,
+      "p95Ms": 17.14,
+      "maxMs": 67.4,
+      "over16_7": 332
+    },
+    "root": {
+      "frames": 419,
+      "avgMs": 23.93,
+      "p95Ms": 33.48,
+      "maxMs": 34.24,
+      "over16_7": 305
+    },
+    "lower": {
+      "frames": 400,
+      "avgMs": 25.02,
+      "p95Ms": 33.78,
+      "maxMs": 49.98,
+      "over16_7": 298
+    },
+    "street": {
+      "frames": 333,
+      "avgMs": 30.12,
+      "p95Ms": 33.84,
+      "maxMs": 50.4,
+      "over16_7": 303
+    },
+    "pond": {
+      "frames": 602,
+      "avgMs": 16.62,
+      "p95Ms": 17.12,
+      "maxMs": 17.54,
+      "over16_7": 330
+    },
+    "library": {
+      "frames": 601,
+      "avgMs": 16.64,
+      "p95Ms": 17.1,
+      "maxMs": 17.14,
+      "over16_7": 343
+    },
+    "journal": {
+      "frames": 601,
+      "avgMs": 16.64,
+      "p95Ms": 17.12,
+      "maxMs": 17.42,
+      "over16_7": 339
+    },
+    "durable": {
+      "stateJsonBytes": 20804,
+      "attachmentCount": 0,
+      "attachmentBytes": 0,
+      "subjects": 4,
+      "rooms": 16,
+      "notes": 0,
+      "fish": 0,
+      "usageBytes": 57414,
+      "quotaBytes": 837074944
+    },
+    "consoleErrors": []
+  },
+  "frames": [
+    {
+      "file": "2026-11-25-g10perf-01-dungeon-room.png",
+      "label": "Dungeon room",
+      "detail": "avg=23.93ms p95=33.48ms max=34.24ms over16.7=305/419"
+    },
+    {
+      "file": "2026-11-25-g10perf-02-lower-room.png",
+      "label": "Lower dungeon room",
+      "detail": "avg=25.02ms p95=33.78ms max=49.98ms over16.7=298/400"
+    },
+    {
+      "file": "2026-11-25-g10perf-03-street.png",
+      "label": "Street",
+      "detail": "avg=30.12ms p95=33.84ms max=50.4ms over16.7=303/333"
+    },
+    {
+      "file": "2026-11-25-g10perf-04-pond.png",
+      "label": "Pond",
+      "detail": "avg=16.62ms p95=17.12ms max=17.54ms over16.7=330/602"
+    },
+    {
+      "file": "2026-11-25-g10perf-05-library.png",
+      "label": "Library service",
+      "detail": "avg=16.64ms p95=17.1ms max=17.14ms over16.7=343/601"
+    },
+    {
+      "file": "2026-11-25-g10perf-06-journal.png",
+      "label": "Journal",
+      "detail": "avg=16.64ms p95=17.12ms max=17.42ms over16.7=339/601"
+    }
+  ]
+}

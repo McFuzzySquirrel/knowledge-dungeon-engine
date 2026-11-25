@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | Active — governs P5–P10 |
+| Status | Complete — governed P5–P10; still the rule for future hosts |
 | Parent | [Implementation plan](README.md) |
 | Written | 2026-11-24 |
 | Applies to | `examples/side-scroller/` and any future host surface |
@@ -123,6 +123,15 @@ multi-slot storage; host settings are not in the bundle. Touch buttons call the 
 `IntentState` as the keyboard and the same fishing machine events — no second movement or
 cast implementation lives in the host.
 
+P10 added no capability and no engine field. Its polish is presentation and host
+lifecycle only: one notice rail for the prompt, recovery banner, and toast; one layer
+scale below the title and modal layers; a hidden touch pad while a sheet or modal owns
+the screen; one canvas repaint after a resize, then no repaint while an opaque modal
+covers the world; and short reduced-motion-safe arrivals. The frame loop still never
+calls `snapshot()`, and the one subscription remains the only state path. The local gate
+runs both suites, both typechecks, both builds, the isolation probe, and the two empty
+`src` checks; it is the substitute for the CI workflow this plan does not add.
+
 ## 7. Compat and review
 
 - Every gate runs the engine and example suites, both typechecks, both builds, and the
@@ -130,6 +139,6 @@ cast implementation lives in the host.
 - A future engine refactor may break a host; the example typecheck against source is the
   early-warning system. Add the example to CI only when a CI workflow exists; this plan
   stays local by maintainer decision.
-- Re-read this document at the start of each phase and refine it in P10 with anything the
-  phases learned.
+- Re-read this document at the start of each phase; P10 folded in the P5–P9 lessons and
+  closed the plan without promoting it to an ADR.
 - Promote to `docs/adr/` when a second UI is scheduled, so the rule outlives this example.

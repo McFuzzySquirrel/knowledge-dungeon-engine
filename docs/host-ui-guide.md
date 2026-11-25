@@ -296,6 +296,17 @@ The engine is designed for headless tests; use that:
 
 For a terminal or side-scrolling host, the engine's grid navigation is optional. Its learning and progression commands are not tied to the grid.
 
+**Worked reference:** the [side-scroller example](../examples/side-scroller/README.md)
+implements this table for web and mobile. It is vanilla TypeScript + Vite + Canvas 2D,
+with IndexedDB persistence, a title/continue shell, keyboard and touch input over one
+intent state, focus-trapped dialogs, a polite live region, reduced motion, large text,
+44 px targets, and a safe-area-aware full-viewport layout. Its host-local camera,
+physics, settings, and form drafts never enter `EngineState`. The example's
+[known limits](../examples/side-scroller/README.md#known-limits) and
+[boundary rules](plans/side-scroller-host/ENGINE-BOUNDARY.md) show what it deliberately
+leaves out, and `node examples/side-scroller/scripts/gate.mjs` is the local check that
+keeps it additive. Treat it as a reference, not a dependency or a packaged host kit.
+
 ## Host Acceptance Checklist
 
 - [ ] One engine instance and one storage adapter, with atomic saves and a visible save-failure path.

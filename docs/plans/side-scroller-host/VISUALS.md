@@ -31,8 +31,10 @@ zero state. A same-day follow-up (`g8b`) moved the key map behind a **Controls (
 P9 was captured on 2026-11-24 (`visuals/p9/`, two runs: normal and reduced motion) over the
 real app with WebDriver BiDi viewport emulation: a 1280×800 desktop title and a 390×844
 DPR-2 phone viewport for the title, archetype, rejected import, touch street/dungeon/pond,
-responsive sheet, and an export → clear → import round trip. P10's `visuals/p10/` folder
-will be added when that gate is captured.
+responsive sheet, and an export → clear → import round trip. P10 was captured on
+2026-11-25 (`visuals/p10/`) across the first-ten-minutes path, performance traces at six
+surfaces, every prior capture mode, a reduced-motion journal run, and a production-build
+boot check; each run has a manifest with its conditions and any console result.
 
 The P7 run uses the tutorial fixture and the three synthetic demo subjects. The Workshop
 gear shown is from the engine's own room-clear loot; no learner subject or note appears in
@@ -901,6 +903,217 @@ Manifests: [`2026-11-24-g9-manifest.json`](visuals/p9/2026-11-24-g9-manifest.jso
 The manifests record the keyboard focus result, the 390×844 → 844×390 → 390×844
 orientation check, and the export/import counts. Frames were reduced to 256-colour PNGs;
 the full 26-frame set (13 per run) stays in `visuals/p9/`.
+
+## P10 — Local polish, performance, and the final record
+
+Captured 2026-11-25 from the real app over WebDriver. The run is split by mode so each
+condition has its own manifest: the first-ten-minutes path (`--p10`), performance traces
+(`--perf`), the previous phase modes, a reduced-motion journal run, and a production-build
+boot (`--smoke`). The `--p10` manifest also records the BiDi console subscription, layout
+overlaps, minimum target sizes, focus, large text, the phone sheet, and the durable-state
+size.
+
+### First-ten-minutes path
+
+![Title](visuals/p10/2026-11-25-g10play-01-title.png)
+
+![Village street](visuals/p10/2026-11-25-g10play-02-street.png)
+
+![Progress panel](visuals/p10/2026-11-25-g10play-03-progress-panel.png)
+
+![Three rooms cleared](visuals/p10/2026-11-25-g10play-04-cleared.png)
+
+![Review passed](visuals/p10/2026-11-25-g10play-05-review.png)
+
+![Catch kept](visuals/p10/2026-11-25-g10play-07-fishing.png)
+
+![Journal](visuals/p10/2026-11-25-g10play-08-journal.png)
+
+![Export, clear, import](visuals/p10/2026-11-25-g10play-09-import-roundtrip.png)
+
+The path finished with 0 console errors or warnings. The export bundle carried a 54-byte
+attachment; after clear and import, XP 97 and the one fish were unchanged. The state JSON
+was 26,021 bytes before and after.
+
+### Layout, large text, and the phone sheet
+
+![Large text](visuals/p10/2026-11-25-g10play-10-large-text.png)
+
+![Phone progress sheet](visuals/p10/2026-11-25-g10play-11-phone-sheet.png)
+
+At 20 px text and 390×844, the page has no horizontal overflow, no dialog clips, zero
+visible targets under 44 px, and no HUD overlap. The sheet hides the touch pad rather than
+leaving live buttons under it.
+
+### Creator and the new subject
+
+![Creator subject](visuals/p10/2026-11-25-g10play-12-creator.png)
+
+![New subject room](visuals/p10/2026-11-25-g10play-13-new-subject.png)
+
+### Performance traces
+
+The traces are 10-second `requestAnimationFrame` windows at 1280×800 in headless Firefox
+with software compositing. The `about:blank` baseline is recorded in the manifest; the
+Pond, Library, and Journal match it after the P10 repaint pause, while the canvas-heavy
+Street and dungeon rooms carry the accepted P2-O1 exception.
+
+![Dungeon room trace](visuals/p10/2026-11-25-g10perf-01-dungeon-room.png)
+
+![Pond trace](visuals/p10/2026-11-25-g10perf-04-pond.png)
+
+![Library trace](visuals/p10/2026-11-25-g10perf-05-library.png)
+
+![Journal trace](visuals/p10/2026-11-25-g10perf-06-journal.png)
+
+### Every mode
+
+The previous mode captures were re-run on the final tree: default dungeon + note loop,
+surface, fishing, review, Creator, services, journal, title/mobile shell, and the
+reduced-motion journal. Representative frames and all mode-specific facts are in the rows
+below and in each manifest.
+
+| Date | Gate | Commit | Frame | File | What it shows |
+|---|---|---|---|---|---|
+| 2026-11-25 | G10 playtest | uncommitted | Title | [`2026-11-25-g10play-01-title.png`](visuals/p10/2026-11-25-g10play-01-title.png) | focus=title-continue (true); title=true; targets under 44px=0; consoles subscribed=true; status="3 subjects saved · quest: intro · archetype: not chosen" |
+| 2026-11-25 | G10 playtest | uncommitted | Village street | [`2026-11-25-g10play-02-street.png`](visuals/p10/2026-11-25-g10play-02-street.png) | archetype scholar=true; focus=game; overlaps=none; targets under 44px=0; page scroll=false |
+| 2026-11-25 | G10 playtest | uncommitted | Progress panel | [`2026-11-25-g10play-03-progress-panel.png`](visuals/p10/2026-11-25-g10play-03-progress-panel.png) | open=true; overlaps=none; touch hidden=true; targets under 44px=0 |
+| 2026-11-25 | G10 playtest | uncommitted | Three rooms cleared | [`2026-11-25-g10play-04-cleared.png`](visuals/p10/2026-11-25-g10play-04-cleared.png) | cleared=3/3; lower=304ms; climb=3569ms; xp=86; prompt="E write a note — The Map & Beyond<br>R review — The Map & Beyond" |
+| 2026-11-25 | G10 playtest | uncommitted | Review passed | [`2026-11-25-g10play-05-review.png`](visuals/p10/2026-11-25-g10play-05-review.png) | openedIn=11ms; passes=1; XP=92; next review set=true |
+| 2026-11-25 | G10 playtest | uncommitted | Catch kept | [`2026-11-25-g10play-07-fishing.png`](visuals/p10/2026-11-25-g10play-07-fishing.png) | bite=7902ms; fish 0→1; xp=97; world=fishing |
+| 2026-11-25 | G10 playtest | uncommitted | Journal | [`2026-11-25-g10play-08-journal.png`](visuals/p10/2026-11-25-g10play-08-journal.png) | openedIn=10ms; focus=journal-panel-title; subjects in journal=4; overlaps=none; horizontal clip=false |
+| 2026-11-25 | G10 playtest | uncommitted | Export → clear → import | [`2026-11-25-g10play-09-import-roundtrip.png`](visuals/p10/2026-11-25-g10play-09-import-roundtrip.png) | bundle v1; attachment base64=true; cleared 0→0; XP 97→97; fish 1→1; emptied save cleared=0; state JSON 26015→26015 bytes |
+| 2026-11-25 | G10 playtest | uncommitted | Large text | [`2026-11-25-g10play-10-large-text.png`](visuals/p10/2026-11-25-g10play-10-large-text.png) | text scale=large; page overflowX=false; clipped dialogs=none; targets under 44px=0 |
+| 2026-11-25 | G10 playtest | uncommitted | Phone progress sheet | [`2026-11-25-g10play-11-phone-sheet.png`](visuals/p10/2026-11-25-g10play-11-phone-sheet.png) | viewport=390×844; sheet open=true; touch hidden=true; overlaps=none; page overflowX=false; targets under 44px=0 |
+| 2026-11-25 | G10 playtest | uncommitted | Creator subject | [`2026-11-25-g10play-12-creator.png`](visuals/p10/2026-11-25-g10play-12-creator.png) | subjects=5; rooms=4; overlaps=none; targets under 44px=0 |
+| 2026-11-25 | G10 playtest | uncommitted | New subject room | [`2026-11-25-g10play-13-new-subject.png`](visuals/p10/2026-11-25-g10play-13-new-subject.png) | cleared=1; rooms=4; world=dungeon; created subject active=true |
+| 2026-11-25 | G10 performance | uncommitted | Dungeon room | [`2026-11-25-g10perf-01-dungeon-room.png`](visuals/p10/2026-11-25-g10perf-01-dungeon-room.png) | avg=23.93ms p95=33.48ms max=34.24ms over16.7=305/419 |
+| 2026-11-25 | G10 performance | uncommitted | Lower dungeon room | [`2026-11-25-g10perf-02-lower-room.png`](visuals/p10/2026-11-25-g10perf-02-lower-room.png) | avg=25.02ms p95=33.78ms max=49.98ms over16.7=298/400 |
+| 2026-11-25 | G10 performance | uncommitted | Street | [`2026-11-25-g10perf-03-street.png`](visuals/p10/2026-11-25-g10perf-03-street.png) | avg=30.12ms p95=33.84ms max=50.4ms over16.7=303/333 |
+| 2026-11-25 | G10 performance | uncommitted | Pond | [`2026-11-25-g10perf-04-pond.png`](visuals/p10/2026-11-25-g10perf-04-pond.png) | avg=16.62ms p95=17.12ms max=17.54ms over16.7=330/602 |
+| 2026-11-25 | G10 performance | uncommitted | Library service | [`2026-11-25-g10perf-05-library.png`](visuals/p10/2026-11-25-g10perf-05-library.png) | avg=16.64ms p95=17.1ms max=17.14ms over16.7=343/601 |
+| 2026-11-25 | G10 performance | uncommitted | Journal | [`2026-11-25-g10perf-06-journal.png`](visuals/p10/2026-11-25-g10perf-06-journal.png) | avg=16.64ms p95=17.12ms max=17.42ms over16.7=339/601 |
+| 2026-11-25 | G10 shell | uncommitted | Title — desktop | [`2026-11-25-g10shell-01-title-desktop.png`](visuals/p10/2026-11-25-g10shell-01-title-desktop.png) | title=true; viewport=1280×800; focus=title-continue; touch=off; no page scroll=true; status="3 subjects saved · quest: intro · archetype: not chosen" |
+| 2026-11-25 | G10 shell | uncommitted | Title — phone viewport | [`2026-11-25-g10shell-02-title-mobile.png`](visuals/p10/2026-11-25-g10shell-02-title-mobile.png) | title=true; viewport=390×844; no horizontal overflow=true; archetype buttons=3; status="3 subjects saved · quest: intro · archetype: not chosen" |
+| 2026-11-25 | G10 shell | uncommitted | Archetype chosen | [`2026-11-25-g10shell-03-archetype.png`](visuals/p10/2026-11-25-g10shell-03-archetype.png) | offered=scholar,cartographer,archivist; chosen=scholar; engine status="3 subjects saved · quest: intro · archetype: scholar"; archetype panel hidden=true |
+| 2026-11-25 | G10 shell | uncommitted | Import refused | [`2026-11-25-g10shell-04-import-error.png`](visuals/p10/2026-11-25-g10shell-04-import-error.png) | panel=true; error="Unsupported bundle version 2; expected 1."; save unchanged=true; title still usable=true |
+| 2026-11-25 | G10 shell | uncommitted | Touch controls on the street | [`2026-11-25-g10shell-05-touch-street.png`](visuals/p10/2026-11-25-g10shell-05-touch-street.png) | touch=true; layout=on (on); action="Enter"; viewport=390×844; no page scroll=true |
+| 2026-11-25 | G10 shell | uncommitted | Responsive progress sheet | [`2026-11-25-g10shell-06-responsive-hud.png`](visuals/p10/2026-11-25-g10shell-06-responsive-hud.png) | open=true; sheet radius=12px; summary="Location<br>Village street<br>Phase<br>creator<br>Subject portals<br>3 portals<br>Rooms cleared (all portals)<br>0 / 13<br>XP (all subjects)<br>0<br>Nearby<br>Training Grounds<br>Journal<br>J — subjects, records, assistance, settings"; touch still visible=false |
+| 2026-11-25 | G10 shell | uncommitted | Touch controls in the dungeon | [`2026-11-25-g10shell-07-touch-dungeon.png`](visuals/p10/2026-11-25-g10shell-07-touch-dungeon.png) | touch=true; action="Note"; current room="The Note"; buttons=6; min target=44px |
+| 2026-11-25 | G10 shell | uncommitted | Touch-only journal entry | [`2026-11-25-g10shell-07b-touch-journal.png`](visuals/p10/2026-11-25-g10shell-07b-touch-journal.png) | opened=5ms via Progress → Journal; focus=journal-panel-title; title hidden=true |
+| 2026-11-25 | G10 shell | uncommitted | Touch-only review entry | [`2026-11-25-g10shell-07c-touch-review.png`](visuals/p10/2026-11-25-g10shell-07c-touch-review.png) | opened=8ms via Progress → Review after three touch clears; cleared=3; room="Review “The Map & Beyond”" |
+| 2026-11-25 | G10 shell | uncommitted | Export → clear → import | [`2026-11-25-g10shell-08-import-roundtrip.png`](visuals/p10/2026-11-25-g10shell-08-import-roundtrip.png) | bundle v1/knowledge-dungeon-side-scroller; attachment base64=true; cleared 3→3; XP 86→86; attachment bytes=53; emptied save had cleared=0, XP=0 |
+| 2026-11-25 | G10 shell | uncommitted | Touch controls at the pond | [`2026-11-25-g10shell-09-touch-pond.png`](visuals/p10/2026-11-25-g10shell-09-touch-pond.png) | touch=true; action="Cast"; cleared rooms=3; world=fishing; phase hint="Fishing at Fishing Pond in First Dungeon (Tutorial). Hold Space to charge the cast." |
+| 2026-11-25 | G10 shell | uncommitted | Touch cast charged and released | [`2026-11-25-g10shell-10-touch-cast.png`](visuals/p10/2026-11-25-g10shell-10-touch-cast.png) | charging label="Release"; after release="Wait"; status="Waiting for a bite." |
+| 2026-11-25 | G10 shell | uncommitted | Touch-only catch kept | [`2026-11-25-g10shell-10b-touch-kept.png`](visuals/p10/2026-11-25-g10shell-10b-touch-kept.png) | bite=1952ms; recall=665ms; kept=true; fish 0→1; xp=91; action label now="Cast" |
+| 2026-11-25 | G10 surface | uncommitted | Village street | [`2026-11-25-g10surface-01-street.png`](visuals/p10/2026-11-25-g10surface-01-street.png) | world=village; subjects=3; nearby=Training Grounds |
+| 2026-11-25 | G10 surface | uncommitted | Portal entry | [`2026-11-25-g10surface-02-dungeon-entry.png`](visuals/p10/2026-11-25-g10surface-02-dungeon-entry.png) | shownIn=34ms; world=dungeon; active=true; subjects=4; rooms=3 |
+| 2026-11-25 | G10 surface | uncommitted | Room cleared | [`2026-11-25-g10surface-03-cleared.png`](visuals/p10/2026-11-25-g10surface-03-cleared.png) | world=dungeon; xp=28; cleared=1; active session=true |
+| 2026-11-25 | G10 surface | uncommitted | Returned through the shaft | [`2026-11-25-g10surface-04-returned.png`](visuals/p10/2026-11-25-g10surface-04-returned.png) | climb=4167ms; world=village; activeSubject=null; active session=false; sessions=4; portals label=true |
+| 2026-11-25 | G10 surface | uncommitted | Reload on the street | [`2026-11-25-g10surface-05-reload-surface.png`](visuals/p10/2026-11-25-g10surface-05-reload-surface.png) | world=village; subjects=4; activeSubject=null; portal row=true |
+| 2026-11-25 | G10 surface | uncommitted | Reload in the dungeon | [`2026-11-25-g10surface-06-reload-dungeon.png`](visuals/p10/2026-11-25-g10surface-06-reload-dungeon.png) | world=dungeon; active=true; rooms=3; sessions=6; summary has world=true |
+| 2026-11-25 | G10 fishing | uncommitted | Pond before a clear | [`2026-11-25-g10fish-01a-pond-refusal.png`](visuals/p10/2026-11-25-g10fish-01a-pond-refusal.png) | nearby=Fishing Pond (north-west); shownIn=43ms; canvas message="Clear a room before fishing. Kitchen Chemistry has no cleared rooms yet." |
+| 2026-11-25 | G10 fishing | uncommitted | Dungeon entry | [`2026-11-25-g10fish-01-dungeon-entry.png`](visuals/p10/2026-11-25-g10fish-01-dungeon-entry.png) | world=dungeon; active session=true; rooms=3 |
+| 2026-11-25 | G10 fishing | uncommitted | Pond on the street | [`2026-11-25-g10fish-02-pond-on-street.png`](visuals/p10/2026-11-25-g10fish-02-pond-on-street.png) | cleared=1; nearby=Fishing Pond (north-west); prompt=Near Fishing Pond. Press E to fish. |
+| 2026-11-25 | G10 fishing | uncommitted | Pond entry | [`2026-11-25-g10fish-03-pond-idle.png`](visuals/p10/2026-11-25-g10fish-03-pond-idle.png) | shownIn=13ms; world=fishing; subject=host-resolved; xp=28; fish=0; reduced-motion=false; frame avg=16.72ms p95=17.16ms max=50.3ms over16.7=316/599 |
+| 2026-11-25 | G10 fishing | uncommitted | Charging the cast | [`2026-11-25-g10fish-03b-powering.png`](visuals/p10/2026-11-25-g10fish-03b-powering.png) | phase=powering; prompt=Fishing at Fishing Pond in First Dungeon (Tutorial). Hold Space to charge the cast. |
+| 2026-11-25 | G10 fishing | uncommitted | Cast waiting | [`2026-11-25-g10fish-04-waiting.png`](visuals/p10/2026-11-25-g10fish-04-waiting.png) | phase=waiting; prompt=Waiting for a bite. |
+| 2026-11-25 | G10 fishing | uncommitted | Bite | [`2026-11-25-g10fish-05-bite.png`](visuals/p10/2026-11-25-g10fish-05-bite.png) | shownIn=8372ms; screen-reader message present=true |
+| 2026-11-25 | G10 fishing | uncommitted | Recall dialog | [`2026-11-25-g10fish-06-recall.png`](visuals/p10/2026-11-25-g10fish-06-recall.png) | shownIn=671ms; focus=fishing-answered-correct; question shown=true; collection row=0 fish |
+| 2026-11-25 | G10 fishing | uncommitted | Catch save failure | [`2026-11-25-g10fish-07-not-saved.png`](visuals/p10/2026-11-25-g10fish-07-not-saved.png) | shownIn=12ms; error=true; dialog still open=true; fish 0→0 |
+| 2026-11-25 | G10 fishing | uncommitted | Kept with recall | [`2026-11-25-g10fish-08-kept.png`](visuals/p10/2026-11-25-g10fish-08-kept.png) | shownIn=14ms; fish=1; xp=33; focus=game; message="Kept. 5 XP gained. Collection: 1." |
+| 2026-11-25 | G10 fishing | uncommitted | Released | [`2026-11-25-g10fish-09-released.png`](visuals/p10/2026-11-25-g10fish-09-released.png) | fish=1 (unchanged from 1); focus=game; message="Released. Nothing was added to the collection." |
+| 2026-11-25 | G10 fishing | uncommitted | Left the pond | [`2026-11-25-g10fish-10-street.png`](visuals/p10/2026-11-25-g10fish-10-street.png) | shownIn=36ms; world=village; fish=1 |
+| 2026-11-25 | G10 fishing | uncommitted | Reload after a catch | [`2026-11-25-g10fish-11-reload.png`](visuals/p10/2026-11-25-g10fish-11-reload.png) | fish=1; xp=33; world=village |
+| 2026-11-25 | G10 fishing | uncommitted | Non-portal building | [`2026-11-25-g10fish-11a-library.png`](visuals/p10/2026-11-25-g10fish-11a-library.png) | nearby=; canvas message="" |
+| 2026-11-25 | G10 fishing | uncommitted | Mid-cast reload recovery | [`2026-11-25-g10fish-12-mid-cast-reload.png`](visuals/p10/2026-11-25-g10fish-12-mid-cast-reload.png) | world=village; notice=false; fish=1 |
+| 2026-11-25 | G10 review | uncommitted | Review locked | [`2026-11-25-g10review-01-locked.png`](visuals/p10/2026-11-25-g10review-01-locked.png) | shownIn=33ms; cleared=1/3; toast says locked=true; panel stayed closed=true; prompt offers R=true |
+| 2026-11-25 | G10 review | uncommitted | Cleared room prompt | [`2026-11-25-g10review-02-due-prompt.png`](visuals/p10/2026-11-25-g10review-02-due-prompt.png) | cleared=3/3; climb=3619ms; prompt shows E and R=true; HUD reviews due="3 rooms" |
+| 2026-11-25 | G10 review | uncommitted | Review panel | [`2026-11-25-g10review-03-review-panel.png`](visuals/p10/2026-11-25-g10review-03-review-panel.png) | shownIn=10ms; focus=review-rating-0; rating buttons=6; prompt shown=true; previous row="Previous rating None chosen yet"; frame avg=16.65ms p95=17.12ms max=17.26ms over16.7=341/601 |
+| 2026-11-25 | G10 review | uncommitted | Rating selected | [`2026-11-25-g10review-04-selected.png`](visuals/p10/2026-11-25-g10review-04-selected.png) | pressed=review-rating-5; submit enabled=true |
+| 2026-11-25 | G10 review | uncommitted | Rated pass | [`2026-11-25-g10review-05-rated.png`](visuals/p10/2026-11-25-g10review-05-rated.png) | shownIn=5ms; XP copy=true; pass progress=true; next review copy=true; passCount tut-map=1; reviewPasses=1; focus=review-close |
+| 2026-11-25 | G10 review | uncommitted | Saved for later | [`2026-11-25-g10review-06-saved.png`](visuals/p10/2026-11-25-g10review-06-saved.png) | shownIn=4ms; marker=tut-map; no XP promise=true; passCount unchanged=1; focus=review-rating-4 |
+| 2026-11-25 | G10 review | uncommitted | Resumed after reload | [`2026-11-25-g10review-07-resumed.png`](visuals/p10/2026-11-25-g10review-07-resumed.png) | marker after reload=tut-map; previous rating restored=true; focus=review-rating-4 |
+| 2026-11-25 | G10 review | uncommitted | Saved review discarded | [`2026-11-25-g10review-08-discarded.png`](visuals/p10/2026-11-25-g10review-08-discarded.png) | armed copy=true; shownIn=6ms; marker=null; result="Saved review discarded. Nothing was scheduled." |
+| 2026-11-25 | G10 review | uncommitted | Resumed completion is not paid twice | [`2026-11-25-g10review-09-duplicate.png`](visuals/p10/2026-11-25-g10review-09-duplicate.png) | shownIn=15ms; marker left in place disclosed=true; duplicate copy=true; xp 92→92; reviewPasses 1→1 |
+| 2026-11-25 | G10 review | uncommitted | Review save failure | [`2026-11-25-g10review-11-not-saved.png`](visuals/p10/2026-11-25-g10review-11-not-saved.png) | descend=2848ms; shownIn=5ms; error says not saved=true; panel open=true; submit enabled after failure=true; xp 92→92; passCount tut-tools 0→0 |
+| 2026-11-25 | G10 review | uncommitted | Reload after review work | [`2026-11-25-g10review-11-reload.png`](visuals/p10/2026-11-25-g10review-11-reload.png) | world=dungeon; cleared=3/3; reviewPasses=1; passCounts={"tut-note":0,"tut-tools":0,"tut-map":1}; nextReview set=true; marker=null; focus=game |
+| 2026-11-25 | G10 review | uncommitted | Street review shortcut | [`2026-11-25-g10review-12-street-shortcut.png`](visuals/p10/2026-11-25-g10review-12-street-shortcut.png) | street=3814ms; panel=12ms; focus=review-rating-0; previous="Previous rating None chosen yet"; subject activated for the command=true |
+| 2026-11-25 | G10 review | uncommitted | Street review closed | [`2026-11-25-g10review-13-street-closed.png`](visuals/p10/2026-11-25-g10review-13-street-closed.png) | world=village; activeSubject=null; study session open=false; focus=game; reviews due still listed=true |
+| 2026-11-25 | G10 Creator | uncommitted | Creator subject list | [`2026-11-25-g10creator-01-subject-list.png`](visuals/p10/2026-11-25-g10creator-01-subject-list.png) | seededIn=61ms; openIn=133ms; subjects=3; portals row="3 portals"; listed=3; focus=H2 |
+| 2026-11-25 | G10 Creator | uncommitted | Creator create form | [`2026-11-25-g10creator-02-create-form.png`](visuals/p10/2026-11-25-g10creator-02-create-form.png) | name="Tide Pools"; root="Rock Pool Ecology"; subjects before create=3 |
+| 2026-11-25 | G10 Creator | uncommitted | Created subject | [`2026-11-25-g10creator-03-created.png`](visuals/p10/2026-11-25-g10creator-03-created.png) | shownIn=50ms; subjects 3→4; rooms=1; active study=true; result=true |
+| 2026-11-25 | G10 Creator | uncommitted | Room tree | [`2026-11-25-g10creator-04-tree.png`](visuals/p10/2026-11-25-g10creator-04-tree.png) | addedIn=40ms; rooms=4; order=◆ root Rock Pool Ecology > ↳ Tide Zones > ↳ Pool Life > ↳ Salinity |
+| 2026-11-25 | G10 Creator | uncommitted | Cascade confirmation | [`2026-11-25-g10creator-05-cascade-confirm.png`](visuals/p10/2026-11-25-g10creator-05-cascade-confirm.png) | rooms=6; confirm="Confirm remove: 3 rooms"; names cascade=true; no write yet=true |
+| 2026-11-25 | G10 Creator | uncommitted | Cascade removed | [`2026-11-25-g10creator-06-cascade-removed.png`](visuals/p10/2026-11-25-g10creator-06-cascade-removed.png) | removedIn=23ms; rooms=3; result=true |
+| 2026-11-25 | G10 Creator | uncommitted | Tree with tags | [`2026-11-25-g10creator-07-tree-tags.png`](visuals/p10/2026-11-25-g10creator-07-tree-tags.png) | tagsIn=33ms; tags="water, observation"; rooms=3 |
+| 2026-11-25 | G10 Creator | uncommitted | Cross-link edge | [`2026-11-25-g10creator-08-cross-link.png`](visuals/p10/2026-11-25-g10creator-08-cross-link.png) | linkIn=39ms; edges=["Pool Life → Salinity (related)"] |
+| 2026-11-25 | G10 Creator | uncommitted | New portal on the street | [`2026-11-25-g10creator-09-street-portal.png`](visuals/p10/2026-11-25-g10creator-09-street-portal.png) | closedIn=50ms; focus returned to #game=true; tab reached=subject-edit-demo-rivers; subjects=4; portals row="4 portals"; walk found Tide Pools=true; nearby="Tide Pools"; activeStudy=false |
+| 2026-11-25 | G10 Creator | uncommitted | Duplicate-name refusal | [`2026-11-25-g10creator-10-refusal.png`](visuals/p10/2026-11-25-g10creator-10-refusal.png) | shownIn=22ms; refusal=true; subjects still=4; error="Refused: a subject named “Tide Pools” already exists." |
+| 2026-11-25 | G10 Creator | uncommitted | Rejected graph write | [`2026-11-25-g10creator-11-not-saved.png`](visuals/p10/2026-11-25-g10creator-11-not-saved.png) | shownIn=8ms; not saved=true; tree intact=true; tags still "quota-test"; subjects 4→4 |
+| 2026-11-25 | G10 Creator | uncommitted | Keyboard-only Creator | [`2026-11-25-g10creator-12-keyboard-create.png`](visuals/p10/2026-11-25-g10creator-12-keyboard-create.png) | openIn=5ms; tabs to name=9; create focus=create-submit; createdIn=5ms; subjects 4→5; tabs to topics=3, to add=1; treeIn=4ms; rooms=3 |
+| 2026-11-25 | G10 Creator | uncommitted | Keyboard-only portal entry | [`2026-11-25-g10creator-13-keyboard-enter.png`](visuals/p10/2026-11-25-g10creator-13-keyboard-enter.png) | escape focus returned=true; walk found=true; enteredIn=19ms; summary subject row=true; world=dungeon · scribe |
+| 2026-11-25 | G10 services | uncommitted | Villager dialogue | [`2026-11-25-g10services-01-villager.png`](visuals/p10/2026-11-25-g10services-01-villager.png) | openedIn=28ms; nearby="Wandering Scholar"; focus=game; text as node=true |
+| 2026-11-25 | G10 services | uncommitted | Villager cursor advanced | [`2026-11-25-g10services-02-villager-second-line.png`](visuals/p10/2026-11-25-g10services-02-villager-second-line.png) | second line differs=true; closedIn=29ms |
+| 2026-11-25 | G10 services | uncommitted | Library | [`2026-11-25-g10services-03-library.png`](visuals/p10/2026-11-25-g10services-03-library.png) | walk found=true; openIn=42ms; role=dialog modal=true; review desk=true; artifact=true; notes=true; focus=service-panel-title |
+| 2026-11-25 | G10 services | uncommitted | Review opened from the Library | [`2026-11-25-g10services-04-library-review.png`](visuals/p10/2026-11-25-g10services-04-library-review.png) | openIn=14ms; keyboard focus on "Review"; focus=review-rating-0; prompt shown=true; service closed=true; rating controls=6 |
+| 2026-11-25 | G10 services | uncommitted | Review rated from the Library | [`2026-11-25-g10services-05-library-review-rated.png`](visuals/p10/2026-11-25-g10services-05-library-review-rated.png) | shownIn=5ms; reward copy=true; next review copy=true |
+| 2026-11-25 | G10 services | uncommitted | Library review closed | [`2026-11-25-g10services-06-library-review-closed.png`](visuals/p10/2026-11-25-g10services-06-library-review-closed.png) | closedIn=32ms; world=village; activeSubject=null; study session open=false; reviewPasses total=1 |
+| 2026-11-25 | G10 services | uncommitted | Fish Stand (display only) | [`2026-11-25-g10services-07-fish-stand.png`](visuals/p10/2026-11-25-g10services-07-fish-stand.png) | walk found=true; openIn=19ms; selling notice=true; buttons=1; focus=service-panel-title |
+| 2026-11-25 | G10 services | uncommitted | Workshop inventory | [`2026-11-25-g10services-08-workshop.png`](visuals/p10/2026-11-25-g10services-08-workshop.png) | walk found=true; openIn=27ms; subject=true; equip button=workshop-equip-gear-mwvacoa5-6epa; inventory=3; focus=service-panel-title |
+| 2026-11-25 | G10 services | uncommitted | Workshop save failure | [`2026-11-25-g10services-09-workshop-not-saved.png`](visuals/p10/2026-11-25-g10services-09-workshop-not-saved.png) | shownIn=5ms; not saved=true; panel open=true; equipped 0→0; inventory 3→3 |
+| 2026-11-25 | G10 services | uncommitted | Workshop equipped | [`2026-11-25-g10services-10-workshop-equipped.png`](visuals/p10/2026-11-25-g10services-10-workshop-equipped.png) | shownIn=5ms; equipped=1; result="Equipped. The change survives a reload." |
+| 2026-11-25 | G10 services | uncommitted | Trophy Hall | [`2026-11-25-g10services-11-trophy-hall.png`](visuals/p10/2026-11-25-g10services-11-trophy-hall.png) | walk found=true; openIn=18ms; badges section=true; records=true; zeroes shown=true; focus=service-panel-title |
+| 2026-11-25 | G10 services | uncommitted | Guild Hall | [`2026-11-25-g10services-12-guild-hall.png`](visuals/p10/2026-11-25-g10services-12-guild-hall.png) | walk found=true; openIn=17ms; quest board=true; roster=true; creator entry=true; focus=service-panel-title |
+| 2026-11-25 | G10 services | uncommitted | Equipment after reload | [`2026-11-25-g10services-13-workshop-reload.png`](visuals/p10/2026-11-25-g10services-13-workshop-reload.png) | equipped=1; walk found=false; subject=false; unequip shown=false; focus=title-continue |
+| 2026-11-25 | G10 journal | uncommitted | Journal overview | [`2026-11-25-g10journal-01-journal-overview.png`](visuals/p10/2026-11-25-g10journal-01-journal-overview.png) | openIn=11ms; focus=journal-panel-title; subjects=active subject row; sections=journal-overview,journal-subjects,journal-progress,journal-badges,journal-records,journal-inventory,journal-fish,journal-due,journal-assistance,journal-settings; records=true; due=true; assistance=true; settings=true |
+| 2026-11-25 | G10 journal | uncommitted | Journal subjects | [`2026-11-25-g10journal-02-journal-subjects.png`](visuals/p10/2026-11-25-g10journal-02-journal-subjects.png) | section=journal-panel-title; room counts=true; enter buttons=4 |
+| 2026-11-25 | G10 journal | uncommitted | Journal records | [`2026-11-25-g10journal-03-journal-records.png`](visuals/p10/2026-11-25-g10journal-03-journal-records.png) | notes=true; active days=true; engine copy=true |
+| 2026-11-25 | G10 journal | uncommitted | Journal assistance | [`2026-11-25-g10journal-04-journal-assistance.png`](visuals/p10/2026-11-25-g10journal-04-journal-assistance.png) | suggestions=6; engine reason labels=true; mode copy=true |
+| 2026-11-25 | G10 journal | uncommitted | Journal settings | [`2026-11-25-g10journal-05-journal-settings.png`](visuals/p10/2026-11-25-g10journal-05-journal-settings.png) | focus=journal-panel-title; values={"reducedMotion":"system","assistance":"gentle","textScale":"normal","touch":"auto"}; local-only copy=true |
+| 2026-11-25 | G10 journal | uncommitted | Large text applied | [`2026-11-25-g10journal-06-journal-large-text.png`](visuals/p10/2026-11-25-g10journal-06-journal-large-text.png) | dataset=large; value=large; same panel open=true |
+| 2026-11-25 | G10 journal | uncommitted | Assistance mode off | [`2026-11-25-g10journal-07-journal-assistance-off.png`](visuals/p10/2026-11-25-g10journal-07-journal-assistance-off.png) | mode=off; off copy=true; suggestions=0 |
+| 2026-11-25 | G10 journal | uncommitted | Settings after reload | [`2026-11-25-g10journal-08-journal-settings-persisted.png`](visuals/p10/2026-11-25-g10journal-08-journal-settings-persisted.png) | dataset text=large; select text=large; assistance=off; reduced motion=system; touch=auto |
+| 2026-11-25 | G10 journal | uncommitted | Entered from the journal | [`2026-11-25-g10journal-09-journal-entry.png`](visuals/p10/2026-11-25-g10journal-09-journal-entry.png) | subject=demo-kitchen; enteredIn=111ms; world=dungeon; study session open=true; focus=game |
+| 2026-11-25 | G10 journal | uncommitted | Journal on a fresh save | [`2026-11-25-g10journal-10-journal-empty.png`](visuals/p10/2026-11-25-g10journal-10-journal-empty.png) | subjects visible=true; active subject=true; due=true; focus=journal-panel-title |
+| 2026-11-25 | G10 journal | uncommitted | Fresh-save records | [`2026-11-25-g10journal-11-journal-empty-records.png`](visuals/p10/2026-11-25-g10journal-11-journal-empty-records.png) | zero notes=true; zero fish=true; badges empty=true; fish empty=true |
+| 2026-11-25 | G10 dungeon + note loop | uncommitted | Root room | [`2026-11-25-g10dungeon-01-root-room.png`](visuals/p10/2026-11-25-g10dungeon-01-root-room.png) | visits=1 |
+| 2026-11-25 | G10 dungeon + note loop | uncommitted | Lower room | [`2026-11-25-g10dungeon-02-tools-room.png`](visuals/p10/2026-11-25-g10dungeon-02-tools-room.png) | visits=2 |
+| 2026-11-25 | G10 dungeon + note loop | uncommitted | Upper room | [`2026-11-25-g10dungeon-03-map-room.png`](visuals/p10/2026-11-25-g10dungeon-03-map-room.png) | climb=3620ms; visits=3 |
+| 2026-11-25 | G10 dungeon + note loop | uncommitted | Return to root | [`2026-11-25-g10dungeon-04-return-to-root.png`](visuals/p10/2026-11-25-g10dungeon-04-return-to-root.png) | descend=1151ms; visits=3 |
+| 2026-11-25 | G10 dungeon + note loop | uncommitted | Reload | [`2026-11-25-g10dungeon-05-reload.png`](visuals/p10/2026-11-25-g10dungeon-05-reload.png) | rooms=3; sessions=5; visits=1; focus=game |
+| 2026-11-25 | G10 dungeon + note loop | uncommitted | Composer | [`2026-11-25-g10dungeon-07-composer.png`](visuals/p10/2026-11-25-g10dungeon-07-composer.png) | focus=note-text; prefilled=true; prompt hidden while open=true |
+| 2026-11-25 | G10 dungeon + note loop | uncommitted | Draft | [`2026-11-25-g10dungeon-08-draft.png`](visuals/p10/2026-11-25-g10dungeon-08-draft.png) | missing named=true; xp=0; cleared=0 |
+| 2026-11-25 | G10 dungeon + note loop | uncommitted | Cleared | [`2026-11-25-g10dungeon-09-cleared.png`](visuals/p10/2026-11-25-g10dungeon-09-cleared.png) | xp=28; cleared=1; artifact pre starts "# Scribe Artifa"; focus=note-collect |
+| 2026-11-25 | G10 dungeon + note loop | uncommitted | Composer closed | [`2026-11-25-g10dungeon-10-closed.png`](visuals/p10/2026-11-25-g10dungeon-10-closed.png) | artifacts=1; focus=game; panel hidden=true |
+| 2026-11-25 | G10 dungeon + note loop | uncommitted | Reload after clear | [`2026-11-25-g10dungeon-11-reload.png`](visuals/p10/2026-11-25-g10dungeon-11-reload.png) | xp=28; cleared=1; artifacts=1; visits=1; cleared label=true |
+| 2026-11-25 | G10 dungeon + note loop | uncommitted | Save failure | [`2026-11-25-g10dungeon-12-not-saved.png`](visuals/p10/2026-11-25-g10dungeon-12-not-saved.png) | shownIn=14ms; error=true; submit re-enabled=true; xp 28→28; cleared 1→1 |
+| 2026-11-25 | G10 reduced motion | uncommitted | Journal overview | [`2026-11-25-g10rm-01-journal-overview.png`](visuals/p10/2026-11-25-g10rm-01-journal-overview.png) | openIn=11ms; focus=journal-panel-title; subjects=active subject row; sections=journal-overview,journal-subjects,journal-progress,journal-badges,journal-records,journal-inventory,journal-fish,journal-due,journal-assistance,journal-settings; records=true; due=true; assistance=true; settings=true |
+| 2026-11-25 | G10 reduced motion | uncommitted | Journal subjects | [`2026-11-25-g10rm-02-journal-subjects.png`](visuals/p10/2026-11-25-g10rm-02-journal-subjects.png) | section=journal-panel-title; room counts=true; enter buttons=4 |
+| 2026-11-25 | G10 reduced motion | uncommitted | Journal records | [`2026-11-25-g10rm-03-journal-records.png`](visuals/p10/2026-11-25-g10rm-03-journal-records.png) | notes=true; active days=true; engine copy=true |
+| 2026-11-25 | G10 reduced motion | uncommitted | Journal assistance | [`2026-11-25-g10rm-04-journal-assistance.png`](visuals/p10/2026-11-25-g10rm-04-journal-assistance.png) | suggestions=6; engine reason labels=true; mode copy=true |
+| 2026-11-25 | G10 reduced motion | uncommitted | Journal settings | [`2026-11-25-g10rm-05-journal-settings.png`](visuals/p10/2026-11-25-g10rm-05-journal-settings.png) | focus=journal-panel-title; values={"reducedMotion":"system","assistance":"gentle","textScale":"normal","touch":"auto"}; local-only copy=true |
+| 2026-11-25 | G10 reduced motion | uncommitted | Large text applied | [`2026-11-25-g10rm-06-journal-large-text.png`](visuals/p10/2026-11-25-g10rm-06-journal-large-text.png) | dataset=large; value=large; same panel open=true |
+| 2026-11-25 | G10 reduced motion | uncommitted | Assistance mode off | [`2026-11-25-g10rm-07-journal-assistance-off.png`](visuals/p10/2026-11-25-g10rm-07-journal-assistance-off.png) | mode=off; off copy=true; suggestions=0 |
+| 2026-11-25 | G10 reduced motion | uncommitted | Settings after reload | [`2026-11-25-g10rm-08-journal-settings-persisted.png`](visuals/p10/2026-11-25-g10rm-08-journal-settings-persisted.png) | dataset text=large; select text=large; assistance=off; reduced motion=system; touch=auto |
+| 2026-11-25 | G10 reduced motion | uncommitted | Entered from the journal | [`2026-11-25-g10rm-09-journal-entry.png`](visuals/p10/2026-11-25-g10rm-09-journal-entry.png) | subject=demo-kitchen; enteredIn=73ms; world=dungeon; study session open=true; focus=game |
+| 2026-11-25 | G10 reduced motion | uncommitted | Journal on a fresh save | [`2026-11-25-g10rm-10-journal-empty.png`](visuals/p10/2026-11-25-g10rm-10-journal-empty.png) | subjects visible=true; active subject=true; due=true; focus=journal-panel-title |
+| 2026-11-25 | G10 reduced motion | uncommitted | Fresh-save records | [`2026-11-25-g10rm-11-journal-empty-records.png`](visuals/p10/2026-11-25-g10rm-11-journal-empty-records.png) | zero notes=true; zero fish=true; badges empty=true; fish empty=true |
+| 2026-11-25 | G10 production boot | uncommitted | Production boot | [`2026-11-25-g10prod-01-boot.png`](visuals/p10/2026-11-25-g10prod-01-boot.png) | title in 343ms; title visible=true; canvas=1280×800; failed resources=0; panel error="" |
+
+Manifests:
+[`2026-11-25-g10play-manifest.json`](visuals/p10/2026-11-25-g10play-manifest.json),
+[`2026-11-25-g10perf-manifest.json`](visuals/p10/2026-11-25-g10perf-manifest.json),
+[`2026-11-25-g10shell-manifest.json`](visuals/p10/2026-11-25-g10shell-manifest.json),
+[`2026-11-25-g10surface-manifest.json`](visuals/p10/2026-11-25-g10surface-manifest.json),
+[`2026-11-25-g10fish-manifest.json`](visuals/p10/2026-11-25-g10fish-manifest.json),
+[`2026-11-25-g10review-manifest.json`](visuals/p10/2026-11-25-g10review-manifest.json),
+[`2026-11-25-g10creator-manifest.json`](visuals/p10/2026-11-25-g10creator-manifest.json),
+[`2026-11-25-g10services-manifest.json`](visuals/p10/2026-11-25-g10services-manifest.json),
+[`2026-11-25-g10journal-manifest.json`](visuals/p10/2026-11-25-g10journal-manifest.json),
+[`2026-11-25-g10dungeon-manifest.json`](visuals/p10/2026-11-25-g10dungeon-manifest.json),
+[`2026-11-25-g10rm-manifest.json`](visuals/p10/2026-11-25-g10rm-manifest.json),
+[`2026-11-25-g10prod-manifest.json`](visuals/p10/2026-11-25-g10prod-manifest.json).
 
 ## Capturing the next phase
 

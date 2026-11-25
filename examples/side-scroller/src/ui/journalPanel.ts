@@ -106,7 +106,8 @@ const SURFACE_LABELS: Readonly<Record<assistance.AssistanceSurface, string>> = {
 
 const EMPTY_REASON_LABELS: Readonly<Record<assistance.AssistanceEmptyReason, string>> = {
   'mode-off': 'Assistance is off in Settings.',
-  'no-suggestions': 'The engine found nothing to suggest right now.',
+  'no-suggestions':
+    'The engine found nothing to suggest right now. Clear or review a room to give it more to work with.',
   'flag-disabled': 'Adaptive assistance is disabled for this build.',
 };
 
@@ -325,7 +326,9 @@ function body(
   /* Progress */
   const progress = section('Progress', 'journal-progress');
   if (view.subjects.length === 0) {
-    progress.append(empty('No progress yet.'));
+    progress.append(
+      empty('No progress yet. Clear a room to record XP, rank, and room counts here.'),
+    );
   } else {
     const list = element('ul', { className: 'service-list' });
     for (const subject of view.subjects) {
@@ -365,7 +368,11 @@ function body(
   /* Records */
   const records = section('Records', 'journal-records');
   if (!view.stats) {
-    records.append(empty('No records yet. The engine’s statistics are unavailable for this save.'));
+    records.append(
+      empty(
+        'No records yet. Visit rooms, submit notes, and pass reviews to build the engine’s statistics.',
+      ),
+    );
   } else {
     const totals = view.stats.totals;
     records.append(
@@ -430,7 +437,9 @@ function body(
   /* Due */
   const due = section('Due', 'journal-due');
   if (view.due.length === 0) {
-    due.append(empty('No rooms are due right now.'));
+    due.append(
+      empty('No rooms are due right now. Clear and review a room to start the schedule.'),
+    );
   } else {
     const list = element('ul', { className: 'service-list' });
     for (const entry of view.due) {

@@ -3,7 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Knowledge Dungeon — Side-Scroller (P9)</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231a2030'/%3E%3Cpath d='M8 22V10h4l4 6 4-6h4v12h-4v-6l-4 6-4-6v6z' fill='%237fd1b9'/%3E%3C/svg%3E"
+    />
+    <title>Knowledge Dungeon — Side-Scroller</title>
     <style>
       :root {
         color-scheme: dark;
@@ -14,6 +18,15 @@
         --accent: #7fd1b9;
         --danger: #ff9a9a;
         font-size: 16px;
+
+        /* One overlay scale. Higher layers paint over lower ones; notices never
+           share a layer with a dialog. */
+        --z-world: 0;
+        --z-touch: 1;
+        --z-notices: 2;
+        --z-hud: 3;
+        --z-title: 4;
+        --z-modal: 5;
       }
       html[data-text-scale="large"] { font-size: 20px; }
       * { box-sizing: border-box; }
@@ -50,12 +63,39 @@
         outline-offset: -3px;
       }
 
-      #prompt {
+      /* One top row: the notice column and the progress toggle share flex space,
+         so a long prompt or large text can never sit under the button. */
+      #top-bar {
         position: absolute;
-        left: calc(env(safe-area-inset-left) + 0.75rem);
-        top: calc(env(safe-area-inset-top) + 0.75rem);
-        z-index: 2;
-        max-width: calc(100% - 9rem);
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: var(--z-notices);
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: calc(env(safe-area-inset-top) + 0.75rem) calc(env(safe-area-inset-right) + 0.75rem)
+          0 calc(env(safe-area-inset-left) + 0.75rem);
+        pointer-events: none;
+      }
+      #top-bar > * { pointer-events: auto; }
+      #notice-stack {
+        flex: 1 1 auto;
+        min-width: 0;
+        max-width: min(32rem, 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+        pointer-events: none;
+      }
+      #notice-stack > * { max-width: 100%; pointer-events: auto; }
+      @media (min-width: 901px) {
+        /* The open desktop panel owns the right edge; shorten the notice column. */
+        body[data-progress="true"] #notice-stack { max-width: calc(100% - 26rem); }
+      }
+      #prompt {
         padding: 0.35rem 0.6rem;
         border: 1px solid #3a4a6d;
         border-radius: 0.35rem;
@@ -76,11 +116,6 @@
       #prompt .prompt-line { display: block; }
 
       #toast {
-        position: absolute;
-        top: calc(env(safe-area-inset-top) + 4.5rem);
-        right: calc(env(safe-area-inset-right) + 0.75rem);
-        z-index: 2;
-        max-width: min(26rem, calc(100% - 1.5rem));
         padding: 0.45rem 0.7rem;
         border: 1px solid #3a4a6d;
         border-radius: 0.35rem;
@@ -92,18 +127,14 @@
       #toast[hidden] { display: none; }
 
       #recovery {
-        position: absolute;
-        left: calc(env(safe-area-inset-left) + 0.75rem);
-        top: calc(env(safe-area-inset-top) + 4.5rem);
-        z-index: 2;
         display: flex;
         gap: 0.75rem;
         align-items: center;
-        max-width: min(32rem, calc(100% - 1.5rem));
+        width: 100%;
         padding: 0.5rem 0.75rem;
         border: 1px solid #7a6a35;
         border-radius: 0.35rem;
-        background: rgb(42 37 21 / 95%);
+        background: rgb(42 37 21 / 97%);
         color: var(--ink);
         font-size: 0.95rem;
       }
@@ -114,7 +145,7 @@
       #overlay {
         position: absolute;
         inset: 0;
-        z-index: 3;
+        z-index: var(--z-title);
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -131,6 +162,7 @@
       #title-panel[hidden] { display: none; }
       #title-panel { width: 100%; display: flex; justify-content: center; }
       /* The title owns the screen: no prompt, toast, panel, or touch layer leaks through. */
+      body[data-title="true"] #top-bar,
       body[data-title="true"] #prompt,
       body[data-title="true"] #toast,
       body[data-title="true"] #recovery,
@@ -139,7 +171,7 @@
       body[data-title="true"] #toggle-panel,
       body[data-title="true"] #progress-panel { display: none; }
       .title-card {
-        width: min(42rem, 100%);
+        width: min(46rem, 100%);
         text-align: left;
         padding: 1.25rem;
         border: 1px solid #2b3550;
@@ -213,7 +245,7 @@
       #note-panel, #fishing-panel, #review-panel, #creator-panel, #service-panel, #journal-panel, #help-panel {
         position: absolute;
         inset: 0;
-        z-index: 4;
+        z-index: var(--z-modal);
         overflow: auto;
         padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right))
           max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
@@ -225,7 +257,7 @@
       #touch-controls {
         position: absolute;
         inset: auto 0 0 0;
-        z-index: 1;
+        z-index: var(--z-touch);
         display: flex;
         justify-content: space-between;
         align-items: flex-end;
@@ -264,10 +296,7 @@
 
       /* ── Progress overlay / sheet ─────────────────────────────────────── */
       #toggle-panel {
-        position: absolute;
-        top: calc(env(safe-area-inset-top) + 0.75rem);
-        right: calc(env(safe-area-inset-right) + 0.75rem);
-        z-index: 2;
+        flex: none;
         min-height: 44px;
       }
       #progress-panel {
@@ -277,11 +306,11 @@
         width: min(24rem, calc(100% - 1.5rem));
         max-height: calc(100% - 5rem);
         overflow: auto;
-        z-index: 2;
+        z-index: var(--z-hud);
         padding: 1rem;
         border: 1px solid #2b3550;
         border-radius: 0.5rem;
-        background: rgb(26 32 48 / 96%);
+        background: var(--panel);
       }
       #progress-panel[hidden] { display: none; }
       #progress-panel .panel-heading h2 { color: var(--accent); }
@@ -312,7 +341,11 @@
         border: 1px solid #3a4a6d;
         border-radius: 0.35rem;
         padding: 0.4rem 0.7rem;
+        min-height: 2.75rem;
         cursor: pointer;
+      }
+      input:not([type="checkbox"]):not([type="radio"]), select {
+        min-height: 2.75rem;
       }
       button:hover { background: #2d3b59; }
       button:disabled { opacity: 0.55; cursor: not-allowed; }
@@ -320,10 +353,35 @@
         outline: 3px solid var(--accent);
         outline-offset: 2px;
       }
+
+      /* Short, meaningful arrivals. The reduced-motion rules below remove all
+         of this, so no motion is forced. */
+      @keyframes overlay-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes panel-in {
+        from { opacity: 0; transform: translateY(0.35rem); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      #overlay:not([hidden]) { animation: overlay-in 140ms ease-out; }
+      #progress-panel:not([hidden]),
+      #note-panel:not([hidden]),
+      #fishing-panel:not([hidden]),
+      #review-panel:not([hidden]),
+      #creator-panel:not([hidden]),
+      #service-panel:not([hidden]),
+      #journal-panel:not([hidden]),
+      #help-panel:not([hidden]) {
+        animation: panel-in 140ms ease-out;
+      }
+      #prompt:not([hidden]), #toast:not([hidden]), #recovery:not([hidden]), #npc-dialogue:not([hidden]) {
+        animation: overlay-in 120ms ease-out;
+      }
       .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
       .panel-heading { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: baseline; justify-content: space-between; }
       .panel-heading h2 { margin: 0; }
-      .panel-heading button { padding: 0.25rem 0.5rem; font-size: 0.9rem; min-height: 36px; }
+      .panel-heading button { padding: 0.25rem 0.5rem; font-size: 0.9rem; min-height: 2.75rem; }
       .controls { margin-top: 0.75rem; font-size: 0.9rem; color: var(--muted); }
       .controls kbd, #help-panel kbd {
         display: inline-block;
@@ -555,7 +613,7 @@
         left: 50%;
         bottom: max(0.75rem, env(safe-area-inset-bottom));
         transform: translateX(-50%);
-        z-index: 2;
+        z-index: var(--z-hud);
         display: flex;
         flex-wrap: wrap;
         gap: 0.4rem 0.75rem;
@@ -599,14 +657,6 @@
           border-radius: 0.75rem 0.75rem 0 0;
           padding-bottom: max(1rem, env(safe-area-inset-bottom));
         }
-        #toast { max-width: calc(100% - 1.5rem); }
-        #recovery {
-          top: auto;
-          left: calc(env(safe-area-inset-left) + 0.75rem);
-          right: calc(env(safe-area-inset-right) + 0.75rem);
-          bottom: calc(env(safe-area-inset-bottom) + 9.5rem);
-          max-width: none;
-        }
         #npc-dialogue { bottom: calc(env(safe-area-inset-bottom) + 9rem); }
       }
       @media (prefers-reduced-motion: reduce) {
@@ -631,18 +681,21 @@
         aria-describedby="game-help"
       ></canvas>
 
-      <div id="prompt" hidden></div>
-      <div id="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
-      <div id="recovery" role="status" aria-live="polite" hidden>
-        <p id="recovery-text"></p>
-        <button id="recovery-dismiss" type="button">Dismiss</button>
+      <div id="top-bar">
+        <div id="notice-stack" role="group" aria-label="Game notices">
+          <div id="prompt" hidden></div>
+          <div id="recovery" role="status" aria-live="polite" hidden>
+            <p id="recovery-text"></p>
+            <button id="recovery-dismiss" type="button">Dismiss</button>
+          </div>
+          <div id="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+        </div>
+        <button id="toggle-panel" type="button" aria-controls="progress-panel" aria-expanded="false">
+          Progress
+        </button>
       </div>
       <div id="npc-dialogue" role="group" aria-labelledby="npc-dialogue-label" hidden></div>
       <div id="touch-controls" hidden></div>
-
-      <button id="toggle-panel" type="button" aria-controls="progress-panel" aria-expanded="false">
-        Progress
-      </button>
       <aside id="progress-panel" aria-labelledby="panel-title" hidden>
         <div class="panel-heading">
           <h2 id="panel-title" tabindex="-1">Progress</h2>

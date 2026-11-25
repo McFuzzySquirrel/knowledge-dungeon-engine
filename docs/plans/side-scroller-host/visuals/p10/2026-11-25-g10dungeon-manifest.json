@@ -1,0 +1,276 @@
+{
+  "capturedAt": "2026-11-24T22:51:25.856Z",
+  "app": "http://localhost:5174/",
+  "viewport": "default headless Firefox (captured window)",
+  "prefix": "2026-11-25-g10dungeon",
+  "lowFps": false,
+  "noteLoop": true,
+  "frameStats": null,
+  "finalState": {
+    "activeSubjectId": "tutorial-first-walkthrough",
+    "activeStudy": true,
+    "subjects": 4,
+    "world": "dungeon",
+    "rooms": [
+      "tut-note",
+      "tut-tools",
+      "tut-map"
+    ],
+    "visited": [
+      "tut-note"
+    ],
+    "sessions": 5,
+    "xp": 0,
+    "inventory": 0,
+    "equipped": 0,
+    "xpTotal": 0,
+    "fish": 0,
+    "cleared": 0,
+    "artifacts": 0,
+    "reviewPasses": 0,
+    "reviewPassesTotal": 0,
+    "reviewPassCounts": {
+      "tut-note": 0,
+      "tut-tools": 0,
+      "tut-map": 0
+    },
+    "nextReview": {
+      "tut-note": null,
+      "tut-tools": null,
+      "tut-map": null
+    },
+    "marker": null,
+    "attachmentKeys": [],
+    "attachmentSizes": {}
+  },
+  "error": "",
+  "notes": {
+    "composer": {
+      "focus": "note-text",
+      "value": "Summary\n\nKey Points\n\nRecall Question\n",
+      "promptHidden": true
+    },
+    "draft": {
+      "feedback": "Missing required sections: Key Points, Recall Question.\nConfirmation is required: tick “I wrote these notes myself” before submitting.\nWord count: 7. The 120-word badge is optional and does not block a clear.",
+      "errorHidden": true,
+      "focus": "note-text"
+    },
+    "cleared": {
+      "feedback": "Room cleared.\nXP gained: 28.\nBadges unlocked: CreatorPhaseComplete.\nQuality bonus: 7/10.",
+      "artifact": "# Scribe Artifact\n\n- Artifact ID: artifact-tut-note\n- Subject: First Dungeon (Tutorial)\n- Topic: The Note\n- Room ID: tut-note\n- Generated At: 2026-11-24T22:51:14.979Z\n- Quality Bonus: 7/10\n\n## Rubric Breakdown\n- sectionCompleteness: 2/2\n- conceptTermCoverage: 2/2\n- linkReferences: 0/2\n- recallQuestionQuality: 1/2\n- clarityReadability: 2/2\n\n## Submitted Notes\n\nSummary\nThe note records what the learner understood in this room and why it matters.\n\nKey Points\nA note needs a summary, key points, and a recall question. The recall question ends with a question mark.\n\nRecall Question\nWhy does a note need a recall question?\n",
+      "focus": "note-collect"
+    },
+    "collected": {
+      "activeSubjectId": "tutorial-first-walkthrough",
+      "activeStudy": true,
+      "subjects": 4,
+      "world": "dungeon",
+      "rooms": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "visited": [
+        "tut-note"
+      ],
+      "sessions": 4,
+      "xp": 28,
+      "inventory": 1,
+      "equipped": 0,
+      "xpTotal": 28,
+      "fish": 0,
+      "cleared": 1,
+      "artifacts": 1,
+      "reviewPasses": 0,
+      "reviewPassesTotal": 0,
+      "reviewPassCounts": {
+        "tut-note": 0,
+        "tut-tools": 0,
+        "tut-map": 0
+      },
+      "nextReview": {
+        "tut-note": null,
+        "tut-tools": null,
+        "tut-map": null
+      },
+      "marker": null,
+      "attachmentKeys": [],
+      "attachmentSizes": {}
+    },
+    "reload": {
+      "activeSubjectId": "tutorial-first-walkthrough",
+      "activeStudy": true,
+      "subjects": 4,
+      "world": "dungeon",
+      "rooms": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "visited": [
+        "tut-note"
+      ],
+      "sessions": 5,
+      "xp": 28,
+      "inventory": 1,
+      "equipped": 0,
+      "xpTotal": 28,
+      "fish": 0,
+      "cleared": 1,
+      "artifacts": 1,
+      "reviewPasses": 0,
+      "reviewPassesTotal": 0,
+      "reviewPassCounts": {
+        "tut-note": 0,
+        "tut-tools": 0,
+        "tut-map": 0
+      },
+      "nextReview": {
+        "tut-note": null,
+        "tut-tools": null,
+        "tut-map": null
+      },
+      "marker": null,
+      "attachmentKeys": [],
+      "attachmentSizes": {}
+    },
+    "failed": {
+      "error": "Not saved: simulated quota failure. Nothing was committed. Try again.",
+      "pending": false,
+      "feedback": ""
+    },
+    "beforeFailure": {
+      "activeSubjectId": "tutorial-first-walkthrough",
+      "activeStudy": true,
+      "subjects": 4,
+      "world": "dungeon",
+      "rooms": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "visited": [
+        "tut-note",
+        "tut-tools"
+      ],
+      "sessions": 5,
+      "xp": 28,
+      "inventory": 1,
+      "equipped": 0,
+      "xpTotal": 28,
+      "fish": 0,
+      "cleared": 1,
+      "artifacts": 1,
+      "reviewPasses": 0,
+      "reviewPassesTotal": 0,
+      "reviewPassCounts": {
+        "tut-note": 0,
+        "tut-tools": 0,
+        "tut-map": 0
+      },
+      "nextReview": {
+        "tut-note": null,
+        "tut-tools": null,
+        "tut-map": null
+      },
+      "marker": null,
+      "attachmentKeys": [],
+      "attachmentSizes": {}
+    },
+    "afterFailure": {
+      "activeSubjectId": "tutorial-first-walkthrough",
+      "activeStudy": true,
+      "subjects": 4,
+      "world": "dungeon",
+      "rooms": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "visited": [
+        "tut-note",
+        "tut-tools"
+      ],
+      "sessions": 5,
+      "xp": 28,
+      "inventory": 1,
+      "equipped": 0,
+      "xpTotal": 28,
+      "fish": 0,
+      "cleared": 1,
+      "artifacts": 1,
+      "reviewPasses": 0,
+      "reviewPassesTotal": 0,
+      "reviewPassCounts": {
+        "tut-note": 0,
+        "tut-tools": 0,
+        "tut-map": 0
+      },
+      "nextReview": {
+        "tut-note": null,
+        "tut-tools": null,
+        "tut-map": null
+      },
+      "marker": null,
+      "attachmentKeys": [],
+      "attachmentSizes": {}
+    }
+  },
+  "frames": [
+    {
+      "file": "2026-11-25-g10dungeon-01-root-room.png",
+      "label": "Root room",
+      "detail": "visits=1"
+    },
+    {
+      "file": "2026-11-25-g10dungeon-02-tools-room.png",
+      "label": "Lower room",
+      "detail": "visits=2"
+    },
+    {
+      "file": "2026-11-25-g10dungeon-03-map-room.png",
+      "label": "Upper room",
+      "detail": "climb=3620ms; visits=3"
+    },
+    {
+      "file": "2026-11-25-g10dungeon-04-return-to-root.png",
+      "label": "Return to root",
+      "detail": "descend=1151ms; visits=3"
+    },
+    {
+      "file": "2026-11-25-g10dungeon-05-reload.png",
+      "label": "Reload",
+      "detail": "rooms=3; sessions=5; visits=1; focus=game"
+    },
+    {
+      "file": "2026-11-25-g10dungeon-07-composer.png",
+      "label": "Composer",
+      "detail": "focus=note-text; prefilled=true; prompt hidden while open=true"
+    },
+    {
+      "file": "2026-11-25-g10dungeon-08-draft.png",
+      "label": "Draft",
+      "detail": "missing named=true; xp=0; cleared=0"
+    },
+    {
+      "file": "2026-11-25-g10dungeon-09-cleared.png",
+      "label": "Cleared",
+      "detail": "xp=28; cleared=1; artifact pre starts \"# Scribe Artifa\"; focus=note-collect"
+    },
+    {
+      "file": "2026-11-25-g10dungeon-10-closed.png",
+      "label": "Composer closed",
+      "detail": "artifacts=1; focus=game; panel hidden=true"
+    },
+    {
+      "file": "2026-11-25-g10dungeon-11-reload.png",
+      "label": "Reload after clear",
+      "detail": "xp=28; cleared=1; artifacts=1; visits=1; cleared label=true"
+    },
+    {
+      "file": "2026-11-25-g10dungeon-12-not-saved.png",
+      "label": "Save failure",
+      "detail": "shownIn=14ms; error=true; submit re-enabled=true; xp 28→28; cleared 1→1"
+    }
+  ]
+}

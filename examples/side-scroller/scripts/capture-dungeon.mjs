@@ -28,6 +28,10 @@
  * rooms, captures the cascade confirmation, removes the subtree, shows the new
  * street portal, records a duplicate-name refusal and a rejected graph write,
  * and checks the keyboard focus path.
+ * P10 adds `--p10` (the first-ten-minutes path plus layout, focus, large-text,
+ * phone, and import checks), `--perf` (10-second traces plus an about:blank
+ * baseline), and `--smoke` (a production-build boot check). The P10 modes
+ * subscribe to the browser log and record console errors/warnings.
  *
  * The script drives the real app over WebDriver, writes PNGs to `--out`, and
  * writes `<prefix>-manifest.json` plus Markdown table rows for VISUALS.md.
@@ -73,6 +77,9 @@ function parseArgs(argv) {
     else if (arg === '--help') options.help = true;
     else if (arg === '--openings') options.openings = true;
     else if (arg === '--shell' || arg === '--mobile') options.shell = true;
+    else if (arg === '--p10') options.p10 = true;
+    else if (arg === '--perf') options.perf = true;
+    else if (arg === '--smoke') options.smoke = true;
     else throw new Error(`Unknown argument: ${arg}`);
   }
   return options;
@@ -112,6 +119,8 @@ async function openSession(prefs = {}) {
   let bidi = null;
   let bidiNext = 1;
   const bidiPending = new Map();
+  /** P10: browser console and uncaught-error entries, subscribed before navigation. */
+  const consoleEntries = [];
 
   function bidiCommand(method, params) {
     if (!bidi) throw new Error('WebDriver BiDi is not available for this session');
@@ -120,7 +129,7 @@ async function openSession(prefs = {}) {
     return new Promise((resolve) => bidiPending.set(messageId, resolve));
   }
 
-  async function setViewport(width, height, devicePixelRatio = 1) {
+  async function ensureBidi() {
     if (!bidiUrl) return false;
     if (!bidi) {
       bidi = new WebSocket(bidiUrl);
@@ -130,12 +139,32 @@ async function openSession(prefs = {}) {
       });
       bidi.onmessage = (event) => {
         const message = JSON.parse(event.data);
+        if (message.method === 'log.entryAdded') {
+          const entry = message.params?.entry ?? {};
+          consoleEntries.push({
+            level: entry.level ?? '',
+            type: entry.type ?? '',
+            text: entry.text ?? '',
+          });
+        }
         if (message.id && bidiPending.has(message.id)) {
           bidiPending.get(message.id)(message);
           bidiPending.delete(message.id);
         }
       };
     }
+    return true;
+  }
+
+  async function subscribeLogs() {
+    if (!(await ensureBidi())) return false;
+    const result = await bidiCommand('session.subscribe', { events: ['log.entryAdded'] });
+    return result.type === 'success';
+  }
+
+  async function setViewport(width, height, devicePixelRatio = 1) {
+    if (!bidiUrl) return false;
+    if (!(await ensureBidi())) return false;
     const tree = await bidiCommand('browsingContext.getTree', { maxDepth: 0 });
     const context = tree.result.contexts[0].context;
     const result = await bidiCommand('browsingContext.setViewport', {
@@ -150,6 +179,16 @@ async function openSession(prefs = {}) {
     id,
     session,
     setViewport,
+    subscribeLogs,
+    consoleEntries,
+    consoleErrors() {
+      return consoleEntries.filter(
+        (entry) =>
+          entry.level === 'error' ||
+          entry.level === 'warning' ||
+          entry.type === 'javascript',
+      );
+    },
     async close() {
       bidi?.close();
       await wd('DELETE', session(''));
@@ -296,6 +335,20 @@ async function startTutorial(session) {
   await sleep(1500);
 }
 
+/** P9+ reloads land on the title; continue before testing the world. */
+async function continueTitleIfVisible(session) {
+  const visible = await waitForExpr(
+    session,
+    `document.querySelector('#title-panel')?.hidden === false`,
+    6000,
+  );
+  if (visible === null) return false;
+  await session.execute(`document.querySelector('#title-continue').click(); return true;`);
+  await waitForExpr(session, `document.querySelector('#overlay')?.hidden === true`, 8000);
+  await sleep(400);
+  return true;
+}
+
 async function waitForExpr(session, expression, timeoutMs = 8000, stepMs = 200) {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
@@ -306,8 +359,22 @@ async function waitForExpr(session, expression, timeoutMs = 8000, stepMs = 200) 
   return null;
 }
 
+/** The Nearby row is only rendered while the desktop panel is open. */
+async function ensureProgressVisible(session) {
+  await session.execute(`
+    const panel = document.querySelector('#progress-panel');
+    if (panel?.hidden) document.querySelector('#toggle-panel').click();
+    return true;
+  `);
+  await sleep(300);
+}
+
 /** Hold a direction until the HUD's Nearby row names the target. */
 async function walkToNearby(session, code, key, needle, timeoutMs = 15000) {
+  const hidden = await session.execute(
+    `return document.querySelector('#progress-panel')?.hidden === true;`,
+  );
+  if (hidden) await ensureProgressVisible(session);
   await session.synthDown(code, key);
   const start = Date.now();
   let found = false;
@@ -361,9 +428,7 @@ async function captureNoteLoop(prefix, frames) {
     await startTutorial(session);
 
     // 07 — composer opens from E, with the section template and textarea focus.
-    await session.synthDown('KeyE', 'e');
-    await session.synthUp('KeyE', 'e');
-    await waitForExpr(session, `document.querySelector('#note-panel')?.hidden === false`);
+    if (!(await openComposerWithRetry(session))) throw new Error('The note composer did not open');
     const composer = await session.execute(`
       return {
         focus: document.activeElement?.id ?? '',
@@ -441,6 +506,7 @@ async function captureNoteLoop(prefix, frames) {
 
     // 11 — reload: cleared room, XP, and artifact survive.
     await wd('POST', session.session('/refresh'), {});
+    await continueTitleIfVisible(session);
     await sleep(2600);
     const reload = await stored(session);
     const reloadHud = await panel(session);
@@ -455,9 +521,7 @@ async function captureNoteLoop(prefix, frames) {
     await sleep(300);
     await session.hold('s', 3000);
     await sleep(500);
-    await session.synthDown('KeyE', 'e');
-    await session.synthUp('KeyE', 'e');
-    await waitForExpr(session, `document.querySelector('#note-panel')?.hidden === false`);
+    if (!(await openComposerWithRetry(session))) throw new Error('The note composer did not open');
     const beforeFailure = await stored(session);
     await session.execute(`
       const text = document.querySelector('#note-text');
@@ -605,6 +669,7 @@ async function captureDungeon(prefix, frames) {
 
     // Reload proves the subject and rooms survive IndexedDB.
     await wd('POST', session.session('/refresh'), {});
+    await continueTitleIfVisible(session);
     await sleep(2600);
     const reload = await stored(session);
     const reloadHud = await panel(session);
@@ -636,6 +701,7 @@ async function captureSurface(prefix, frames) {
     await sleep(1400);
     await wd('POST', session.session('/refresh'), {});
     await sleep(2200);
+    await continueTitleIfVisible(session);
     await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Village street') === true`);
     await waitForExpr(session, `document.querySelector('#prompt')?.hidden === false`, 5000);
 
@@ -653,6 +719,7 @@ async function captureSurface(prefix, frames) {
     await session.synthDown('KeyE', 'e');
     await session.synthUp('KeyE', 'e');
     const enterMs = await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Subject') === true`);
+    await sleep(800);
     const entered = await stored(session);
     frames.push({
       file: await session.screenshot(`${prefix}-02-dungeon-entry.png`),
@@ -663,7 +730,15 @@ async function captureSurface(prefix, frames) {
     // Clear the root room with the same note fixture used at G2.
     await session.synthDown('KeyE', 'e');
     await session.synthUp('KeyE', 'e');
-    await waitForExpr(session, `document.querySelector('#note-panel')?.hidden === false`);
+    let composerOpen = await waitForExpr(session, `document.querySelector('#note-panel')?.hidden === false`);
+    if (composerOpen === null) {
+      // The portal transition can swallow the first E; retry once, then fail loudly.
+      await sleep(400);
+      await session.synthDown('KeyE', 'e');
+      await session.synthUp('KeyE', 'e');
+      composerOpen = await waitForExpr(session, `document.querySelector('#note-panel')?.hidden === false`);
+    }
+    if (composerOpen === null) throw new Error('The surface run could not open the note composer');
     await session.execute(`
       const text = document.querySelector('#note-text');
       text.value = ${JSON.stringify(VALID_NOTE)};
@@ -707,6 +782,7 @@ async function captureSurface(prefix, frames) {
     // Reload on the surface: engine state, subject portals, and cleared count survive.
     await wd('POST', session.session('/refresh'), {});
     await sleep(2600);
+    await continueTitleIfVisible(session);
     await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Village street') === true`);
     const reloadSurface = await stored(session);
     const reloadSurfacePanel = await panel(session);
@@ -723,6 +799,7 @@ async function captureSurface(prefix, frames) {
     await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Subject') === true`);
     await wd('POST', session.session('/refresh'), {});
     await sleep(2600);
+    await continueTitleIfVisible(session);
     const reloadDungeon = await stored(session);
     const reloadDungeonPanel = await panel(session);
     frames.push({
@@ -756,6 +833,7 @@ async function captureFishing(prefix, frames) {
     await sleep(1400);
     await wd('POST', session.session('/refresh'), {});
     await sleep(2200);
+    await continueTitleIfVisible(session);
     await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Village street') === true`);
 
     // Before any clear, the pond must explain why E cannot open it — on the
@@ -776,6 +854,7 @@ async function captureFishing(prefix, frames) {
     await session.synthDown('KeyE', 'e');
     await session.synthUp('KeyE', 'e');
     await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Subject') === true`);
+    await sleep(800);
     const entered = await stored(session);
     frames.push({
       file: await session.screenshot(`${prefix}-01-dungeon-entry.png`),
@@ -786,7 +865,14 @@ async function captureFishing(prefix, frames) {
     // Clear one room so the pond is eligible.
     await session.synthDown('KeyE', 'e');
     await session.synthUp('KeyE', 'e');
-    await waitForExpr(session, `document.querySelector('#note-panel')?.hidden === false`);
+    let composerOpen = await waitForExpr(session, `document.querySelector('#note-panel')?.hidden === false`);
+    if (composerOpen === null) {
+      await sleep(400);
+      await session.synthDown('KeyE', 'e');
+      await session.synthUp('KeyE', 'e');
+      composerOpen = await waitForExpr(session, `document.querySelector('#note-panel')?.hidden === false`);
+    }
+    if (composerOpen === null) throw new Error('The fishing run could not open the note composer');
     await session.execute(`
       const text = document.querySelector('#note-text');
       text.value = ${JSON.stringify(VALID_NOTE)};
@@ -991,6 +1077,7 @@ async function captureFishing(prefix, frames) {
 
     // Reload: the collection and XP survive.
     await wd('POST', session.session('/refresh'), {});
+    await continueTitleIfVisible(session);
     await sleep(2600);
     await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Village street') === true`);
     const reloaded = await stored(session);
@@ -1030,6 +1117,7 @@ async function captureFishing(prefix, frames) {
     await session.synthUp('Space', ' ');
     await sleep(400);
     await wd('POST', session.session('/refresh'), {});
+    await continueTitleIfVisible(session);
     await sleep(2800);
     await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Village street') === true`);
     const recovered = await panel(session);
@@ -1065,12 +1153,25 @@ async function captureFishing(prefix, frames) {
 
 // ── P5 review ───────────────────────────────────────────────────────────────
 
+/** Press E and wait for the composer; a portal transition can swallow the first press. */
+async function openComposerWithRetry(session, attempts = 3) {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    await session.synthDown('KeyE', 'e');
+    await session.synthUp('KeyE', 'e');
+    const opened = await waitForExpr(
+      session,
+      `document.querySelector('#note-panel')?.hidden === false`,
+      4000,
+    );
+    if (opened !== null) return true;
+    await sleep(500);
+  }
+  return false;
+}
+
 /** Open the composer with `E`, submit the valid fixture, and close it again. */
 async function clearCurrentRoom(session, collect = false) {
-  await session.synthDown('KeyE', 'e');
-  await session.synthUp('KeyE', 'e');
-  const opened = await waitForExpr(session, `document.querySelector('#note-panel')?.hidden === false`);
-  if (!opened) throw new Error('The note composer did not open');
+  if (!(await openComposerWithRetry(session))) throw new Error('The note composer did not open');
   await session.execute(`
     const text = document.querySelector('#note-text');
     text.value = ${JSON.stringify(VALID_NOTE)};
@@ -1155,6 +1256,76 @@ async function climbToStreet(session) {
   return null;
 }
 
+/**
+ * P10 traversal: a wider retry budget than the per-phase captures.
+ *
+ * The player can stop just outside the room centre at the top of a ladder; a
+ * bigger horizontal nudge gives the centre test another chance without changing
+ * the game or the capture.
+ */
+async function climbUntilRoomWide(session, needle, attempts = 8) {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const ms = await holdUntilRoom(session, 'KeyW', 'w', needle, 15000);
+    if (ms !== null) return ms;
+    await session.hold(attempt % 2 === 0 ? 'a' : 'd', 700);
+    await sleep(250);
+  }
+  return null;
+}
+
+async function climbToStreetWide(session, attempts = 10) {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    await session.synthDown('KeyW', 'w');
+    const ms = await waitForExpr(
+      session,
+      `document.querySelector('#summary')?.innerText.includes('Village street') === true`,
+      8000,
+    );
+    await session.synthUp('KeyW', 'w');
+    if (ms !== null) return ms;
+    await session.hold(attempt % 2 === 0 ? 'a' : 'd', 700);
+    await sleep(250);
+  }
+  return null;
+}
+
+/**
+ * Escape a generated dungeon without knowing its room graph: climb, sweep the
+ * level, and try the next ladder. The public HUD's "Village street" row is the
+ * only success test, so this still uses the same physical exit a learner uses.
+ */
+async function escapeDungeonToStreet(session, cycles = 4) {
+  for (let cycle = 0; cycle < cycles; cycle += 1) {
+    for (const move of [
+      { direction: null, ms: 0 },
+      { direction: 'd', ms: 2500 },
+      { direction: 'a', ms: 5000 },
+    ]) {
+      if (move.direction) await session.hold(move.direction, move.ms);
+      await session.synthDown('KeyW', 'w');
+      const ms = await waitForExpr(
+        session,
+        `document.querySelector('#summary')?.innerText.includes('Village street') === true`,
+        6000,
+      );
+      await session.synthUp('KeyW', 'w');
+      if (ms !== null) return ms;
+      await sleep(200);
+    }
+  }
+  return null;
+}
+
+async function descendUntilRoomWide(session, needle, attempts = 8) {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const ms = await holdUntilRoom(session, 'KeyS', 's', needle, 12000);
+    if (ms !== null) return ms;
+    await session.hold(attempt % 2 === 0 ? 'a' : 'd', 700);
+    await sleep(250);
+  }
+  return null;
+}
+
 /** Press `R` and wait for the panel. */
 async function openReviewWithR(session) {
   await session.synthDown('KeyR', 'r');
@@ -1229,9 +1400,13 @@ async function captureReview(prefix, frames) {
     await session.execute(`document.querySelector('#toast').hidden = true; return true;`);
 
     // Finish the other two rooms so the engine unlocks review.
-    await descendToToolsRoom(session);
+    await session.hold('d', 650);
+    await sleep(300);
+    if ((await descendUntilRoomWide(session, 'Tools of the Trade')) === null) {
+      throw new Error('Could not descend to the lower room');
+    }
     await clearCurrentRoom(session);
-    const climbMs = await climbToMapRoom(session);
+    const climbMs = await climbUntilRoomWide(session, 'The Map & Beyond');
     if (climbMs === null) throw new Error('Could not climb to the upper room');
     await clearCurrentRoom(session);
     const allCleared = await stored(session);
@@ -1316,13 +1491,16 @@ async function captureReview(prefix, frames) {
 
     // Reload: the marker survives. Walk back to the same room and resume.
     await wd('POST', session.session('/refresh'), {});
+    await continueTitleIfVisible(session);
     await sleep(2800);
     await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Subject') === true`);
     const reloaded = await stored(session);
-    if ((await descendToToolsRoom(session)) === null) {
+    await session.hold('d', 650);
+    await sleep(300);
+    if ((await descendUntilRoomWide(session, 'Tools of the Trade')) === null) {
       throw new Error('Could not descend to the lower room after reload');
     }
-    if ((await climbToMapRoom(session)) === null) {
+    if ((await climbUntilRoomWide(session, 'The Map & Beyond')) === null) {
       throw new Error('Could not climb to the upper room after reload');
     }
     await openReviewWithR(session);
@@ -1355,12 +1533,15 @@ async function captureReview(prefix, frames) {
     await waitForExpr(session, `document.querySelector('#review-result')?.innerText.includes('Saved for later') === true`);
     await session.hold('\uE00C', 60);
     await wd('POST', session.session('/refresh'), {});
+    await continueTitleIfVisible(session);
     await sleep(2800);
     await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Subject') === true`);
-    if ((await descendToToolsRoom(session)) === null) {
+    await session.hold('d', 650);
+    await sleep(300);
+    if ((await descendUntilRoomWide(session, 'Tools of the Trade')) === null) {
       throw new Error('Could not descend to the lower room after reload');
     }
-    if ((await climbToMapRoom(session)) === null) {
+    if ((await climbUntilRoomWide(session, 'The Map & Beyond')) === null) {
       throw new Error('Could not climb to the upper room after reload');
     }
     await openReviewWithR(session);
@@ -1414,6 +1595,7 @@ async function captureReview(prefix, frames) {
 
     // Final reload: review state is durable and no marker is left behind.
     await wd('POST', session.session('/refresh'), {});
+    await continueTitleIfVisible(session);
     await sleep(2800);
     const finalState = await stored(session);
     const finalPanel = await panel(session);
@@ -1553,6 +1735,7 @@ async function captureCreator(prefix, frames) {
   );
   try {
     await wd('POST', session.session('/url'), { url: APP });
+    await continueTitleIfVisible(session);
     const seededMs = await waitForExpr(
       session,
       `document.querySelector('#summary')?.innerText.includes('3 portals') === true`,
@@ -2171,7 +2354,9 @@ async function captureOpenings(prefix, frames) {
       detail: 'The chamber outline is cut at the ladder doorway; the room reads as connected to the shaft',
     });
 
-    if ((await descendToToolsRoom(session)) === null) {
+    await session.hold('d', 650);
+    await sleep(300);
+    if ((await descendUntilRoomWide(session, 'Tools of the Trade')) === null) {
       throw new Error('Could not descend to the lower room');
     }
     await sleep(500);
@@ -2281,6 +2466,7 @@ async function captureJournal(prefix, frames) {
     await sleep(1500);
     await wd('POST', session.session('/refresh'), {});
     await sleep(2200);
+    await continueTitleIfVisible(session);
     await waitForExpr(
       session,
       `document.querySelector('#summary')?.innerText.includes('Village street') === true`,
@@ -2289,11 +2475,13 @@ async function captureJournal(prefix, frames) {
 
     await startTutorial(session);
     await clearCurrentRoom(session, true);
-    if ((await descendToToolsRoom(session)) === null) {
+    await session.hold('d', 650);
+    await sleep(300);
+    if ((await descendUntilRoomWide(session, 'Tools of the Trade')) === null) {
       throw new Error('Could not descend to the lower room');
     }
     await clearCurrentRoom(session);
-    if ((await climbToMapRoom(session)) === null) {
+    if ((await climbUntilRoomWide(session, 'The Map & Beyond')) === null) {
       throw new Error('Could not climb to the upper room');
     }
     await clearCurrentRoom(session);
@@ -2309,6 +2497,7 @@ async function captureJournal(prefix, frames) {
     const seeded = await seedWorkshopGear(session);
     await wd('POST', session.session('/refresh'), {});
     await sleep(2600);
+    await continueTitleIfVisible(session);
     await waitForExpr(
       session,
       `document.querySelector('#summary')?.innerText.includes('Village street') === true`,
@@ -2388,6 +2577,7 @@ async function captureJournal(prefix, frames) {
     await closeJournal(session);
     await wd('POST', session.session('/refresh'), {});
     await sleep(2600);
+    await continueTitleIfVisible(session);
     await waitForExpr(
       session,
       `document.querySelector('#summary')?.innerText.includes('Village street') === true`,
@@ -2434,6 +2624,7 @@ async function captureJournal(prefix, frames) {
     await sleep(1500);
     await wd('POST', session.session('/refresh'), {});
     await sleep(2400);
+    await continueTitleIfVisible(session);
     await waitForExpr(
       session,
       `document.querySelector('#summary')?.innerText.includes('Village street') === true`,
@@ -2488,16 +2679,19 @@ async function captureServices(prefix, frames) {
     await sleep(1500);
     await wd('POST', session.session('/refresh'), {});
     await sleep(2200);
+    await continueTitleIfVisible(session);
     await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Village street') === true`);
 
     await startTutorial(session);
     await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Subject') === true`);
     await clearCurrentRoom(session, true);
-    if ((await descendToToolsRoom(session)) === null) {
+    await session.hold('d', 650);
+    await sleep(300);
+    if ((await descendUntilRoomWide(session, 'Tools of the Trade')) === null) {
       throw new Error('Could not descend to the lower room');
     }
     await clearCurrentRoom(session);
-    if ((await climbToMapRoom(session)) === null) {
+    if ((await climbUntilRoomWide(session, 'The Map & Beyond')) === null) {
       throw new Error('Could not climb to the upper room');
     }
     await clearCurrentRoom(session);
@@ -2519,6 +2713,7 @@ async function captureServices(prefix, frames) {
     const seeded = await seedWorkshopGear(session);
     await wd('POST', session.session('/refresh'), {});
     await sleep(2600);
+    await continueTitleIfVisible(session);
     const reloadStreet = await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Village street') === true`, 8000);
     if (reloadStreet === null) throw new Error('The reload did not land on the village street');
     const reloaded = await stored(session);
@@ -3336,9 +3531,782 @@ async function captureShell(prefix, frames) {
   }
 }
 
+// ── P10 playtest, layout audit, and performance ────────────────────────────
+
+/** Rects of the fixed HUD surfaces, plus overlap and target-size checks. */
+async function layoutAudit(session) {
+  return session.execute(`
+    const ids = [
+      'prompt', 'recovery', 'toast', 'toggle-panel', 'progress-panel',
+      'touch-controls', 'npc-dialogue', 'title-panel',
+    ];
+    const visible = (node) => {
+      if (!node || node.hidden) return false;
+      if (node.closest('[hidden]')) return false;
+      const style = getComputedStyle(node);
+      if (style.display === 'none' || style.visibility === 'hidden') return false;
+      const rect = node.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0;
+    };
+    const boxes = ids
+      .map((id) => document.getElementById(id))
+      .filter(visible)
+      .map((node) => {
+        const rect = node.getBoundingClientRect();
+        return {
+          id: node.id,
+          x: Math.round(rect.x),
+          y: Math.round(rect.y),
+          w: Math.round(rect.width),
+          h: Math.round(rect.height),
+        };
+      });
+    const overlaps = [];
+    for (let i = 0; i < boxes.length; i += 1) {
+      for (let j = i + 1; j < boxes.length; j += 1) {
+        const a = boxes[i];
+        const b = boxes[j];
+        if (a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h) {
+          overlaps.push(a.id + '×' + b.id);
+        }
+      }
+    }
+    const targets = [...document.querySelectorAll('button, [role="button"], select')]
+      .filter(visible)
+      .map((node) => {
+        const rect = node.getBoundingClientRect();
+        return {
+          id: node.id || node.dataset.archetype || node.dataset.intent || node.innerText.trim().slice(0, 24),
+          w: Math.round(rect.width),
+          h: Math.round(rect.height),
+        };
+      });
+    const smallTargets = targets.filter((target) => target.w < 44 || target.h < 44);
+    const clippedPanels = [...document.querySelectorAll('#progress-panel, #note-panel, #fishing-panel, #review-panel, #creator-panel, #service-panel, #journal-panel, #help-panel')]
+      .filter(visible)
+      .map((node) => ({
+        id: node.id,
+        horizontalClip: node.scrollWidth > node.clientWidth + 1,
+        verticalClip: node.scrollWidth > node.clientWidth + 1,
+      }));
+    return {
+      viewport: { w: window.innerWidth, h: window.innerHeight },
+      overflowX: document.documentElement.scrollWidth > window.innerWidth,
+      overflowY: document.documentElement.scrollHeight > window.innerHeight,
+      boxes,
+      overlaps,
+      smallTargets,
+      clippedPanels,
+      focus: document.activeElement?.id || document.activeElement?.tagName || '',
+      textScale: document.documentElement.dataset.textScale ?? '',
+      touchVisible: document.getElementById('touch-controls')?.hidden === false,
+      progressOpen: document.getElementById('progress-panel')?.hidden === false,
+    };
+  `);
+}
+
+async function focusAudit(session) {
+  return session.execute(`
+    const node = document.activeElement;
+    if (!node || node === document.body) return { focus: '', focusVisible: false, outline: '' };
+    const style = getComputedStyle(node);
+    return {
+      focus: node.id || node.tagName,
+      focusVisible: node.matches(':focus-visible'),
+      outline: style.outlineStyle + ' ' + style.outlineWidth + ' ' + style.outlineColor,
+    };
+  `);
+}
+
+async function measureFrames(session, durationMs = 10000) {
+  return session.executeAsync(`
+    const done = arguments[arguments.length - 1];
+    const duration = ${durationMs};
+    const deltas = [];
+    const started = performance.now();
+    let last = started;
+    function tick(now) {
+      deltas.push(now - last);
+      last = now;
+      if (now - started < duration) requestAnimationFrame(tick);
+      else {
+        const sorted = [...deltas].sort((a, b) => a - b);
+        done({
+          frames: deltas.length,
+          avgMs: Math.round((deltas.reduce((a, b) => a + b, 0) / deltas.length) * 100) / 100,
+          p95Ms: Math.round(sorted[Math.floor(sorted.length * 0.95)] * 100) / 100,
+          maxMs: Math.round(Math.max(...deltas) * 100) / 100,
+          over16_7: deltas.filter((value) => value > 16.7).length,
+        });
+      }
+    }
+    requestAnimationFrame(tick);
+  `);
+}
+
+/** Durable-state size from IndexedDB, without learner prose in the output. */
+async function storageFootprint(session) {
+  return session.executeAsync(`
+    const done = arguments[arguments.length - 1];
+    const finish = async (state) => {
+      const json = JSON.stringify(state);
+      const estimate = await navigator.storage?.estimate?.().catch(() => null);
+      done({
+        stateJsonBytes: new TextEncoder().encode(json).length,
+        attachmentCount: Object.keys(state.attachmentBytes ?? {}).length,
+        attachmentBytes: Object.values(state.attachmentBytes ?? {}).reduce(
+          (sum, bytes) => sum + (bytes?.length ?? 0),
+          0,
+        ),
+        subjects: Object.keys(state.subjects ?? {}).length,
+        rooms: Object.values(state.subjects ?? {}).reduce(
+          (sum, subject) => sum + Object.keys(subject.rooms ?? {}).length,
+          0,
+        ),
+        notes: Object.values(state.progression ?? {}).reduce(
+          (sum, record) => sum + (record?.collectedNotes?.length ?? 0),
+          0,
+        ),
+        fish: Object.values(state.progression ?? {}).reduce(
+          (sum, record) => sum + (record?.fishCollection?.length ?? 0),
+          0,
+        ),
+        usageBytes: estimate?.usage ?? null,
+        quotaBytes: estimate?.quota ?? null,
+      });
+    };
+    const request = indexedDB.open('knowledge-dungeon-side-scroller');
+    request.onerror = () => done({ error: String(request.error) });
+    request.onsuccess = () => {
+      const get = request.result.transaction('engine-state', 'readonly').objectStore('engine-state').get('state');
+      get.onerror = () => done({ error: String(get.error) });
+      get.onsuccess = () => finish(get.result);
+    };
+  `);
+}
+
+async function p10Title(session) {
+  const titleAudit = await layoutAudit(session);
+  const focus = await focusAudit(session);
+  const status = await session.execute(`return document.querySelector('#title-status')?.innerText ?? '';`);
+  return { titleAudit, focus, status };
+}
+
+/**
+ * P10 first-ten-minutes run.
+ *
+ * One real session covers title → archetype → street → three rooms → review →
+ * Creator → new portal → fishing → journal → export → clear → import → reload.
+ * It records layout overlaps, minimum target sizes, focus, durable-state size,
+ * and every browser console error/warning collected by the BiDi log subscription.
+ */
+async function captureP10(prefix, frames) {
+  // One WebDriver session at a time: run the keyboard-only pass first.
+  const keyboard = await captureKeyboardRegression();
+  const session = await openSession();
+  const subscribed = await session.subscribeLogs();
+  try {
+    await session.setViewport(1280, 800, 1);
+    await wd('POST', session.session('/url'), { url: APP });
+    await waitForExpr(session, `document.querySelector('#title-panel')?.hidden === false`, 20000);
+    await sleep(500);
+
+    const title = await p10Title(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-01-title.png`),
+      label: 'Title',
+      detail: `focus=${title.focus.focus} (${title.focus.focusVisible}); title=${title.titleAudit.overflowX === false}; targets under 44px=${title.titleAudit.smallTargets.length}; consoles subscribed=${subscribed}; status="${title.status}"`,
+    });
+
+    // Fresh save through the title's own New game path.
+    await session.execute(`window.confirm = () => true; document.querySelector('#title-new-game').click(); return true;`);
+    await sleep(1600);
+    await wd('POST', session.session('/refresh'), {});
+    await waitForExpr(session, `document.querySelector('#title-panel')?.hidden === false`, 20000);
+    await sleep(400);
+    await session.execute(`document.querySelector('[data-archetype="scholar"]').click(); return true;`);
+    await sleep(500);
+    const archetypePressed = await session.execute(
+      `return document.querySelector('[data-archetype="scholar"]')?.getAttribute('aria-pressed') === 'true';`,
+    );
+    await session.execute(`document.querySelector('#title-continue').click(); return true;`);
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Village street') === true`, 15000);
+    await sleep(500);
+    const street = await layoutAudit(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-02-street.png`),
+      label: 'Village street',
+      detail: `archetype scholar=${archetypePressed}; focus=${street.focus}; overlaps=${street.overlaps.join(',') || 'none'}; targets under 44px=${street.smallTargets.length}; page scroll=${street.overflowY}`,
+    });
+
+    // The open desktop panel shortens the notice column instead of covering it.
+    await session.execute(`
+      const panel = document.querySelector('#progress-panel');
+      if (panel.hidden) document.querySelector('#toggle-panel').click();
+      return true;
+    `);
+    await sleep(300);
+    const panelAudit = await layoutAudit(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-03-progress-panel.png`),
+      label: 'Progress panel',
+      detail: `open=${panelAudit.progressOpen}; overlaps=${panelAudit.overlaps.join(',') || 'none'}; touch hidden=${!panelAudit.touchVisible}; targets under 44px=${panelAudit.smallTargets.length}`,
+    });
+    await session.execute(`
+      const panel = document.querySelector('#progress-panel');
+      if (!panel.hidden) document.querySelector('#toggle-panel').click();
+      return true;
+    `);
+    await sleep(250);
+
+    // Enter the Training Grounds from the spawn.
+    await session.synthDown('KeyE', 'e');
+    await session.synthUp('KeyE', 'e');
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Subject') === true`, 12000);
+    await sleep(400);
+    await clearCurrentRoom(session);
+    await session.hold('d', 650);
+    await sleep(300);
+    const lowerMs = await descendUntilRoomWide(session, 'Tools of the Trade');
+    if (lowerMs === null) throw new Error('P10 playtest could not reach the lower room');
+    await clearCurrentRoom(session);
+    const climbMs = await climbUntilRoomWide(session, 'The Map & Beyond');
+    if (climbMs === null) throw new Error('P10 playtest could not reach the upper room');
+    await clearCurrentRoom(session);
+    const cleared = await stored(session);
+    if (cleared.cleared !== 3) throw new Error(`P10 playtest expected 3 clears, got ${cleared.cleared}`);
+    const clearedPrompt = await session.execute(
+      `return document.querySelector('#prompt')?.innerText ?? '';`,
+    );
+    frames.push({
+      file: await session.screenshot(`${prefix}-04-cleared.png`),
+      label: 'Three rooms cleared',
+      detail: `cleared=${cleared.cleared}/3; lower=${lowerMs}ms; climb=${climbMs}ms; xp=${cleared.xp}; prompt="${clearedPrompt.replace(/\\n/g, ' / ')}"`,
+    });
+
+    // Review the upper room with the keyboard.
+    const reviewMs = await openReviewWithR(session);
+    if (!reviewMs) throw new Error('P10 playtest could not open review');
+    await session.hold('5', 60);
+    await session.hold('\uE007', 60);
+    await waitForExpr(session, `document.querySelector('#review-result')?.hidden === false`, 10000);
+    const reviewed = await stored(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-05-review.png`),
+      label: 'Review passed',
+      detail: `openedIn=${reviewMs}ms; passes=${reviewed.reviewPasses}; XP=${reviewed.xp}; next review set=${Object.values(reviewed.nextReview).some(Boolean)}`,
+    });
+    await session.hold('\uE00C', 60);
+    await sleep(400);
+
+    // Return to the street, then fish and read the journal.
+    if ((await climbToStreetWide(session)) === null) throw new Error('P10 playtest could not climb to the street');
+    await sleep(400);
+    let pond = await walkToNearby(session, 'KeyA', 'a', 'Fishing Pond', 30000);
+    if (!pond.found) pond = await walkToNearby(session, 'KeyD', 'd', 'Fishing Pond', 30000);
+    if (!pond.found) {
+      throw new Error(`P10 playtest could not reach a pond; nearby="${pond.nearby}"`);
+    }
+    await session.execute(`
+      const panel = document.querySelector('#progress-panel');
+      if (!panel.hidden) document.querySelector('#toggle-panel').click();
+      return true;
+    `);
+    await sleep(250);
+    await session.synthDown('KeyE', 'e');
+    await session.synthUp('KeyE', 'e');
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Fishing pond') === true`, 12000);
+    await session.synthDown('Space', ' ');
+    await sleep(650);
+    await session.synthUp('Space', ' ');
+    await waitForExpr(session, `document.querySelector('#status')?.innerText.includes('Waiting for a bite') === true`, 8000);
+    const biteMs = await waitForExpr(session, `document.querySelector('#status')?.innerText.includes('Bite!') === true`, 25000);
+    if (!biteMs) throw new Error('P10 playtest saw no bite');
+    await session.synthDown('Space', ' ');
+    await session.synthUp('Space', ' ');
+    await waitForExpr(session, `document.querySelector('#fishing-panel')?.hidden === false`, 10000);
+    const fishBefore = (await stored(session)).fish;
+    await session.execute(`document.querySelector('#fishing-answered-correct').click(); return true;`);
+    await waitForExpr(session, `document.querySelector('#fishing-panel')?.hidden === true`, 10000);
+    const fished = await stored(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-07-fishing.png`),
+      label: 'Catch kept',
+      detail: `bite=${biteMs}ms; fish ${fishBefore}→${fished.fish}; xp=${fished.xpTotal}; world=${fished.world}`,
+    });
+    await session.synthDown('Escape', 'Escape');
+    await session.synthUp('Escape', 'Escape');
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Village street') === true`, 12000);
+    await sleep(400);
+    await session.synthDown('KeyJ', 'j');
+    await session.synthUp('KeyJ', 'j');
+    const journalMs = await waitForExpr(session, `document.querySelector('#journal-panel')?.hidden === false`, 8000);
+    const journalLayout = await layoutAudit(session);
+    const journalFocus = await focusAudit(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-08-journal.png`),
+      label: 'Journal',
+      detail: `openedIn=${journalMs}ms; focus=${journalFocus.focus}; subjects in journal=${await session.execute(`return document.querySelectorAll('#journal-panel .journal-subject').length;`)}; overlaps=${journalLayout.overlaps.join(',') || 'none'}; horizontal clip=${journalLayout.clippedPanels.some((panel) => panel.horizontalClip)}`,
+    });
+    await session.synthDown('Escape', 'Escape');
+    await session.synthUp('Escape', 'Escape');
+    await sleep(350);
+
+    // Portable save: inject one attachment, export, clear, import.
+    await session.executeAsync(`
+      const done = arguments[arguments.length - 1];
+      const request = indexedDB.open('knowledge-dungeon-side-scroller');
+      request.onerror = () => done({ error: String(request.error) });
+      request.onsuccess = () => {
+        const database = request.result;
+        const transaction = database.transaction('engine-state', 'readwrite');
+        const store = transaction.objectStore('engine-state');
+        const get = store.get('state');
+        get.onsuccess = () => {
+          const state = get.result;
+          state.attachmentBytes['p10-evidence.txt'] = new TextEncoder().encode(
+            'P10 attachment bytes survive a JSON export and import.',
+          );
+          store.put(state, 'state');
+        };
+        transaction.oncomplete = () => done({ ok: true });
+        transaction.onerror = () => done({ error: String(transaction.error) });
+      };
+    `);
+    await wd('POST', session.session('/refresh'), {});
+    await waitForExpr(session, `document.querySelector('#title-panel')?.hidden === false`, 20000);
+    await sleep(500);
+    await session.execute(`document.querySelector('#title-continue').click(); return true;`);
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Village street') === true`, 12000);
+    await sleep(400);
+    await session.execute(`
+      window.__p10Export = null;
+      const realCreate = URL.createObjectURL;
+      URL.createObjectURL = (blob) => {
+        const url = realCreate.call(URL, blob);
+        blob.text().then((text) => { window.__p10Export = text; });
+        return url;
+      };
+      const realClick = HTMLAnchorElement.prototype.click;
+      HTMLAnchorElement.prototype.click = function () {
+        if (this.download) return;
+        return realClick.call(this);
+      };
+      document.querySelector('#export-save').click();
+      return true;
+    `);
+    await waitForExpr(session, `typeof window.__p10Export === 'string' && window.__p10Export.length > 100`, 8000);
+    const exported = JSON.parse(await session.execute(`return window.__p10Export;`));
+    const beforeExport = await stored(session);
+    const sizeBefore = await storageFootprint(session);
+    if (exported.bundleVersion !== 1 || exported.app !== 'knowledge-dungeon-side-scroller') {
+      throw new Error('P10 export did not produce a v1 bundle');
+    }
+
+    await session.execute(`window.confirm = () => true; document.querySelector('#clear-save').click(); return true;`);
+    await sleep(1600);
+    await wd('POST', session.session('/refresh'), {});
+    await waitForExpr(session, `document.querySelector('#title-panel')?.hidden === false`, 20000);
+    await sleep(400);
+    const emptied = await stored(session);
+    await session.execute(`
+      document.querySelector('#title-import-toggle').click();
+      const text = document.querySelector('#title-import-text');
+      text.value = ${JSON.stringify(JSON.stringify(exported))};
+      document.querySelector('#title-import-apply').click();
+      return true;
+    `);
+    await sleep(1400);
+    await waitForExpr(session, `document.querySelector('#title-panel')?.hidden === false`, 20000);
+    await session.execute(`document.querySelector('#title-continue').click(); return true;`);
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Village street') === true`, 15000);
+    await sleep(400);
+    const restored = await stored(session);
+    if (
+      restored.cleared !== beforeExport.cleared ||
+      restored.xpTotal !== beforeExport.xpTotal ||
+      restored.fish !== beforeExport.fish ||
+      !restored.attachmentKeys.includes('p10-evidence.txt')
+    ) {
+      throw new Error(
+        `P10 import round trip lost state: before=${JSON.stringify(beforeExport)} after=${JSON.stringify(restored)}`,
+      );
+    }
+    const sizeAfter = await storageFootprint(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-09-import-roundtrip.png`),
+      label: 'Export → clear → import',
+      detail: `bundle v${exported.bundleVersion}; attachment base64=${typeof exported.state.attachmentBytes['p10-evidence.txt'] === 'string'}; cleared ${beforeExport.cleared}→${restored.cleared}; XP ${beforeExport.xpTotal}→${restored.xpTotal}; fish ${beforeExport.fish}→${restored.fish}; emptied save cleared=${emptied.cleared}; state JSON ${sizeBefore.stateJsonBytes}→${sizeAfter.stateJsonBytes} bytes`,
+    });
+
+    // Large text: the open journal must not clip horizontally.
+    await session.execute(`
+      localStorage.setItem('knowledge-dungeon.host-settings.v1', JSON.stringify({
+        reducedMotion: 'system', assistanceMode: 'gentle', textScale: 'large', touchLayout: 'auto',
+      }));
+      return true;
+    `);
+    await wd('POST', session.session('/refresh'), {});
+    await waitForExpr(session, `document.querySelector('#title-panel')?.hidden === false`, 20000);
+    await session.execute(`document.querySelector('#title-continue').click(); return true;`);
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Village street') === true`, 12000);
+    await session.synthDown('KeyJ', 'j');
+    await session.synthUp('KeyJ', 'j');
+    await waitForExpr(session, `document.querySelector('#journal-panel')?.hidden === false`, 8000);
+    const large = await layoutAudit(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-10-large-text.png`),
+      label: 'Large text',
+      detail: `text scale=${large.textScale}; page overflowX=${large.overflowX}; clipped dialogs=${large.clippedPanels.filter((panel) => panel.horizontalClip).map((panel) => panel.id).join(',') || 'none'}; targets under 44px=${large.smallTargets.length}`,
+    });
+    await session.synthDown('Escape', 'Escape');
+    await session.synthUp('Escape', 'Escape');
+    await session.execute(`
+      localStorage.setItem('knowledge-dungeon.host-settings.v1', JSON.stringify({
+        reducedMotion: 'system', assistanceMode: 'gentle', textScale: 'normal', touchLayout: 'auto',
+      }));
+      return true;
+    `);
+
+    // Phone width: the sheet hides the touch pad and no HUD surface overlaps.
+    await session.setViewport(390, 844, 2);
+    await sleep(500);
+    await session.execute(`
+      const panel = document.querySelector('#progress-panel');
+      if (panel.hidden) document.querySelector('#toggle-panel').click();
+      return true;
+    `);
+    await sleep(350);
+    const phone = await layoutAudit(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-11-phone-sheet.png`),
+      label: 'Phone progress sheet',
+      detail: `viewport=${phone.viewport.w}×${phone.viewport.h}; sheet open=${phone.progressOpen}; touch hidden=${!phone.touchVisible}; overlaps=${phone.overlaps.join(',') || 'none'}; page overflowX=${phone.overflowX}; targets under 44px=${phone.smallTargets.length}`,
+    });
+    await session.execute(`
+      const panel = document.querySelector('#progress-panel');
+      if (!panel.hidden) document.querySelector('#toggle-panel').click();
+      return true;
+    `);
+    await session.setViewport(1280, 800, 1);
+    await session.execute(`document.documentElement.dataset.textScale = 'normal'; return true;`);
+    await sleep(300);
+
+    // Creator last: create a subject, enter it through the journal, clear its
+    // root room, and leave the playtest in that dungeon. The portable-save run
+    // above already proved the street state, so no physical walk-out is needed
+    // after this final mode.
+    await session.synthDown('KeyC', 'c');
+    await session.synthUp('KeyC', 'c');
+    await waitForExpr(session, `document.querySelector('#creator-panel')?.hidden === false`, 10000);
+    await session.execute(`
+      const set = (selector, value) => {
+        const node = document.querySelector(selector);
+        node.value = value;
+        node.dispatchEvent(new Event('input', { bubbles: true }));
+      };
+      set('#creator-subject-name', 'P10 Playtest');
+      set('#creator-root-topic', 'Playtest Root');
+      document.querySelector('[data-focus-key="create-submit"]').click();
+      return true;
+    `);
+    await waitForExpr(
+      session,
+      `document.querySelector('#creator-panel .creator-room-select') !== null`,
+      12000,
+    );
+    await addCreatorRooms(session, 'Playtest Root', ['Playtest One', 'Playtest Two', 'Playtest Three']);
+    await waitForExpr(
+      session,
+      `document.querySelectorAll('#creator-panel .creator-room-select').length === 4`,
+      12000,
+    );
+    const created = await stored(session);
+    const creatorLayout = await layoutAudit(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-12-creator.png`),
+      label: 'Creator subject',
+      detail: `subjects=${created.subjects}; rooms=${created.rooms.length}; overlaps=${creatorLayout.overlaps.join(',') || 'none'}; targets under 44px=${creatorLayout.smallTargets.length}`,
+    });
+    await session.synthDown('Escape', 'Escape');
+    await session.synthUp('Escape', 'Escape');
+    await waitForExpr(session, `document.querySelector('#creator-panel')?.hidden !== false`, 8000);
+    await sleep(600);
+
+    await session.synthDown('KeyJ', 'j');
+    await session.synthUp('KeyJ', 'j');
+    await waitForExpr(session, `document.querySelector('#journal-panel')?.hidden === false`, 8000);
+    const journalEntry = await session.execute(`
+      const row = [...document.querySelectorAll('#journal-panel .journal-subject')]
+        .find((node) => node.innerText.includes('P10 Playtest'));
+      const enter = row?.querySelector('[data-focus-key^="journal-enter-"]');
+      if (!enter) return false;
+      enter.click();
+      return true;
+    `);
+    if (!journalEntry) throw new Error('P10 playtest journal had no new subject row');
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('P10 Playtest') === true`, 15000);
+    await clearCurrentRoom(session);
+    const subjectCleared = await stored(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-13-new-subject.png`),
+      label: 'New subject room',
+      detail: `cleared=${subjectCleared.cleared}; rooms=${subjectCleared.rooms.length}; world=${subjectCleared.world}; created subject active=true`,
+    });
+
+    const durable = await storageFootprint(session);
+    const consoleErrors = session.consoleErrors();
+    return {
+      subscribed,
+      title: { focus: title.focus, status: title.status },
+      archetypePressed,
+      street,
+      panelAudit,
+      cleared,
+      reviewed,
+      created,
+      creatorLayout,
+      subjectCleared,
+      fished,
+      journal: { journalMs, focus: journalFocus, layout: journalLayout },
+      export: {
+        bundleVersion: exported.bundleVersion,
+        before: beforeExport,
+        restored,
+        emptied,
+        sizeBefore,
+        sizeAfter,
+      },
+      largeText: large,
+      phone,
+      keyboard,
+      durable,
+      consoleErrors,
+    };
+  } finally {
+    await session.close();
+  }
+}
+
+/**
+ * P10 performance run.
+ *
+ * A 10 s trace at each surface the plan names, plus an about:blank baseline and
+ * the durable-state footprint after a scripted run.
+ */
+async function capturePerf(prefix, frames) {
+  const session = await openSession();
+  const subscribed = await session.subscribeLogs();
+  try {
+    await session.setViewport(1280, 800, 1);
+    await wd('POST', session.session('/url'), { url: 'about:blank' });
+    await sleep(500);
+    const baseline = await measureFrames(session);
+
+    await wd('POST', session.session('/url'), { url: APP });
+    await waitForExpr(session, `document.querySelector('#title-panel')?.hidden === false`, 20000);
+    await startTutorial(session);
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Subject') === true`, 12000);
+    const root = await measureFrames(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-01-dungeon-room.png`),
+      label: 'Dungeon room',
+      detail: `avg=${root.avgMs}ms p95=${root.p95Ms}ms max=${root.maxMs}ms over16.7=${root.over16_7}/${root.frames}`,
+    });
+
+    await clearCurrentRoom(session);
+    if ((await descendToToolsRoom(session)) === null) throw new Error('perf run could not reach the lower room');
+    const lower = await measureFrames(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-02-lower-room.png`),
+      label: 'Lower dungeon room',
+      detail: `avg=${lower.avgMs}ms p95=${lower.p95Ms}ms max=${lower.maxMs}ms over16.7=${lower.over16_7}/${lower.frames}`,
+    });
+
+    if ((await climbToStreetWide(session)) === null) throw new Error('perf run could not reach the street');
+    await sleep(400);
+    const street = await measureFrames(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-03-street.png`),
+      label: 'Street',
+      detail: `avg=${street.avgMs}ms p95=${street.p95Ms}ms max=${street.maxMs}ms over16.7=${street.over16_7}/${street.frames}`,
+    });
+
+    const pondWalk = await walkToNearby(session, 'KeyA', 'a', 'Fishing Pond', 30000);
+    if (!pondWalk.found) throw new Error('perf run could not reach the pond');
+    await session.synthDown('KeyE', 'e');
+    await session.synthUp('KeyE', 'e');
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Fishing pond') === true`, 12000);
+    const pond = await measureFrames(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-04-pond.png`),
+      label: 'Pond',
+      detail: `avg=${pond.avgMs}ms p95=${pond.p95Ms}ms max=${pond.maxMs}ms over16.7=${pond.over16_7}/${pond.frames}`,
+    });
+    await session.synthDown('Escape', 'Escape');
+    await session.synthUp('Escape', 'Escape');
+    await waitForExpr(session, `document.querySelector('#summary')?.innerText.includes('Village street') === true`, 12000);
+    await sleep(300);
+
+    const library = await openServiceAt(session, 'Library', 'KeyD', 'd', 30000);
+    if (!library.openedMs) throw new Error('perf run could not open the Library');
+    const libraryFrames = await measureFrames(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-05-library.png`),
+      label: 'Library service',
+      detail: `avg=${libraryFrames.avgMs}ms p95=${libraryFrames.p95Ms}ms max=${libraryFrames.maxMs}ms over16.7=${libraryFrames.over16_7}/${libraryFrames.frames}`,
+    });
+    await closeService(session);
+    await sleep(300);
+
+    await session.synthDown('KeyJ', 'j');
+    await session.synthUp('KeyJ', 'j');
+    let journalOpen = await waitForExpr(
+      session,
+      `document.querySelector('#journal-panel')?.hidden === false`,
+      8000,
+    );
+    if (journalOpen === null) {
+      await ensureProgressVisible(session);
+      await session.execute(`document.querySelector('#open-journal').click(); return true;`);
+      journalOpen = await waitForExpr(
+        session,
+        `document.querySelector('#journal-panel')?.hidden === false`,
+        8000,
+      );
+    }
+    if (journalOpen === null) throw new Error('The perf run could not open the journal');
+    const journal = await measureFrames(session);
+    frames.push({
+      file: await session.screenshot(`${prefix}-06-journal.png`),
+      label: 'Journal',
+      detail: `avg=${journal.avgMs}ms p95=${journal.p95Ms}ms max=${journal.maxMs}ms over16.7=${journal.over16_7}/${journal.frames}`,
+    });
+    const durable = await storageFootprint(session);
+    const consoleErrors = session.consoleErrors();
+    return {
+      subscribed,
+      baseline,
+      root,
+      lower,
+      street,
+      pond,
+      library: libraryFrames,
+      journal,
+      durable,
+      consoleErrors,
+    };
+  } finally {
+    await session.close();
+  }
+}
+
+/** A production-build boot check: title visible, no failed resources, clean log. */
+async function captureSmoke(prefix, frames) {
+  const session = await openSession();
+  const subscribed = await session.subscribeLogs();
+  try {
+    await session.setViewport(1280, 800, 1);
+    await wd('POST', session.session('/url'), { url: APP });
+    const titleMs = await waitForExpr(
+      session,
+      `document.querySelector('#title-panel')?.hidden === false`,
+      20000,
+    );
+    const state = await session.execute(`
+      return {
+        titleVisible: document.querySelector('#title-panel')?.hidden === false,
+        overlayHidden: document.querySelector('#overlay')?.hidden === true,
+        status: document.querySelector('#title-status')?.innerText ?? '',
+        canvas: {
+          width: document.querySelector('#game')?.width ?? 0,
+          height: document.querySelector('#game')?.height ?? 0,
+        },
+        error: document.querySelector('#error')?.hidden
+          ? ''
+          : (document.querySelector('#error')?.innerText ?? ''),
+        failedResources: performance.getEntriesByType('resource')
+          .filter((entry) => typeof entry.responseStatus === 'number' && entry.responseStatus >= 400)
+          .map((entry) => ({ name: entry.name.split('/').pop() ?? entry.name, status: entry.responseStatus })),
+      };
+    `);
+    frames.push({
+      file: await session.screenshot(`${prefix}-01-boot.png`),
+      label: 'Production boot',
+      detail: `title in ${titleMs ?? 'timeout'}ms; title visible=${state.titleVisible}; canvas=${state.canvas.width}×${state.canvas.height}; failed resources=${state.failedResources.length}; panel error="${state.error}"`,
+    });
+    return {
+      subscribed,
+      titleMs,
+      state,
+      consoleErrors: session.consoleErrors(),
+    };
+  } finally {
+    await session.close();
+  }
+}
+
 async function main() {
   await mkdir(OUT, { recursive: true });
   const frames = [];
+
+  if (options.smoke) {
+    const run = await captureSmoke(options.prefix, frames);
+    const manifest = {
+      capturedAt: new Date().toISOString(),
+      app: APP,
+      viewport: '1280×800 desktop',
+      prefix: options.prefix,
+      smoke: true,
+      result: run,
+      frames,
+    };
+    await writeFile(resolve(OUT, `${options.prefix}-manifest.json`), JSON.stringify(manifest, null, 2));
+    console.log(JSON.stringify(manifest, null, 2));
+    return;
+  }
+
+  if (options.p10) {
+    const run = await captureP10(options.prefix, frames);
+    const manifest = {
+      capturedAt: new Date().toISOString(),
+      app: APP,
+      viewport: '1280×800 desktop, then 390×844 DPR 2 phone sheet',
+      prefix: options.prefix,
+      p10: true,
+      result: run,
+      frames,
+    };
+    await writeFile(resolve(OUT, `${options.prefix}-manifest.json`), JSON.stringify(manifest, null, 2));
+    console.log(JSON.stringify(manifest, null, 2));
+    const date = new Date().toISOString().slice(0, 10);
+    console.log('\nMarkdown rows:\n');
+    for (const frame of frames) {
+      console.log(`| ${date} | ${frame.label} | \`${frame.file}\` | ${frame.detail} |`);
+    }
+    return;
+  }
+
+  if (options.perf) {
+    const run = await capturePerf(options.prefix, frames);
+    const manifest = {
+      capturedAt: new Date().toISOString(),
+      app: APP,
+      viewport: '1280×800 desktop',
+      prefix: options.prefix,
+      perf: true,
+      result: run,
+      frames,
+    };
+    await writeFile(resolve(OUT, `${options.prefix}-manifest.json`), JSON.stringify(manifest, null, 2));
+    console.log(JSON.stringify(manifest, null, 2));
+    const date = new Date().toISOString().slice(0, 10);
+    console.log('\nMarkdown rows:\n');
+    for (const frame of frames) {
+      console.log(`| ${date} | ${frame.label} | \`${frame.file}\` | ${frame.detail} |`);
+    }
+    return;
+  }
 
   if (options.shell) {
     const run = await captureShell(options.prefix, frames);

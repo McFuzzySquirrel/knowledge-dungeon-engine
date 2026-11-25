@@ -1,0 +1,222 @@
+{
+  "capturedAt": "2026-11-24T22:53:45.444Z",
+  "app": "http://localhost:5174/",
+  "viewport": "default headless Firefox (captured window)",
+  "prefix": "2026-11-25-g10surface",
+  "surface": true,
+  "result": {
+    "boot": {
+      "activeSubjectId": null,
+      "activeStudy": false,
+      "subjects": 3,
+      "world": "village",
+      "rooms": [],
+      "visited": [],
+      "sessions": 3,
+      "xp": null,
+      "inventory": 0,
+      "equipped": 0,
+      "xpTotal": 0,
+      "fish": 0,
+      "cleared": 0,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassesTotal": 0,
+      "reviewPassCounts": {},
+      "nextReview": {},
+      "marker": null,
+      "attachmentKeys": [],
+      "attachmentSizes": {}
+    },
+    "entered": {
+      "activeSubjectId": "tutorial-first-walkthrough",
+      "activeStudy": true,
+      "subjects": 4,
+      "world": "dungeon",
+      "rooms": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "visited": [
+        "tut-note"
+      ],
+      "sessions": 4,
+      "xp": 0,
+      "inventory": 0,
+      "equipped": 0,
+      "xpTotal": 0,
+      "fish": 0,
+      "cleared": 0,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassesTotal": 0,
+      "reviewPassCounts": {
+        "tut-note": 0,
+        "tut-tools": 0,
+        "tut-map": 0
+      },
+      "nextReview": {
+        "tut-note": null,
+        "tut-tools": null,
+        "tut-map": null
+      },
+      "marker": null,
+      "attachmentKeys": [],
+      "attachmentSizes": {}
+    },
+    "cleared": {
+      "activeSubjectId": "tutorial-first-walkthrough",
+      "activeStudy": true,
+      "subjects": 4,
+      "world": "dungeon",
+      "rooms": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "visited": [
+        "tut-note"
+      ],
+      "sessions": 4,
+      "xp": 28,
+      "inventory": 1,
+      "equipped": 0,
+      "xpTotal": 28,
+      "fish": 0,
+      "cleared": 1,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassesTotal": 0,
+      "reviewPassCounts": {
+        "tut-note": 0,
+        "tut-tools": 0,
+        "tut-map": 0
+      },
+      "nextReview": {
+        "tut-note": null,
+        "tut-tools": null,
+        "tut-map": null
+      },
+      "marker": null,
+      "attachmentKeys": [],
+      "attachmentSizes": {}
+    },
+    "returned": {
+      "activeSubjectId": null,
+      "activeStudy": false,
+      "subjects": 4,
+      "world": "village",
+      "rooms": [],
+      "visited": [],
+      "sessions": 4,
+      "xp": null,
+      "inventory": 1,
+      "equipped": 0,
+      "xpTotal": 28,
+      "fish": 0,
+      "cleared": 0,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassesTotal": 0,
+      "reviewPassCounts": {},
+      "nextReview": {},
+      "marker": null,
+      "attachmentKeys": [],
+      "attachmentSizes": {}
+    },
+    "reloadSurface": {
+      "activeSubjectId": null,
+      "activeStudy": false,
+      "subjects": 4,
+      "world": "village",
+      "rooms": [],
+      "visited": [],
+      "sessions": 4,
+      "xp": null,
+      "inventory": 1,
+      "equipped": 0,
+      "xpTotal": 28,
+      "fish": 0,
+      "cleared": 0,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassesTotal": 0,
+      "reviewPassCounts": {},
+      "nextReview": {},
+      "marker": null,
+      "attachmentKeys": [],
+      "attachmentSizes": {}
+    },
+    "reloadDungeon": {
+      "activeSubjectId": "tutorial-first-walkthrough",
+      "activeStudy": true,
+      "subjects": 4,
+      "world": "dungeon",
+      "rooms": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "visited": [
+        "tut-note"
+      ],
+      "sessions": 6,
+      "xp": 28,
+      "inventory": 1,
+      "equipped": 0,
+      "xpTotal": 28,
+      "fish": 0,
+      "cleared": 1,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassesTotal": 0,
+      "reviewPassCounts": {
+        "tut-note": 0,
+        "tut-tools": 0,
+        "tut-map": 0
+      },
+      "nextReview": {
+        "tut-note": null,
+        "tut-tools": null,
+        "tut-map": null
+      },
+      "marker": null,
+      "attachmentKeys": [],
+      "attachmentSizes": {}
+    },
+    "error": ""
+  },
+  "frames": [
+    {
+      "file": "2026-11-25-g10surface-01-street.png",
+      "label": "Village street",
+      "detail": "world=village; subjects=3; nearby=Training Grounds"
+    },
+    {
+      "file": "2026-11-25-g10surface-02-dungeon-entry.png",
+      "label": "Portal entry",
+      "detail": "shownIn=34ms; world=dungeon; active=true; subjects=4; rooms=3"
+    },
+    {
+      "file": "2026-11-25-g10surface-03-cleared.png",
+      "label": "Room cleared",
+      "detail": "world=dungeon; xp=28; cleared=1; active session=true"
+    },
+    {
+      "file": "2026-11-25-g10surface-04-returned.png",
+      "label": "Returned through the shaft",
+      "detail": "climb=4167ms; world=village; activeSubject=null; active session=false; sessions=4; portals label=true"
+    },
+    {
+      "file": "2026-11-25-g10surface-05-reload-surface.png",
+      "label": "Reload on the street",
+      "detail": "world=village; subjects=4; activeSubject=null; portal row=true"
+    },
+    {
+      "file": "2026-11-25-g10surface-06-reload-dungeon.png",
+      "label": "Reload in the dungeon",
+      "detail": "world=dungeon; active=true; rooms=3; sessions=6; summary has world=true"
+    }
+  ]
+}

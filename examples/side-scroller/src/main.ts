@@ -398,13 +398,29 @@ function setPanelOpen(open: boolean): void {
   progressPanel.hidden = !open;
   togglePanelButton.setAttribute('aria-expanded', String(open));
   togglePanelButton.textContent = open ? 'Hide progress' : 'Progress';
+  document.body.dataset.progress = String(open);
+  syncTouchVisibility();
 }
 
-/** `auto` follows a coarse pointer; the setting can force it on or off (P8/P9). */
+/**
+ * `auto` follows a coarse pointer; the setting can force it on or off (P8/P9).
+ *
+ * The touch pad is hidden while a modal or the progress sheet is open: those
+ * surfaces paint above it, so leaving live buttons underneath would both look
+ * like bleed-through and make the controls unreachable.
+ */
 function syncTouchVisibility(): void {
   if (!touchControls) return;
   const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
-  touchControls.setVisible(!titleActive && shouldShowTouchControls(hostSettings, coarsePointer));
+  const modalOpen = Boolean(
+    composer || reviewPanel || creatorPanel || servicePanel || journalPanel || helpPanel,
+  );
+  touchControls.setVisible(
+    !titleActive &&
+      !modalOpen &&
+      progressPanel.hidden &&
+      shouldShowTouchControls(hostSettings, coarsePointer),
+  );
 }
 
 /** Show the title and pause the world. Continue is the only exit. */
@@ -516,10 +532,11 @@ function syncPromptInternal(): void {
   prompts.hide();
 }
 
-/** Every prompt change also refreshes the touch action label. */
+/** Every prompt change also refreshes the touch label and overlay visibility. */
 function syncPrompt(): void {
   syncPromptInternal();
   syncTouchActionLabel();
+  syncTouchVisibility();
 }
 
 function interactionVerb(type: string): string {
@@ -2851,11 +2868,16 @@ function maybeReturnToVillage(): void {
 
 let lastFrameMs = performance.now();
 let firstFrame = true;
+/** A resize while a modal covers the world still needs one fresh canvas frame. */
+let forceFrame = false;
 
 function frame(nowMs: number): void {
   const deltaMs = firstFrame ? 0 : Math.max(0, Math.min(nowMs - lastFrameMs, 100));
   firstFrame = false;
   lastFrameMs = nowMs;
+  const modalOpen = Boolean(
+    composer || reviewPanel || creatorPanel || servicePanel || journalPanel || helpPanel,
+  );
 
   if (screen === 'fishing' && fishing && context && !journalPanel && !helpPanel) {
     fishing.clockMs += deltaMs;
@@ -2875,7 +2897,7 @@ function frame(nowMs: number): void {
   if (level && body && context) {
     // The composer, the review panel, the Creator, a village service, the
     // journal, and Controls pause the world.
-    if (!titleActive && !composer && !reviewPanel && !creatorPanel && !servicePanel && !journalPanel && !helpPanel) {
+    if (!titleActive && !modalOpen) {
       body = stepBody(body, intent, level, deltaMs);
       if (screen === 'dungeon') {
         updateRoomVisit();
@@ -2884,20 +2906,26 @@ function frame(nowMs: number): void {
         updateInteractable();
       }
     }
-    updateCamera(camera, body, level, deltaMs, reducedMotionActive());
-    renderWorld(context, {
-      level,
-      body,
-      camera,
-      activeRoomId,
-      surface,
-      activeInteractableId: activeInteractable?.id ?? null,
-      npcs: surfaceNpcs,
-      activeNpcId: activeNpc?.id ?? null,
-      badges,
-      reducedMotion: reducedMotionActive(),
-      textScale: hostSettings.textScale,
-    });
+    // A modal is opaque enough that re-drawing the same world underneath it is
+    // wasted work. Keep the last frame; draw once after a resize or when the
+    // modal closes.
+    if (!modalOpen || forceFrame) {
+      updateCamera(camera, body, level, deltaMs, reducedMotionActive());
+      renderWorld(context, {
+        level,
+        body,
+        camera,
+        activeRoomId,
+        surface,
+        activeInteractableId: activeInteractable?.id ?? null,
+        npcs: surfaceNpcs,
+        activeNpcId: activeNpc?.id ?? null,
+        badges,
+        reducedMotion: reducedMotionActive(),
+        textScale: hostSettings.textScale,
+      });
+      forceFrame = false;
+    }
   }
 
   requestAnimationFrame(frame);
@@ -2917,7 +2945,12 @@ function resizeCanvas(): void {
     });
     return;
   }
-  if (level && body) updateCamera(camera, body, level, 100, true);
+  if (level && body) {
+    updateCamera(camera, body, level, 100, true);
+    // The canvas was cleared by the resize; the next frame must repaint even
+    // when a modal is covering the world.
+    forceFrame = true;
+  }
 }
 
 /** Delete the save and the demo-seed flag, then reload into a first run. */

@@ -474,7 +474,12 @@ export function mountCreatorPanel(
     section.append(row);
 
     if (view.edges.length === 0) {
-      section.append(element('p', { className: 'note-hint', text: 'No cross-links yet.' }));
+      section.append(
+        element('p', {
+          className: 'note-hint',
+          text: 'No cross-links yet. Add two rooms, then choose a from and to room below.',
+        }),
+      );
     } else {
       const list = element('ul', { className: 'creator-edge-list' });
       for (const edge of view.edges) {

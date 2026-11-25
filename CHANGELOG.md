@@ -7,6 +7,7 @@ All notable changes are documented here. Follow Keep a Changelog categories: Add
 ### Added
 
 - Host UI guide covering architecture, screen and input design, frame loops, persistence UX, accessibility, performance, testing, and trust boundaries.
+- Completed `examples/side-scroller/` through P10: title/save portability, touch, journal and services, reduced motion and large text, a one-column notice rail, and a local gate (`node examples/side-scroller/scripts/gate.mjs`). The example remains additive; the engine suite and `src/` are unchanged.
 
 ## [0.1.0] - 2026-11-23
 

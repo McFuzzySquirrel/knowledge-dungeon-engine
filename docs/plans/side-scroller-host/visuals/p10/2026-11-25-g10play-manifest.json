@@ -1,0 +1,634 @@
+{
+  "capturedAt": "2026-11-24T22:35:19.832Z",
+  "app": "http://localhost:5174/",
+  "viewport": "1280×800 desktop, then 390×844 DPR 2 phone sheet",
+  "prefix": "2026-11-25-g10play",
+  "p10": true,
+  "result": {
+    "subscribed": true,
+    "title": {
+      "focus": {
+        "focus": "title-continue",
+        "focusVisible": true,
+        "outline": "solid 3px rgb(127, 209, 185)"
+      },
+      "status": "3 subjects saved · quest: intro · archetype: not chosen"
+    },
+    "archetypePressed": true,
+    "street": {
+      "viewport": {
+        "w": 1280,
+        "h": 800
+      },
+      "overflowX": false,
+      "overflowY": false,
+      "boxes": [
+        {
+          "id": "prompt",
+          "x": 12,
+          "y": 12,
+          "w": 230,
+          "h": 36
+        },
+        {
+          "id": "toggle-panel",
+          "x": 1138,
+          "y": 12,
+          "w": 130,
+          "h": 44
+        },
+        {
+          "id": "progress-panel",
+          "x": 884,
+          "y": 60,
+          "w": 384,
+          "h": 720
+        }
+      ],
+      "overlaps": [],
+      "smallTargets": [],
+      "clippedPanels": [
+        {
+          "id": "progress-panel",
+          "horizontalClip": false,
+          "verticalClip": false
+        }
+      ],
+      "focus": "game",
+      "textScale": "normal",
+      "touchVisible": false,
+      "progressOpen": true
+    },
+    "panelAudit": {
+      "viewport": {
+        "w": 1280,
+        "h": 800
+      },
+      "overflowX": false,
+      "overflowY": false,
+      "boxes": [
+        {
+          "id": "prompt",
+          "x": 12,
+          "y": 12,
+          "w": 230,
+          "h": 36
+        },
+        {
+          "id": "toggle-panel",
+          "x": 1138,
+          "y": 12,
+          "w": 130,
+          "h": 44
+        },
+        {
+          "id": "progress-panel",
+          "x": 884,
+          "y": 60,
+          "w": 384,
+          "h": 720
+        }
+      ],
+      "overlaps": [],
+      "smallTargets": [],
+      "clippedPanels": [
+        {
+          "id": "progress-panel",
+          "horizontalClip": false,
+          "verticalClip": false
+        }
+      ],
+      "focus": "game",
+      "textScale": "normal",
+      "touchVisible": false,
+      "progressOpen": true
+    },
+    "cleared": {
+      "activeSubjectId": "tutorial-first-walkthrough",
+      "activeStudy": true,
+      "subjects": 4,
+      "world": "dungeon",
+      "rooms": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "visited": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "sessions": 4,
+      "xp": 86,
+      "inventory": 3,
+      "equipped": 0,
+      "xpTotal": 86,
+      "fish": 0,
+      "cleared": 3,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassesTotal": 0,
+      "reviewPassCounts": {
+        "tut-note": 0,
+        "tut-tools": 0,
+        "tut-map": 0
+      },
+      "nextReview": {
+        "tut-note": null,
+        "tut-tools": null,
+        "tut-map": null
+      },
+      "marker": null,
+      "attachmentKeys": [],
+      "attachmentSizes": {}
+    },
+    "reviewed": {
+      "activeSubjectId": "tutorial-first-walkthrough",
+      "activeStudy": true,
+      "subjects": 4,
+      "world": "dungeon",
+      "rooms": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "visited": [
+        "tut-note",
+        "tut-tools",
+        "tut-map"
+      ],
+      "sessions": 4,
+      "xp": 92,
+      "inventory": 3,
+      "equipped": 0,
+      "xpTotal": 92,
+      "fish": 0,
+      "cleared": 3,
+      "artifacts": 0,
+      "reviewPasses": 1,
+      "reviewPassesTotal": 1,
+      "reviewPassCounts": {
+        "tut-note": 0,
+        "tut-tools": 0,
+        "tut-map": 1
+      },
+      "nextReview": {
+        "tut-note": null,
+        "tut-tools": null,
+        "tut-map": "2026-11-25T22:34:47.625Z"
+      },
+      "marker": null,
+      "attachmentKeys": [],
+      "attachmentSizes": {}
+    },
+    "created": {
+      "activeSubjectId": "subject-c30cd21d-00af-4589-a762-9d787e58f90e",
+      "activeStudy": true,
+      "subjects": 5,
+      "world": "village",
+      "rooms": [
+        "room-43989045-40a2-43ed-a4e5-d3c496b1a0f3",
+        "586be4b6-6955-4295-a7f8-cebb9bbf60f1",
+        "1d6efea5-d6d4-496b-b16d-81ca411e50de",
+        "ac205d11-8ed3-4595-a398-443db1906ecc"
+      ],
+      "visited": [],
+      "sessions": 5,
+      "xp": 0,
+      "inventory": 3,
+      "equipped": 0,
+      "xpTotal": 97,
+      "fish": 1,
+      "cleared": 0,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassesTotal": 1,
+      "reviewPassCounts": {
+        "room-43989045-40a2-43ed-a4e5-d3c496b1a0f3": 0,
+        "586be4b6-6955-4295-a7f8-cebb9bbf60f1": 0,
+        "1d6efea5-d6d4-496b-b16d-81ca411e50de": 0,
+        "ac205d11-8ed3-4595-a398-443db1906ecc": 0
+      },
+      "nextReview": {
+        "room-43989045-40a2-43ed-a4e5-d3c496b1a0f3": null,
+        "586be4b6-6955-4295-a7f8-cebb9bbf60f1": null,
+        "1d6efea5-d6d4-496b-b16d-81ca411e50de": null,
+        "ac205d11-8ed3-4595-a398-443db1906ecc": null
+      },
+      "marker": null,
+      "attachmentKeys": [
+        "p10-evidence.txt"
+      ],
+      "attachmentSizes": {
+        "p10-evidence.txt": 54
+      }
+    },
+    "creatorLayout": {
+      "viewport": {
+        "w": 1280,
+        "h": 800
+      },
+      "overflowX": false,
+      "overflowY": false,
+      "boxes": [
+        {
+          "id": "toggle-panel",
+          "x": 1177,
+          "y": 12,
+          "w": 91,
+          "h": 44
+        }
+      ],
+      "overlaps": [],
+      "smallTargets": [],
+      "clippedPanels": [
+        {
+          "id": "creator-panel",
+          "horizontalClip": false,
+          "verticalClip": false
+        }
+      ],
+      "focus": "creator-panel-title",
+      "textScale": "normal",
+      "touchVisible": false,
+      "progressOpen": false
+    },
+    "subjectCleared": {
+      "activeSubjectId": "subject-c30cd21d-00af-4589-a762-9d787e58f90e",
+      "activeStudy": true,
+      "subjects": 5,
+      "world": "dungeon",
+      "rooms": [
+        "room-43989045-40a2-43ed-a4e5-d3c496b1a0f3",
+        "586be4b6-6955-4295-a7f8-cebb9bbf60f1",
+        "1d6efea5-d6d4-496b-b16d-81ca411e50de",
+        "ac205d11-8ed3-4595-a398-443db1906ecc"
+      ],
+      "visited": [
+        "room-43989045-40a2-43ed-a4e5-d3c496b1a0f3"
+      ],
+      "sessions": 6,
+      "xp": 26,
+      "inventory": 4,
+      "equipped": 0,
+      "xpTotal": 123,
+      "fish": 1,
+      "cleared": 1,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassesTotal": 1,
+      "reviewPassCounts": {
+        "room-43989045-40a2-43ed-a4e5-d3c496b1a0f3": 0,
+        "586be4b6-6955-4295-a7f8-cebb9bbf60f1": 0,
+        "1d6efea5-d6d4-496b-b16d-81ca411e50de": 0,
+        "ac205d11-8ed3-4595-a398-443db1906ecc": 0
+      },
+      "nextReview": {
+        "room-43989045-40a2-43ed-a4e5-d3c496b1a0f3": null,
+        "586be4b6-6955-4295-a7f8-cebb9bbf60f1": null,
+        "1d6efea5-d6d4-496b-b16d-81ca411e50de": null,
+        "ac205d11-8ed3-4595-a398-443db1906ecc": null
+      },
+      "marker": null,
+      "attachmentKeys": [
+        "p10-evidence.txt"
+      ],
+      "attachmentSizes": {
+        "p10-evidence.txt": 54
+      }
+    },
+    "fished": {
+      "activeSubjectId": null,
+      "activeStudy": false,
+      "subjects": 4,
+      "world": "fishing",
+      "rooms": [],
+      "visited": [],
+      "sessions": 4,
+      "xp": null,
+      "inventory": 3,
+      "equipped": 0,
+      "xpTotal": 97,
+      "fish": 1,
+      "cleared": 0,
+      "artifacts": 0,
+      "reviewPasses": 0,
+      "reviewPassesTotal": 1,
+      "reviewPassCounts": {},
+      "nextReview": {},
+      "marker": null,
+      "attachmentKeys": [],
+      "attachmentSizes": {}
+    },
+    "journal": {
+      "journalMs": 10,
+      "focus": {
+        "focus": "journal-panel-title",
+        "focusVisible": true,
+        "outline": "auto 1px rgb(232, 236, 246)"
+      },
+      "layout": {
+        "viewport": {
+          "w": 1280,
+          "h": 800
+        },
+        "overflowX": false,
+        "overflowY": false,
+        "boxes": [
+          {
+            "id": "toggle-panel",
+            "x": 1177,
+            "y": 12,
+            "w": 91,
+            "h": 44
+          }
+        ],
+        "overlaps": [],
+        "smallTargets": [],
+        "clippedPanels": [
+          {
+            "id": "journal-panel",
+            "horizontalClip": false,
+            "verticalClip": false
+          }
+        ],
+        "focus": "journal-panel-title",
+        "textScale": "normal",
+        "touchVisible": false,
+        "progressOpen": false
+      }
+    },
+    "export": {
+      "bundleVersion": 1,
+      "before": {
+        "activeSubjectId": null,
+        "activeStudy": false,
+        "subjects": 4,
+        "world": "village",
+        "rooms": [],
+        "visited": [],
+        "sessions": 4,
+        "xp": null,
+        "inventory": 3,
+        "equipped": 0,
+        "xpTotal": 97,
+        "fish": 1,
+        "cleared": 0,
+        "artifacts": 0,
+        "reviewPasses": 0,
+        "reviewPassesTotal": 1,
+        "reviewPassCounts": {},
+        "nextReview": {},
+        "marker": null,
+        "attachmentKeys": [
+          "p10-evidence.txt"
+        ],
+        "attachmentSizes": {
+          "p10-evidence.txt": 54
+        }
+      },
+      "restored": {
+        "activeSubjectId": null,
+        "activeStudy": false,
+        "subjects": 4,
+        "world": "village",
+        "rooms": [],
+        "visited": [],
+        "sessions": 4,
+        "xp": null,
+        "inventory": 3,
+        "equipped": 0,
+        "xpTotal": 97,
+        "fish": 1,
+        "cleared": 0,
+        "artifacts": 0,
+        "reviewPasses": 0,
+        "reviewPassesTotal": 1,
+        "reviewPassCounts": {},
+        "nextReview": {},
+        "marker": null,
+        "attachmentKeys": [
+          "p10-evidence.txt"
+        ],
+        "attachmentSizes": {
+          "p10-evidence.txt": 54
+        }
+      },
+      "emptied": {
+        "activeSubjectId": null,
+        "activeStudy": false,
+        "subjects": 3,
+        "world": "village",
+        "rooms": [],
+        "visited": [],
+        "sessions": 3,
+        "xp": null,
+        "inventory": 0,
+        "equipped": 0,
+        "xpTotal": 0,
+        "fish": 0,
+        "cleared": 0,
+        "artifacts": 0,
+        "reviewPasses": 0,
+        "reviewPassesTotal": 0,
+        "reviewPassCounts": {},
+        "nextReview": {},
+        "marker": null,
+        "attachmentKeys": [],
+        "attachmentSizes": {}
+      },
+      "sizeBefore": {
+        "stateJsonBytes": 26015,
+        "attachmentCount": 1,
+        "attachmentBytes": 54,
+        "subjects": 4,
+        "rooms": 16,
+        "notes": 0,
+        "fish": 1,
+        "usageBytes": 73798,
+        "quotaBytes": 837074944
+      },
+      "sizeAfter": {
+        "stateJsonBytes": 26015,
+        "attachmentCount": 1,
+        "attachmentBytes": 54,
+        "subjects": 4,
+        "rooms": 16,
+        "notes": 0,
+        "fish": 1,
+        "usageBytes": 73798,
+        "quotaBytes": 837074944
+      }
+    },
+    "largeText": {
+      "viewport": {
+        "w": 1280,
+        "h": 800
+      },
+      "overflowX": false,
+      "overflowY": false,
+      "boxes": [
+        {
+          "id": "toggle-panel",
+          "x": 1103,
+          "y": 15,
+          "w": 162,
+          "h": 48
+        },
+        {
+          "id": "progress-panel",
+          "x": 785,
+          "y": 75,
+          "w": 480,
+          "h": 700
+        }
+      ],
+      "overlaps": [],
+      "smallTargets": [],
+      "clippedPanels": [
+        {
+          "id": "progress-panel",
+          "horizontalClip": false,
+          "verticalClip": false
+        },
+        {
+          "id": "journal-panel",
+          "horizontalClip": false,
+          "verticalClip": false
+        }
+      ],
+      "focus": "journal-panel-title",
+      "textScale": "large",
+      "touchVisible": false,
+      "progressOpen": true
+    },
+    "phone": {
+      "viewport": {
+        "w": 390,
+        "h": 844
+      },
+      "overflowX": false,
+      "overflowY": false,
+      "boxes": [
+        {
+          "id": "prompt",
+          "x": 15,
+          "y": 15,
+          "w": 183,
+          "h": 73
+        },
+        {
+          "id": "toggle-panel",
+          "x": 213,
+          "y": 15,
+          "w": 162,
+          "h": 48
+        },
+        {
+          "id": "progress-panel",
+          "x": 0,
+          "y": 253,
+          "w": 390,
+          "h": 591
+        }
+      ],
+      "overlaps": [],
+      "smallTargets": [],
+      "clippedPanels": [
+        {
+          "id": "progress-panel",
+          "horizontalClip": false,
+          "verticalClip": false
+        }
+      ],
+      "focus": "game",
+      "textScale": "large",
+      "touchVisible": false,
+      "progressOpen": true
+    },
+    "keyboard": {
+      "initialFocus": "title-continue",
+      "afterTab": "title-new-game",
+      "afterShiftTab": "title-continue",
+      "continued": true,
+      "focusAfterContinue": "game",
+      "walked": true,
+      "journalOpened": true,
+      "journalClosed": true
+    },
+    "durable": {
+      "stateJsonBytes": 33224,
+      "attachmentCount": 1,
+      "attachmentBytes": 54,
+      "subjects": 5,
+      "rooms": 20,
+      "notes": 0,
+      "fish": 1,
+      "usageBytes": 209790,
+      "quotaBytes": 837074944
+    },
+    "consoleErrors": []
+  },
+  "frames": [
+    {
+      "file": "2026-11-25-g10play-01-title.png",
+      "label": "Title",
+      "detail": "focus=title-continue (true); title=true; targets under 44px=0; consoles subscribed=true; status=\"3 subjects saved · quest: intro · archetype: not chosen\""
+    },
+    {
+      "file": "2026-11-25-g10play-02-street.png",
+      "label": "Village street",
+      "detail": "archetype scholar=true; focus=game; overlaps=none; targets under 44px=0; page scroll=false"
+    },
+    {
+      "file": "2026-11-25-g10play-03-progress-panel.png",
+      "label": "Progress panel",
+      "detail": "open=true; overlaps=none; touch hidden=true; targets under 44px=0"
+    },
+    {
+      "file": "2026-11-25-g10play-04-cleared.png",
+      "label": "Three rooms cleared",
+      "detail": "cleared=3/3; lower=304ms; climb=3569ms; xp=86; prompt=\"E write a note — The Map & Beyond\nR review — The Map & Beyond\""
+    },
+    {
+      "file": "2026-11-25-g10play-05-review.png",
+      "label": "Review passed",
+      "detail": "openedIn=11ms; passes=1; XP=92; next review set=true"
+    },
+    {
+      "file": "2026-11-25-g10play-07-fishing.png",
+      "label": "Catch kept",
+      "detail": "bite=7902ms; fish 0→1; xp=97; world=fishing"
+    },
+    {
+      "file": "2026-11-25-g10play-08-journal.png",
+      "label": "Journal",
+      "detail": "openedIn=10ms; focus=journal-panel-title; subjects in journal=4; overlaps=none; horizontal clip=false"
+    },
+    {
+      "file": "2026-11-25-g10play-09-import-roundtrip.png",
+      "label": "Export → clear → import",
+      "detail": "bundle v1; attachment base64=true; cleared 0→0; XP 97→97; fish 1→1; emptied save cleared=0; state JSON 26015→26015 bytes"
+    },
+    {
+      "file": "2026-11-25-g10play-10-large-text.png",
+      "label": "Large text",
+      "detail": "text scale=large; page overflowX=false; clipped dialogs=none; targets under 44px=0"
+    },
+    {
+      "file": "2026-11-25-g10play-11-phone-sheet.png",
+      "label": "Phone progress sheet",
+      "detail": "viewport=390×844; sheet open=true; touch hidden=true; overlaps=none; page overflowX=false; targets under 44px=0"
+    },
+    {
+      "file": "2026-11-25-g10play-12-creator.png",
+      "label": "Creator subject",
+      "detail": "subjects=5; rooms=4; overlaps=none; targets under 44px=0"
+    },
+    {
+      "file": "2026-11-25-g10play-13-new-subject.png",
+      "label": "New subject room",
+      "detail": "cleared=1; rooms=4; world=dungeon; created subject active=true"
+    }
+  ]
+}
