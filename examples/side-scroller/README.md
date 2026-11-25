@@ -12,6 +12,7 @@ documented root entries) leaves the engine exactly as it was. The full rule set 
 | Field | Value |
 | --- | --- |
 | Status | Complete — P0–P10, G10 passed |
+| Live | https://mcfuzzysquirrel.github.io/knowledge-dungeon-engine/examples/side-scroller/ |
 | Stack | Vanilla TypeScript + Vite + Canvas 2D |
 | Storage | IndexedDB, one `EngineState` record |
 | Package | Private, standalone (`package.json`, lockfile, `tsconfig`, Vitest config) |
@@ -59,8 +60,28 @@ npm --prefix examples/side-scroller run gate
 It runs root test/typecheck/build, example test/typecheck/build, the Vitest isolation
 probe, and both empty-`src` checks, then prints a pass/fail summary with the engine and
 example test counts. It exits non-zero on any failure and never swallows output. There is
-no root package script and no CI workflow by decision (D-13); this local gate is the
-repeatable substitute.
+no root package script. The Pages deploy workflow runs the example test, typecheck, and
+build; the full engine + example gate remains the local repeatable check.
+
+## Hosted example
+
+The live site is published from the `gh-pages` branch:
+
+```text
+https://mcfuzzysquirrel.github.io/knowledge-dungeon-engine/
+  examples/side-scroller/
+```
+
+The [ADR-0011](../../docs/adr/0011-github-pages-reference-examples.md) decision and
+[`.github/workflows/deploy-example.yml`](../../.github/workflows/deploy-example.yml)
+build each `examples/**` branch with its repository/branch base path, then copy only
+`dist` into that branch's subpath. The landing page and any other examples are preserved.
+To add another example, put its package at `examples/<name>`, copy the workflow to that
+branch, and add a landing-page link. Use a unique IndexedDB database name and
+`localStorage` key: Pages examples share one `github.io` origin.
+
+The deploy is static. Saves stay in the visitor's browser; the workflow does not publish
+the plan documents or the visual-record PNGs.
 
 ## What works
 
@@ -90,9 +111,10 @@ repeatable substitute.
 
 P10 completed the local ship pass: the notice rail and modal layers no longer overlap,
 the sheet hides the touch pad, focus and 44 px targets are checked, the world stops
-repainting under an covering modal, and a repeatable gate now covers both suites and the
+repainting under a covering modal, and a repeatable gate now covers both suites and the
 engine boundary. Placeholder rectangles and silence remain deliberate: this example ships
-no art or audio.
+no art or audio. Post-P10 hosting is covered by
+[ADR-0011](../../docs/adr/0011-github-pages-reference-examples.md).
 
 ## Controls
 
@@ -158,8 +180,9 @@ goes through an engine command; the frame loop never calls `snapshot()`.
 
 - **No art, audio, music, or voice.** Placeholder shapes and silence are product
   decisions (D-11), not unfinished assets.
-- **Local only.** There is no CI workflow, hosted deployment, service worker, or PWA
-  install. The [gate script](#run-it) is the repeatable check.
+- **Saves are local to the browser.** The hosted copy has no backend, accounts, or cloud
+  sync, and no service worker or PWA install. The [gate script](#run-it) is the full
+  repeatable check.
 - **One browser save.** IndexedDB holds one engine state; there are no accounts, cloud
   sync, multiple slots, or anti-cheat.
 - **No fish trading or NPC state.** The Fish Stand is a collection display and villagers

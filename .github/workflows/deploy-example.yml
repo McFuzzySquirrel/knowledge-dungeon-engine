@@ -1,0 +1,65 @@
+name: Deploy reference example
+
+on:
+  push:
+    branches:
+      - 'examples/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gh-pages-examples
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the example branch
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ${{ github.ref_name }}/package-lock.json
+
+      - name: Install the example
+        run: npm ci --prefix "${GITHUB_REF_NAME}"
+
+      - name: Test the example
+        run: npm test --prefix "${GITHUB_REF_NAME}"
+
+      - name: Typecheck the example
+        run: npm run typecheck --prefix "${GITHUB_REF_NAME}"
+
+      - name: Build for the branch path
+        env:
+          EXAMPLE_BASE: /${{ github.event.repository.name }}/${{ github.ref_name }}/
+        run: npm run build --prefix "${GITHUB_REF_NAME}" -- --base="${EXAMPLE_BASE}"
+
+      - name: Check out the Pages branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: site
+
+      - name: Publish the example under its branch path
+        run: |
+          DEST="site/${GITHUB_REF_NAME}"
+          rm -rf "$DEST"
+          mkdir -p "$DEST"
+          cp -R "${GITHUB_REF_NAME}/dist/." "$DEST/"
+          cd site
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          if git diff --cached --quiet; then
+            echo "No changes to publish"
+            exit 0
+          fi
+          git commit -m "Deploy ${GITHUB_REF_NAME}"
+          git push origin HEAD:gh-pages

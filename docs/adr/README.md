@@ -14,6 +14,7 @@
 | [ADR-0008](0008-fishing-state-machine-and-command-layer.md) | [Split Fishing Into A Pure State Machine And An Explicit-Context Command Layer](0008-fishing-state-machine-and-command-layer.md) | Accepted | 2026-11-23 |
 | [ADR-0009](0009-grid-layout-and-floor-walkability.md) | [Derive Grid Layout, Floor Visibility, And Walkability From The Topic Graph](0009-grid-layout-and-floor-walkability.md) | Accepted | 2026-11-23 |
 | [ADR-0010](0010-study-session-lifecycle.md) | [Persist Study Sessions On Every Activity And Recover At Last Activity](0010-study-session-lifecycle.md) | Accepted | 2026-11-23 |
+| [ADR-0011](0011-github-pages-reference-examples.md) | [Publish Reference Examples As Subpaths Of One GitHub Pages Site](0011-github-pages-reference-examples.md) | Accepted | 2026-11-25 |
 
 ## Rules
 

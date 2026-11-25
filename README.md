@@ -123,6 +123,7 @@ tests/                         Unit and phase tests for commands, rules, and wor
 scripts/                       Local Markdown index and MCP documentation-search tooling
 docs/                          User guide, host UI guide, administrator guide, ADRs, release notes
 examples/side-scroller/        Reference side-view host (own package, tests, and plan)
+.github/workflows/             Pages deploy for reference-example branches
 ```
 
 ## Reference Host
@@ -132,6 +133,8 @@ host built on the engine: a side-view village street above a generated dungeon, 
 2D rendering, IndexedDB persistence, and the Creator/Scribe/Archaeologist loop. It is
 standalone (its own `package.json`, lockfile, TypeScript config, and Vitest suite) and
 strictly additive — it changes no engine source, export, schema, or runtime dependency.
+A hosted copy is at
+[`mcfuzzysquirrel.github.io/knowledge-dungeon-engine/examples/side-scroller/`](https://mcfuzzysquirrel.github.io/knowledge-dungeon-engine/examples/side-scroller/).
 
 ```sh
 npm --prefix examples/side-scroller install
@@ -145,8 +148,10 @@ the engine, and the [implementation plan](docs/plans/side-scroller-host/README.m
 [visual record](docs/plans/side-scroller-host/VISUALS.md) document each phase. It is a
 reference, not a published package: the root test suite remains engine-only and does
 not discover `examples/**`. The example is complete through P10 and ships a local gate
-(`node examples/side-scroller/scripts/gate.mjs`); CI and hosted deployment remain
-deferred.
+(`node examples/side-scroller/scripts/gate.mjs`). Hosting follows
+[ADR-0011](docs/adr/0011-github-pages-reference-examples.md): each `examples/*` branch
+publishes its built `dist` under one GitHub Pages site, while the full engine + example
+gate remains local.
 
 ## Getting Started
 
@@ -319,7 +324,7 @@ These are known gaps and candidate work, **not shipped behavior**:
 - Durable `EngineStorage` adapters for browsers and Node.
 - A migration path from existing Knowledge Dungeon saves and backups.
 - An npm release (the package is currently private and installed from Git).
-- A repository CI workflow; validation is currently local, including the side-scroller's P10 gate.
+- A repository-wide CI workflow; the Pages deploy workflow validates the example, while the engine suite and full gate remain local.
 - Dedicated test coverage for the statistics and assistance modules.
 - Additional reference hosts for other UI stacks. The completed
   [side-scroller example](examples/side-scroller/README.md) covers vanilla TypeScript,

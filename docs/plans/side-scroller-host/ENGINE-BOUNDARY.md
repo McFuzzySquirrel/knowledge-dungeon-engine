@@ -132,13 +132,19 @@ calls `snapshot()`, and the one subscription remains the only state path. The lo
 runs both suites, both typechecks, both builds, the isolation probe, and the two empty
 `src` checks; it is the substitute for the CI workflow this plan does not add.
 
+Post-plan hosting ([ADR-0011](../../adr/0011-github-pages-reference-examples.md)) publishes
+only each example branch's built `dist` under a `gh-pages` subpath. It does not change
+`src`, the export map, the storage schema, or the engine test baseline; the deployed app
+keeps every save in the browser.
+
 ## 7. Compat and review
 
 - Every gate runs the engine and example suites, both typechecks, both builds, and the
   `examples/**` isolation probe.
 - A future engine refactor may break a host; the example typecheck against source is the
-  early-warning system. Add the example to CI only when a CI workflow exists; this plan
-  stays local by maintainer decision.
+  early-warning system. The Pages deploy workflow runs the example test, typecheck, and
+  build, but a repository-wide CI workflow still does not exist; the engine suite remains
+  local.
 - Re-read this document at the start of each phase; P10 folded in the P5–P9 lessons and
-  closed the plan without promoting it to an ADR.
+  closed the plan. ADR-0011 records post-plan hosting, not a change to this boundary.
 - Promote to `docs/adr/` when a second UI is scheduled, so the rule outlives this example.

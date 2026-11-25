@@ -24,7 +24,7 @@ the gate outcome and the baseline facts later gates compare against.
 
 | Field | Value |
 |---|---|
-| Plan version | 3.0 |
+| Plan version | 3.1 |
 | Plan written | 2026-11-23 |
 | Engine test baseline | **13 files / 280 tests at `3951737`; unchanged after P0–P10** |
 | First gate run | 2026-11-23 |
@@ -51,6 +51,10 @@ the gate outcome and the baseline facts later gates compare against.
 | G8 follow-up | [P8 — room openings](phase-8-journal.md#execution-evidence) | 2026-11-24 | uncommitted (base `3e8039b`) | pass | 13 / 280 | 32 / 202 | [P8 follow-up evidence](phase-8-journal.md#execution-evidence) |
 | G9 | [P9 — shell and touch](phase-9-shell-mobile.md#execution-evidence) | 2026-11-24 | uncommitted (base `5b76c82`) | pass | 13 / 280 | 35 / 228 | [P9 evidence](phase-9-shell-mobile.md#execution-evidence) |
 | G10 | [P10 — local polish](phase-10-polish.md#execution-evidence) | 2026-11-25 | uncommitted (base `5b76c82`) | pass | 13 / 280 | 35 / 228 | [P10 evidence](phase-10-polish.md#execution-evidence) |
+
+Post-plan hosting is recorded in [ADR-0011](../../adr/0011-github-pages-reference-examples.md):
+each `examples/*` branch publishes only its built `dist` under
+`gh-pages/examples/<name>/`; it changes no engine source or P10 evidence.
 
 ## Baseline record (P0)
 

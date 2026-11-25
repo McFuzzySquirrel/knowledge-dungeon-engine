@@ -2,8 +2,8 @@
 
 | Field | Value |
 |---|---|
-| Plan version | 3.0 |
-| Status | Complete — P0–P10 done; G10 passed |
+| Plan version | 3.1 |
+| Status | Complete — P0–P10 done; G10 passed; hosted example follows [ADR-0011](../../adr/0011-github-pages-reference-examples.md) |
 | Created | 2026-11-23 |
 | Owner | Unassigned |
 | Phase documents | [P0](phase-0-scaffold.md) · [P1](phase-1-dungeon-level.md) · [P2](phase-2-note-loop.md) · [P3](phase-3-surface-village.md) · [P4](phase-4-fishing.md) · [P5](phase-5-review.md) · [P6](phase-6-creator.md) · [P7](phase-7-village.md) · [P8](phase-8-journal.md) · [P9](phase-9-shell-mobile.md) · [P10](phase-10-polish.md) |
@@ -85,6 +85,7 @@ without updating this table.
 | D-16 | Review entry | `R` from a cleared room plus a Library desk in P7; the review panel itself ships in P5 |
 | D-17 | Creator scope | A room-tree editor with forms, not a canvas node graph or tile editor |
 | D-18 | Deferred engine capabilities | Fish trading, NPC dialogue state, multi-save slots, and cloud sync stay out of scope; see [ENGINE-BOUNDARY.md §6](ENGINE-BOUNDARY.md#6-deferred-capabilities) |
+| D-19 | Post-plan hosting | Reference examples may be published as subpaths of one GitHub Pages site under [ADR-0011](../../adr/0011-github-pages-reference-examples.md). The engine and the P0–P10 local gate remain unchanged |
 
 ## 3. Goals and non-goals
 
@@ -111,7 +112,8 @@ without updating this table.
 - Multi-device sync, accounts, cloud storage, anti-cheat, or online services.
 - Fish trading, NPC state mutation, or multiple save slots; see
   [ENGINE-BOUNDARY.md §6](ENGINE-BOUNDARY.md#6-deferred-capabilities).
-- CI workflows, hosted deployment, PWA install, or app-store packaging (D-13).
+- CI workflows, hosted deployment, PWA install, or app-store packaging (D-13; post-plan
+  reference-example hosting is D-19 and [ADR-0011](../../adr/0011-github-pages-reference-examples.md)).
 
 ## 4. Requirements and traceability
 
@@ -348,7 +350,10 @@ source; the example typechecks against the same files the engine builds.
 Exact commands and output summaries go in the phase evidence tables. Do not record
 learner prose or secrets.
 
-There is no CI workflow in this plan (D-13). The local gate is the repeatable substitute.
+P10 added no CI workflow (D-13). The local gate is the full repeatable check. Post-plan
+hosting adds an example-only deploy workflow under
+[ADR-0011](../../adr/0011-github-pages-reference-examples.md); it does not replace the
+gate or change the engine boundary.
 
 ### Manual smoke script (P2–P10)
 
@@ -446,8 +451,10 @@ gate has a dated record.
   so root `package-lock.json` is not rewritten.
 - Landing order is P0 → P1 → P2 → P3 → P4 → P5 → P6 → P7 → P8 → P9 → P10, one phase per
   merge.
-- P5–P10 stay local. No CI workflow, deployment, hosting, or PWA is added (D-13); the
-  P10 gate script is the repeatable check.
+- P5–P10 were delivered locally. The P10 gate script is the repeatable check. Post-plan
+  hosting is governed by D-19 and [ADR-0011](../../adr/0011-github-pages-reference-examples.md):
+  no engine source or storage changes, and each example branch publishes only its built
+  `dist` under `/examples/<name>/`.
 - Mobile support is a tested local target from P9 onward; S-01 names the browsers.
 
 ### Migration
@@ -562,3 +569,4 @@ phase relies on a changed answer.
 | 2026-11-24 | 2.8 | Shell direction accepted after P8: P9 will make the canvas the viewport with the title, HUD, journal, services, help, and touch controls inside the world; P9-T5 now specifies a full-viewport layout instead of a 16:9 card |
 | 2026-11-24 | 2.9 | P9 executed and G9 passed; title/new/continue/archetype, portable save bundle with base64 attachments and validated import, one-intent touch layer, full-viewport responsive shell with a progress sheet, keyboard and reduced-motion re-runs, three new example suites (35 / 228), `--mobile` capture mode and `g9`/`g9rm` frames; engine count unchanged and no `src/` diff |
 | 2026-11-25 | 3.0 | P10 executed and G10 passed; one notice rail and layer scale, sheet/modal touch hiding, 44 px targets, reduced-motion-safe arrivals, large-text and phone checks, no canvas repaint under an opaque modal, `--p10`/`--perf`/`--smoke` capture modes, `scripts/gate.mjs`, example/root/host-guide/boundary docs, and the first-ten-minutes script; example suite 35 / 228; engine 13 / 280 unchanged; no `src/` diff |
+| 2026-11-25 | 3.1 | Post-plan hosting: ADR-0011 adds a GitHub Pages landing site, a per-`examples/*` deploy workflow, and subpath hosting with unique storage namespaces. P10 evidence and the engine suite are unchanged; the local gate remains the full check |

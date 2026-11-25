@@ -14,8 +14,9 @@
 
 Finish the local example: smooth the presentation without adding art or audio, run the
 accessibility and performance passes, make the console clean, write the example's own
-documentation, and leave one repeatable local gate. There is no CI workflow and no
-deployment in this plan; both are explicitly deferred.
+documentation, and leave one repeatable local gate. P10 itself added no CI workflow and
+no deployment; both were deferred. Post-plan hosting is a separate accepted decision in
+[ADR-0011](../../adr/0011-github-pages-reference-examples.md), not part of the G10 gate.
 
 This phase is deliberately **not** an art pass. Placeholder rectangles stay. The polish is
 layout, affordances, transitions, focus, text, and the removal of rough edges found by
@@ -24,7 +25,8 @@ playing all six phases end to end.
 ## Non-goals
 
 - Sprites, tilesets, sound effects, music, voice, or a mute control.
-- GitHub Actions, Pages, Netlify, or any hosted deployment.
+- GitHub Actions, Pages, Netlify, or any hosted deployment in P10. Post-plan hosting is
+  recorded separately in [ADR-0011](../../adr/0011-github-pages-reference-examples.md).
 - PWA/service-worker install.
 - New gameplay features. Bugs found here are fixed; new systems wait for a new plan.
 - Engine changes, including performance work in `src/`.
